@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.1",
+  "workflows": {
+    "speckit": {
+      "name": "Full SDD Cycle",
+      "version": "1.0.0",
+      "description": "Runs specify \u2192 plan \u2192 tasks \u2192 implement with review gates",
+      "source": "bundled",
+      "installed_at": "2026-05-12T13:21:11.119864+00:00",
+      "updated_at": "2026-05-12T13:21:11.119875+00:00"
+    },
+    "systematic-debugging": {
+      "name": "Systematic Debugging",
+      "version": "1.0.0",
+      "description": "6-step bug investigation SOP: reproduce \u2192 query harness \u2192 root cause (F1-F8) \u2192 fix \u2192 knowledge sediment \u2192 link check",
+      "source": "bundled",
+      "installed_at": "2026-07-16T00:00:00+00:00",
+      "updated_at": "2026-07-16T00:00:00+00:00"
+    }
+  }
+}
