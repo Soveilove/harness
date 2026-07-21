@@ -1,0 +1,126 @@
+schema_version: 1
+workflow_version: "0.2.0"
+policy:
+  max_stages_per_invocation: 1
+  implicit_stage_chaining: false
+  require_skill_report: true
+  unavailable_candidate_behavior: inventory_only
+sources:
+  repository:
+    kind: internal
+    status: active
+  mattpocock-skills:
+    kind: third_party
+    repository: "https://github.com/mattpocock/skills"
+    ref: "9603c1cc8118d08bc1b3bf34cf714f62178dea3b"
+    status: research_only
+skills:
+  sovei-workflow:
+    source: repository
+    path: ".agents/skills/sovei-workflow/SKILL.md"
+    status: active
+  knowledge-loader:
+    source: repository
+    path: ".agents/skills/knowledge-loader/SKILL.md"
+    status: active
+  mattpocock-grill-me:
+    source: mattpocock-skills
+    path: "skills/productivity/grill-me/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-grilling:
+    source: mattpocock-skills
+    path: "skills/productivity/grilling/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-grill-with-docs:
+    source: mattpocock-skills
+    path: "skills/engineering/grill-with-docs/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-domain-modeling:
+    source: mattpocock-skills
+    path: "skills/engineering/domain-modeling/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-wayfinder:
+    source: mattpocock-skills
+    path: "skills/engineering/wayfinder/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-to-spec:
+    source: mattpocock-skills
+    path: "skills/engineering/to-spec/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-to-tickets:
+    source: mattpocock-skills
+    path: "skills/engineering/to-tickets/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-implement:
+    source: mattpocock-skills
+    path: "skills/engineering/implement/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-code-review:
+    source: mattpocock-skills
+    path: "skills/engineering/code-review/SKILL.md"
+    status: candidate_not_installed
+  mattpocock-handoff:
+    source: mattpocock-skills
+    path: "skills/productivity/handoff/SKILL.md"
+    status: candidate_not_installed
+stages:
+  load:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: []
+    alternative_third_party_skills: []
+  grill:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-grilling"]
+    alternative_third_party_skills: ["mattpocock-grill-me", "mattpocock-grill-with-docs"]
+  wayfind:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-wayfinder"]
+    alternative_third_party_skills: []
+  spec:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-domain-modeling", "mattpocock-to-spec"]
+    alternative_third_party_skills: []
+  scope:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-domain-modeling"]
+    alternative_third_party_skills: []
+  plan:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-domain-modeling"]
+    alternative_third_party_skills: []
+  tasks:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-to-tickets"]
+    alternative_third_party_skills: []
+  implement:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-implement"]
+    alternative_third_party_skills: []
+  converge:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-code-review"]
+    alternative_third_party_skills: []
+  verify:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-code-review"]
+    alternative_third_party_skills: []
+  learn:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: ["mattpocock-handoff"]
+    alternative_third_party_skills: []
+  sync:
+    required_skills: ["sovei-workflow", "knowledge-loader"]
+    third_party_skills: []
+    candidate_third_party_skills: []
+    alternative_third_party_skills: []

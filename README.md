@@ -1,89 +1,45 @@
-# E:\memory — AI 开发 Harness 中枢
+# Sovei Harness 中枢
 
-> 这是一个**知识驱动的 AI 开发护栏系统**，不是普通的文档库。
-> 核心目标：在 AI 写代码前就给约束，防止 AI 静默漂移，把验证从"逐行读代码"降到"对齐业务红线"。
+`E:\memory` 只承担两件事：
 
----
+1. 在 `harness/` 维护经过确认的稳定开发知识、规则、模板和工具。
+2. 按 [SYNC.md](SYNC.md) 将稳定 Harness 分发到 A/B/C 工程。
 
-## 体系定位
+## 生效边界
 
-```
-E:\memory\ (Harness 中枢 — 唯一源)
-│
-├── harness/                    ← 完整 Harness（分发到项目的全部内容）
-│   ├── memory/                 ← 知识层（宪法、踩坑、决策、偏好、架构）
-│   ├── spec-harness/           ← 规则层（stable/pending/rejected/taxonomy/audit）
-│   ├── codegraph/              ← 导航层（代码地图）
-│   ├── templates/              ← 模板层（spec/plan/tasks/checklist）
-│   ├── scripts/                ← 脚本层（sync-harness.sh 等）
-│   ├── workflows/              ← 工作流（systematic-debugging 等）
-│   ├── extensions/             ← 扩展（git hooks）
-│   ├── integrations/           ← IDE 集成 manifest
-│   └── ide-adapters/           ← 跨 IDE 适配文件（CLAUDE.md / AGENTS.md）
-│
-├── .codebuddy/                 ← CodeBuddy IDE 适配层
-│   ├── rules/                  ← 强制规则（alwaysApply: true）
-│   ├── skills/                 ← 按需知识加载（Skill）
-│   └── memory/                 ← Working Memory（自动注入）
-│
-├── design-docs/                ← 设计文档（不分发）
-├── docs/                       ← 个人文档（不分发）
-├── backups/                    ← 备份
-├── README.md                   ← 本文件
-├── QUICKSTART.md               ← 快速操作指引
-└── SYNC.md                     ← 同步操作手册
-```
+| 路径 | 定位 | 是否分发 |
+|---|---|---|
+| `harness/` | 当前稳定 Harness 的唯一源 | 是 |
+| `.agents/`、`.codebuddy/` | 中枢自身的 Agent/IDE 适配 | 仅分发脚本明确列出的适配文件 |
+| `design-docs/SOVEI_HARNESS_WORKFLOW_DESIGN.md` | 新版 Sovei 架构基线 | 否 |
+| `.agents/skills/sovei-workflow/` | Codex 可显式调用的 Phase 1 工作流 | 按同步脚本分发 |
+| `packages/sovei-system/` | 中枢系统的私有 pnpm package、依赖和审计 CLI | 否 |
+| `specs/` | 中枢自身的 Feature 实例和验证证据 | 否 |
+| `SYNC.md` | A/B/C 同步的唯一操作指引 | 否 |
 
-## 规则注入层次
+Sovei 0.2.0 已启用 `load`、`grill`、`spec`、`scope`、`plan`。每次调用只执行一个阶段，然后输出下一条需要在新上下文中调用的命令，禁止一次串完整条工作流。阶段的真实 Skill 依赖和可替换第三方候选统一登记在 `harness/workflows/sovei/skill-map.yaml`。
 
-```
-全局个人规则（~/.claude/CLAUDE.md）
-  ↓ 所有项目通用：沟通风格、AI 协作约定、通用编码习惯
-项目级规则（CLAUDE.md / AGENTS.md / .codebuddy/rules/）
-  ↓ 项目特定：架构红线、Vue 约束、环境约束、知识加载指引
-知识库（.specify/）
-  ↓ 按需加载：踩坑库、决策记录、代码地图、实现规则
+工作流的场景选择、命令格式、阶段停止条件和常见问题统一见 [Sovei 工作流使用指引](harness/workflows/sovei/USAGE.md)。
+
+当前执行任一阶段都只实际使用仓库内的 `sovei-workflow` 和 `knowledge-loader`；所有 Matt Pocock Skills 仍是 `candidate_not_installed`，不会被自动调用。`tasks` 及之后阶段、外部 Skill 生命周期、Baseline 和跨工程协调仍是 future；不得因为设计文档或 Skill Map 中出现某项候选能力，就让 Agent 假定系统已经具备该能力。
+
+## 中枢 Package
+
+`packages/sovei-system` 是本仓库自己的私有项目。Node 依赖安装在该目录的 `node_modules`，版本锁定在同目录 `pnpm-lock.yaml`，不参与 A/B/C 分发。
+
+```powershell
+pnpm --dir packages\sovei-system install
+pnpm --dir packages\sovei-system run check
+pnpm --dir packages\sovei-system run skills -- load
 ```
 
-## 各 IDE 规则加载对照
+新增系统依赖时，在该 package 中执行 `pnpm add <package>` 或 `pnpm add -D <package>`，不要把依赖散装到仓库根目录或 Harness 发布目录。
 
-| IDE | 全局规则 | 项目规则 | 知识加载 |
-|-----|---------|---------|---------|
-| **Claude Code** | `~/.claude/CLAUDE.md` | 项目根 `CLAUDE.md` | 读 `.specify/` |
-| **CodeBuddy** | `~/.codebuddy/rules/` | `.codebuddy/rules/RULE.mdc` | `knowledge-loader` SKILL |
-| **Trae** | `~/.trae/rules/` | 项目根 `AGENTS.md` | 读 `.specify/` |
-| **Cursor** | `~/.cursor/rules/` | 项目根 `AGENTS.md` | 读 `.specify/` |
+## 数据所有权
 
-## 核心原理
+- 中枢只保存已经审查并可跨工程复用的稳定内容。
+- `specs/`、`.specify/feature.json`、项目根 `AGENTS.md`/`CLAUDE.md` 和项目 Baseline 属于工程实例，不得跨工程覆盖。
+- 分支中的候选知识不能直接覆盖中枢。先在来源工程验证，再人工提炼和晋级。
+- A/B/C 之间禁止相互复制 `.specify/`；所有稳定分发都从 `E:\memory\harness` 发出。
 
-**事前约束替代事后验证**：
-
-```
-AI 写代码前 → 先读知识库（红线、参数链路、坑点）
-  → AI 在约束范围内写代码
-  → 人审"AI 是否遵守红线"（10 分钟，不需要逐行读代码）
-  → 新坑点/决策写回知识库 → 下次 AI 自动拿到
-```
-
-## 已注册项目
-
-| 项目 | 路径 | 角色 |
-|------|------|------|
-| pino-front | `E:\project\holopix\pino-front` | A 工程 / 当前开发实例 |
-| pino-front-b | `D:\holopix\pino-front-b` | B 工程实例 |
-| pino-front-c | `D:\holopix\pino-front-c` | C 工程实例 |
-
-## 常用操作
-
-```text
-从 E:\memory\harness 分发到 <项目路径>
-全量分发 Harness 到所有项目
-合并各工程到 E:\memory\harness
-接入新项目 <项目路径>
-```
-
-详见 [QUICKSTART.md](QUICKSTART.md) 和 [SYNC.md](SYNC.md)。
-
----
-
-*更新日期: 2026-07-16 — 增加跨 IDE 适配层，增加个人全局规则，三层规则注入体系*
+架构设计见 [SOVEI_HARNESS_WORKFLOW_DESIGN.md](design-docs/SOVEI_HARNESS_WORKFLOW_DESIGN.md)，日常同步只看 [SYNC.md](SYNC.md)。

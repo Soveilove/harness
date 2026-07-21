@@ -120,13 +120,9 @@ SearchBar @search
 
 ## 多文件夹同步
 
-详细流程见：`requirements-analysis/MULTI_WORKSPACE_KNOWLEDGE_SYNC.md`
-
-简要规则：
-
-- 多个独立工作目录之间同步 `.specify/codegraph/recent-work-code-map.md` 和 `.specify/codegraph/board-code-map.md`，不复制 `.specify/codegraph` 数据库、缓存、日志和运行时文件。
-- 以顶部 `Code Map 版本` 较新的文件为基准；如果多个目录都改过，合并新增入口、链路图和常见任务定位后再提升版本号。
-- Memory 相关内容同步 `.specify/memory/`，IDE 加载入口同步各自 rules / skills，不能只同步 Trae。
+- 不在独立工作目录之间直接复制 Code Map 或 Memory。
+- 稳定内容经中枢审查和晋级后统一分发；具体边界只以 `E:\memory\SYNC.md` 为准。
+- 数据库、缓存、日志、运行时文件和工程实例状态永不进入稳定分发。
 
 ## 维护边界
 

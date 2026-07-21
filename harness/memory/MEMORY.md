@@ -1,6 +1,6 @@
 # Pino Front — 中枢 Harness 记忆索引
 
-> 所有 `.specify/memory/` 文件都是合并产物，与中枢 `E:\memory\harness` 保持一致。各工程（A/B/C）的改进先 merge 到这里，再由这里分发到全部工程。
+> 本目录只保存经过审查、可跨工程复用的稳定知识。工程分支中的候选内容不得整目录合并到这里；必须先验证、提炼并人工晋级，再由中枢分发。
 > **注意**：`AGENTS.md` 和 `CLAUDE.md` 纳入版本管理时，同步时不要处理这两个文件。
 
 ## 通用记忆
@@ -31,15 +31,13 @@
 - `../spec-harness/rejected-patterns.md` — 失败模式记录
 - `../spec-harness/failure-taxonomy.md` — 失败分类
 - `../codegraph/index.md` — 代码地图索引
-
-## 设计文档（中枢专属，不分发）
-
-架构设计文档在中枢统一存放，不复制到项目 `.specify/memory/`：
-- `E:\memory\design-docs\CROSS_IDE_MEMORY_SOLUTION.md` — 跨 IDE Memory 共享方案
-- `E:\memory\design-docs\SDD-MEMORY-INTEGRATION.md` — SDD + Memory 集成指南
+- `../workflows/sovei/workflow.yaml` — Sovei Phase 1 阶段图与 Artifact 契约
+- 项目根 `.agents/skills/sovei-workflow/SKILL.md` — Codex 显式工作流入口
 
 ## 同步约定
 
-- `E:\memory\harness` 是中央 merge 中转站（各工程改进 merge 到这里，再分发回各工程）。
+- `E:\memory\harness` 是稳定发布源，不是工程副本的自动 merge 目标。
+- 工程改进必须经验证和人工提炼后，才能晋级为中枢稳定知识。
 - 分发时保护各工程的 `.specify/feature.json`、`specs/`、`index.md` 自标识与工程独有文件。
 - **AGENTS.md / CLAUDE.md**：纳入 Git 版本管理时，同步操作**不要**将其加入 .gitignore 或从版本库移除。
+- 具体操作只以中枢根目录 `SYNC.md` 为准。

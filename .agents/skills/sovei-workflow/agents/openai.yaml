@@ -1,0 +1,6 @@
+interface:
+  display_name: "Sovei Workflow"
+  short_description: "Run file-backed Sovei Feature stage gates"
+  default_prompt: "Use $sovei-workflow to load the current Feature state and report the next legal stage."
+policy:
+  allow_implicit_invocation: false

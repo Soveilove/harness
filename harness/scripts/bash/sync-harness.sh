@@ -12,6 +12,8 @@ set -euo pipefail
 # === 配置 ===
 HUB="/e/memory/harness"
 CODEBUDDY_HUB="/e/memory/.codebuddy"
+SOVEI_SKILL_HUB="/e/memory/.agents/skills/sovei-workflow"
+SOVEI_CLAUDE_COMMANDS_HUB="$HUB/ide-adapters/claude/commands/sovei"
 
 # 已注册项目
 PROJECTS=(
@@ -35,7 +37,13 @@ HARNESS_DIRS=(
   "workflows"
   "extensions"
   "integrations"
-  "ide-adapters"
+)
+
+HARNESS_ROOT_FILES=(
+  "index.md"
+  "extensions.yml"
+  "init-options.json"
+  "integration.json"
 )
 
 # CodeBuddy 适配文件
@@ -44,7 +52,7 @@ CODEBUDDY_FILES=(
   "skills/knowledge-loader/SKILL.md"
 )
 
-# 跨 IDE 适配文件（分发到项目根目录）
+# 跨 IDE 适配模板（仅在新项目缺失时初始化，保护项目自己的 Skill 注册内容）
 IDE_ADAPTER_FILES=(
   "CLAUDE.md"
   "AGENTS.md"
@@ -113,7 +121,15 @@ cmd_diff() {
       rel="${src#$HUB/}"
       dst="$spec_dir/$rel"
       diff_file "$src" "$dst" || has_diff=1
-    done < <(find "$HUB/$dir" -type f -name '*.md' -print0 2>/dev/null)
+    done < <(find "$HUB/$dir" -type f ! -name '*.pyc' ! -path '*/__pycache__/*' -print0 2>/dev/null)
+  done
+
+  for root_file in "${HARNESS_ROOT_FILES[@]}"; do
+    src="$HUB/$root_file"
+    dst="$spec_dir/$root_file"
+    if [ -f "$src" ]; then
+      diff_file "$src" "$dst" || has_diff=1
+    fi
   done
 
   # CodeBuddy 适配文件
@@ -123,12 +139,29 @@ cmd_diff() {
     diff_file "$src" "$dst" || has_diff=1
   done
 
-  # 跨 IDE 适配文件
+  # 项目根 IDE 文件是实例资产；只检查是否缺失，不比较内容
   for ide_file in "${IDE_ADAPTER_FILES[@]}"; do
     src="$HUB/ide-adapters/$ide_file"
     dst="$project_path/$ide_file"
-    diff_file "$src" "$dst" || has_diff=1
+    if [ ! -f "$dst" ]; then
+      echo "  [缺少项目适配] $dst"
+      has_diff=1
+    fi
   done
+
+  if [ -d "$SOVEI_SKILL_HUB" ]; then
+    while IFS= read -r -d '' src; do
+      rel="${src#$SOVEI_SKILL_HUB/}"
+      diff_file "$src" "$project_path/.agents/skills/sovei-workflow/$rel" || has_diff=1
+    done < <(find "$SOVEI_SKILL_HUB" -type f ! -name '*.pyc' ! -path '*/__pycache__/*' -print0)
+  fi
+
+  if [ -d "$SOVEI_CLAUDE_COMMANDS_HUB" ]; then
+    while IFS= read -r -d '' src; do
+      rel="${src#$SOVEI_CLAUDE_COMMANDS_HUB/}"
+      diff_file "$src" "$project_path/.claude/commands/sovei/$rel" || has_diff=1
+    done < <(find "$SOVEI_CLAUDE_COMMANDS_HUB" -type f -print0)
+  fi
 
   if [ "$has_diff" = "0" ]; then
     log "✓ 完全一致，无需同步"
@@ -167,13 +200,7 @@ cmd_pull() {
       cp "$HUB/$f" "$spec_dir/$f"
     fi
   done
-  # feature.json 只在目标不存在时复制
-  if [ -f "$HUB/feature.json" ] && [ ! -f "$spec_dir/feature.json" ]; then
-    cp "$HUB/feature.json" "$spec_dir/feature.json"
-    log "  已复制: feature.json（新建）"
-  else
-    log "  跳过保护文件: feature.json"
-  fi
+  log "  项目实例文件不处理: feature.json"
 
   # 复制 CodeBuddy 适配文件
   for cb_file in "${CODEBUDDY_FILES[@]}"; do
@@ -186,15 +213,29 @@ cmd_pull() {
     fi
   done
 
-  # 复制跨 IDE 适配文件（到项目根目录）
+  # 仅初始化缺失的项目根 IDE 文件，避免覆盖项目自己的 Skill 注册内容
   for ide_file in "${IDE_ADAPTER_FILES[@]}"; do
     src="$HUB/ide-adapters/$ide_file"
     dst="$project_path/$ide_file"
-    if [ -f "$src" ]; then
+    if [ -f "$src" ] && [ ! -f "$dst" ]; then
       cp "$src" "$dst"
-      log "  已复制: $ide_file"
+      log "  已初始化: $ide_file"
+    elif [ -f "$dst" ]; then
+      log "  跳过项目实例文件: $ide_file"
     fi
   done
+
+  if [ -d "$SOVEI_SKILL_HUB" ]; then
+    mkdir -p "$project_path/.agents/skills/sovei-workflow"
+    cp -r "$SOVEI_SKILL_HUB/." "$project_path/.agents/skills/sovei-workflow/"
+    log "  已复制: .agents/skills/sovei-workflow/"
+  fi
+
+  if [ -d "$SOVEI_CLAUDE_COMMANDS_HUB" ]; then
+    mkdir -p "$project_path/.claude/commands/sovei"
+    cp -r "$SOVEI_CLAUDE_COMMANDS_HUB/." "$project_path/.claude/commands/sovei/"
+    log "  已复制: .claude/commands/sovei/"
+  fi
 
   log "✓ 分发完成: $project_path"
 }
@@ -251,7 +292,19 @@ cmd_status() {
         if [ "$src_hash" != "$dst_hash" ]; then
           diff_count=$((diff_count + 1))
         fi
-      done < <(find "$HUB/$dir" -type f -name '*.md' -print0 2>/dev/null)
+      done < <(find "$HUB/$dir" -type f ! -name '*.pyc' ! -path '*/__pycache__/*' -print0 2>/dev/null)
+    done
+
+    for root_file in "${HARNESS_ROOT_FILES[@]}"; do
+      src="$HUB/$root_file"
+      dst="$spec_dir/$root_file"
+      if [ -f "$src" ]; then
+        src_hash=$(hash_file "$src")
+        dst_hash=$(hash_file "$dst")
+        if [ "$src_hash" != "$dst_hash" ]; then
+          diff_count=$((diff_count + 1))
+        fi
+      fi
     done
 
     # 检查 CodeBuddy 文件
@@ -265,16 +318,34 @@ cmd_status() {
       fi
     done
 
-    # 检查跨 IDE 适配文件
+    # 项目根 IDE 文件是实例资产；只检查是否存在
     for ide_file in "${IDE_ADAPTER_FILES[@]}"; do
       src="$HUB/ide-adapters/$ide_file"
       dst="$path/$ide_file"
-      src_hash=$(hash_file "$src")
-      dst_hash=$(hash_file "$dst")
-      if [ "$src_hash" != "$dst_hash" ]; then
+      if [ ! -f "$dst" ]; then
         diff_count=$((diff_count + 1))
       fi
     done
+
+    if [ -d "$SOVEI_SKILL_HUB" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#$SOVEI_SKILL_HUB/}"
+        dst="$path/.agents/skills/sovei-workflow/$rel"
+        if [ "$(hash_file "$src")" != "$(hash_file "$dst")" ]; then
+          diff_count=$((diff_count + 1))
+        fi
+      done < <(find "$SOVEI_SKILL_HUB" -type f ! -name '*.pyc' ! -path '*/__pycache__/*' -print0)
+    fi
+
+    if [ -d "$SOVEI_CLAUDE_COMMANDS_HUB" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#$SOVEI_CLAUDE_COMMANDS_HUB/}"
+        dst="$path/.claude/commands/sovei/$rel"
+        if [ "$(hash_file "$src")" != "$(hash_file "$dst")" ]; then
+          diff_count=$((diff_count + 1))
+        fi
+      done < <(find "$SOVEI_CLAUDE_COMMANDS_HUB" -type f -print0)
+    fi
 
     if [ "$diff_count" = "0" ]; then
       log "$name: ✓ 已同步 ($path)"

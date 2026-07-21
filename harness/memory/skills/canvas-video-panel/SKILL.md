@@ -7,7 +7,7 @@ description: "自由画布视频生成模块（图生视频/首尾帧/参考图�
 
 ## 何时使用
 
-当出现以下任一情况时，必须先读本 skill + `.codegraph/board-video-code-map.md`：
+当出现以下任一情况时，必须先读本 skill + `.specify/codegraph/board-video-code-map.md`：
 
 - 修改视频模型展示名（如「Seedance 显示为 Seedance 2.0」）
 - 修改视频生成参数（videoModel / videoMode / videoResolution / videoRatio / videoDuration）
@@ -49,7 +49,7 @@ description: "自由画布视频生成模块（图生视频/首尾帧/参考图�
 | Store | `helper/store/toolbar.ts` | 视频面板状态 |
 | 底部 | `AdvancedHeroActions.vue` / `referenceUploadFormHelper.ts` | 底部输入框视频 |
 
-> 完整链路图和参数映射表见 `.codegraph/board-video-code-map.md`。
+> 完整链路图和参数映射表见 `.specify/codegraph/board-video-code-map.md`。
 
 ### 生成链路（简）
 

@@ -9,6 +9,19 @@
       "installed_at": "2026-05-12T13:21:11.119864+00:00",
       "updated_at": "2026-05-12T13:21:11.119875+00:00"
     },
+    "sovei-workflow": {
+      "name": "Sovei File-Backed Workflow",
+      "version": "0.2.0",
+      "description": "Runs exactly one explicit load, grill, spec, scope, or plan gate per invocation and reports auditable Skill dependencies",
+      "source": "local",
+      "definition": "sovei/workflow.yaml",
+      "usage": "sovei/USAGE.md",
+      "skill_map": "sovei/skill-map.yaml",
+      "skill": ".agents/skills/sovei-workflow/SKILL.md",
+      "active_stages": ["load", "grill", "spec", "scope", "plan"],
+      "installed_at": "2026-07-21T17:14:46+08:00",
+      "updated_at": "2026-07-21T18:06:56+08:00"
+    },
     "systematic-debugging": {
       "name": "Systematic Debugging",
       "version": "1.0.0",

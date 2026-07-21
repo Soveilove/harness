@@ -84,5 +84,5 @@ isCanvasLocalRefineModule(moduleId) // 局部修改 === 63
 **Related**:
 - [[project-architecture]] - 工具栏注册表、面板入口
 - [[canvas-generate-button-reuse]] - 功能面板生成按钮复用
-- `.codegraph/board-code-map.md#局部修改inpaintpanel`
-- `.codegraph/board-code-map.md#图片详情入口按钮查看详情`
+- `.specify/codegraph/board-code-map.md#局部修改inpaintpanel`
+- `.specify/codegraph/board-code-map.md#图片详情入口按钮查看详情`

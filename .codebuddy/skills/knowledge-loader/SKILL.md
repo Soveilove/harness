@@ -18,40 +18,42 @@ Invoke this skill when:
 
 ## Load Order
 
+先解析 `<harness-root>`：中枢仓库存在 `harness/index.md` 时使用 `harness/`；产品工程存在 `.specify/index.md` 时使用 `.specify/`；产品工程同时存在两者时优先 `.specify/`。
+
 ### Step 1: Read indexes
 
-1. Read `harness/index.md` — Harness 总入口，了解三层结构和开发 Loop。
-2. Read `harness/memory/MEMORY.md` — 知识索引，了解可用文件。
+1. Read `<harness-root>/index.md` — Harness 总入口，了解三层结构和开发 Loop。
+2. Read `<harness-root>/memory/MEMORY.md` — 知识索引，了解可用文件。
 
 ### Step 2: Load core knowledge (by task type)
 
 | Task type | Load file | Purpose |
 |-----------|-----------|---------|
-| Any task | `harness/memory/user-preferences.md` | 编码偏好 |
-| Any task | `harness/memory/constitution.md` | 核心开发原则（完整版） |
-| Bug fix | `harness/memory/vue-pitfalls.md` | Vue 踩坑库 |
-| Architecture | `harness/memory/project-architecture.md` | 项目架构 |
-| Technical decision | `harness/memory/design-decisions.md` | ADR 决策记录 |
-| Design/Figma | `harness/memory/design-tools.md` + `harness/memory/figma-config.md` | 设计工具配置 |
+| Any task | `<harness-root>/memory/user-preferences.md` | 编码偏好 |
+| Any task | `<harness-root>/memory/constitution.md` | 核心开发原则（完整版） |
+| Bug fix | `<harness-root>/memory/vue-pitfalls.md` | Vue 踩坑库 |
+| Architecture | `<harness-root>/memory/project-architecture.md` | 项目架构 |
+| Technical decision | `<harness-root>/memory/design-decisions.md` | ADR 决策记录 |
+| Design/Figma | `<harness-root>/memory/design-tools.md` + `<harness-root>/memory/figma-config.md` | 设计工具配置 |
 
 ### Step 3: Load rules (for implementation tasks)
 
 | File | Purpose |
 |------|---------|
-| `harness/spec-harness/implementation-rules.md` | Stable 规则（已验证，开发前必读） |
-| `harness/spec-harness/pending-rules.md` | 候选规则池（观察中） |
-| `harness/spec-harness/failure-taxonomy.md` | 失败分类（F1-F8） |
-| `harness/spec-harness/rejected-patterns.md` | 已拒绝的模式 |
-| `harness/spec-harness/memory-audit-checklist.md` | 记忆审计清单（5 维度定期检查） |
+| `<harness-root>/spec-harness/implementation-rules.md` | Stable 规则（已验证，开发前必读） |
+| `<harness-root>/spec-harness/pending-rules.md` | 候选规则池（观察中） |
+| `<harness-root>/spec-harness/failure-taxonomy.md` | 失败分类（F1-F8） |
+| `<harness-root>/spec-harness/rejected-patterns.md` | 已拒绝的模式 |
+| `<harness-root>/spec-harness/memory-audit-checklist.md` | 记忆审计清单（5 维度定期检查） |
 
 ### Step 4: Load code map (by task domain)
 
 | Task domain | Load file |
 |-------------|-----------|
-| 近期工作 / 首页改版 / 自由画布 | `harness/codegraph/recent-work-code-map.md` |
-| 自由画布详情 | `harness/codegraph/board-code-map.md` |
-| 画布视频 | `harness/codegraph/board-video-code-map.md` |
-| 不确定时 | `harness/codegraph/index.md`（索引） |
+| 近期工作 / 首页改版 / 自由画布 | `<harness-root>/codegraph/recent-work-code-map.md` |
+| 自由画布详情 | `<harness-root>/codegraph/board-code-map.md` |
+| 画布视频 | `<harness-root>/codegraph/board-video-code-map.md` |
+| 不确定时 | `<harness-root>/codegraph/index.md`（索引） |
 
 ## Keyword Triggers
 
@@ -70,9 +72,9 @@ Invoke this skill when:
 
 If unsure what to load, read these 3 files (~20KB total):
 
-1. `harness/memory/user-preferences.md`
-2. `harness/memory/vue-pitfalls.md`
-3. `harness/memory/project-architecture.md`
+1. `<harness-root>/memory/user-preferences.md`
+2. `<harness-root>/memory/vue-pitfalls.md`
+3. `<harness-root>/memory/project-architecture.md`
 
 宁可多读，不要漏读。
 
@@ -80,16 +82,16 @@ If unsure what to load, read these 3 files (~20KB total):
 
 | Knowledge type | File |
 |----------------|------|
-| User preference | `harness/memory/user-preferences.md` |
-| Vue pitfall | `harness/memory/vue-pitfalls.md` |
-| Project structure | `harness/memory/project-architecture.md` |
-| Technical decision (ADR) | `harness/memory/design-decisions.md` |
-| Stable implementation rule | `harness/spec-harness/implementation-rules.md` |
-| Pending rule (observation) | `harness/spec-harness/pending-rules.md` |
-| Rejected pattern | `harness/spec-harness/rejected-patterns.md` |
-| Memory audit | `harness/spec-harness/memory-audit-checklist.md` |
-| Debugging SOP | `harness/workflows/systematic-debugging.md` |
-| Code map update | `harness/codegraph/recent-work-code-map.md` |
+| User preference | `<harness-root>/memory/user-preferences.md` |
+| Vue pitfall | `<harness-root>/memory/vue-pitfalls.md` |
+| Project structure | `<harness-root>/memory/project-architecture.md` |
+| Technical decision (ADR) | `<harness-root>/memory/design-decisions.md` |
+| Stable implementation rule | `<harness-root>/spec-harness/implementation-rules.md` |
+| Pending rule (observation) | `<harness-root>/spec-harness/pending-rules.md` |
+| Rejected pattern | `<harness-root>/spec-harness/rejected-patterns.md` |
+| Memory audit | `<harness-root>/spec-harness/memory-audit-checklist.md` |
+| Debugging SOP | `<harness-root>/workflows/systematic-debugging.md` |
+| Code map update | `<harness-root>/codegraph/recent-work-code-map.md` |
 
 ## Output Behavior
 

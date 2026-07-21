@@ -130,7 +130,7 @@ export function resolve(key?: ModuleKey, fallback?: Component): Component {
 **影响**:
 - 新增面板需在 3 处注册：`GenerationSource` 类型、`SOURCE_TO_TRIGGER` 映射、`CANVAS_PANEL_INLINE_LAYOUT_TRIGGERS` 白名单
 - 锚定 cid 解析顺序需按面板优先级排列（局部修改 `_inpaintTargetCid` 优先于扩图 `_outpaintTargetCid`）
-- 详见 `docs/自由画布/通过面板生成的产出物位置调整.md` 的"后续新增面板如何继承"
+- 新增面板时沿用本 ADR 的插入位置与兼容约束，并以当前代码链路重新验证。
 
 **关键文件**:
 - `domain/generation/types.ts` — `GenerationSource` 联合类型
