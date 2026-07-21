@@ -69,12 +69,46 @@ function Get-SyncItems([string]$TargetProject) {
 
     $codeBuddyItems = @(
         @(".codebuddy\rules\core-constraints\RULE.mdc", ".codebuddy\rules\core-constraints\RULE.mdc"),
-        @(".codebuddy\skills\knowledge-loader\SKILL.md", ".codebuddy\skills\knowledge-loader\SKILL.md")
+        @(".codebuddy\skills\knowledge-loader\SKILL.md", ".codebuddy\skills\knowledge-loader\SKILL.md"),
+        @(".codebuddy\skills\sovei-workflow\SKILL.md", ".codebuddy\skills\sovei-workflow\SKILL.md")
     )
     foreach ($mapping in $codeBuddyItems) {
         $source = Join-Path $MemoryRoot $mapping[0]
         if (Test-Path -LiteralPath $source) {
             $items += [pscustomobject]@{ Source = $source; Target = Join-Path $TargetProject $mapping[1]; Protected = $false }
+        }
+    }
+
+    $codeBuddyCommandsSource = Join-Path $MemoryRoot ".codebuddy\commands\sovei"
+    if (Test-Path -LiteralPath $codeBuddyCommandsSource) {
+        Get-ChildItem -Recurse -File -LiteralPath $codeBuddyCommandsSource | ForEach-Object {
+            $relativePath = $_.FullName.Substring($codeBuddyCommandsSource.Length + 1)
+            $items += [pscustomobject]@{
+                Source = $_.FullName
+                Target = Join-Path $TargetProject ".codebuddy\commands\sovei\$relativePath"
+                Protected = $false
+            }
+        }
+    }
+
+    $traeSkillSource = Join-Path $MemoryRoot ".trae\skills\sovei-workflow"
+    if (Test-Path -LiteralPath $traeSkillSource) {
+        Get-ChildItem -Recurse -File -LiteralPath $traeSkillSource | ForEach-Object {
+            $relativePath = $_.FullName.Substring($traeSkillSource.Length + 1)
+            $items += [pscustomobject]@{
+                Source = $_.FullName
+                Target = Join-Path $TargetProject ".trae\skills\sovei-workflow\$relativePath"
+                Protected = $false
+            }
+        }
+    }
+
+    $adapterManifestSource = Join-Path $HarnessRoot "ide-adapters\sovei-adapters.yaml"
+    if (Test-Path -LiteralPath $adapterManifestSource) {
+        $items += [pscustomobject]@{
+            Source = $adapterManifestSource
+            Target = Join-Path $specifyRoot "ide-adapters\sovei-adapters.yaml"
+            Protected = $false
         }
     }
 

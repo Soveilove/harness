@@ -1,7 +1,7 @@
 # Sovei 个人开发 Harness 与任务编排范式
 
-> 状态：Phase 1 MVP Active（后续阶段不生效）
-> 文档版本：0.2.0
+> 状态：Sovei Workflow 1.1 Active
+> 文档版本：1.1.0
 > 创建日期：2026-07-21
 > 所属中枢：`E:\memory`
 > 目标用户：个人开发者，在 Codex、Claude Code、CodeBuddy、Trae、Cursor 等环境中复用同一套开发纪律
@@ -10,7 +10,7 @@
 
 本文件定义目标架构，不是运行时能力清单。任何命令、状态机、外部 Skill、Baseline 或协调机制，只有在实现文件、验证证据和发布版本均存在时才可被 Agent 调用；设计文字本身不产生系统能力。
 
-当前真实能力：`sovei-workflow` 0.2.0 已实现 `load`、`grill`、`spec`、`scope`、`plan`，并具有文件状态校验、Artifact 模板、Codex Skill、Claude 薄适配和机器可读 Skill Map。每次调用只允许执行一个阶段；`wayfind`、`tasks` 及后续阶段仍为 future。
+当前真实能力：`sovei-workflow` 1.1.0 已实现 `load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync` 十二个阶段，以及确定性的 `reopen` 返工控制和 `completed` 终态。系统具有文件状态校验、Artifact 模板、Codex Skill、Claude/CodeBuddy/Trae 薄适配和机器可读 Skill Map；每次正常调用仍只允许执行一个阶段。
 
 中枢开发工具以私有 package `packages/sovei-system` 独立迭代。它拥有自己的 `package.json`、`pnpm-lock.yaml` 和本地 `node_modules`，用于配置校验、Skill 依赖审计和后续安装器；该 package 不分发到 A/B/C，产品侧 Harness 不能依赖其中的 Node 运行时。
 
@@ -312,7 +312,7 @@ IDE 适配层
 ```yaml
 schema_version: 1
 harness_version: 0.1.0
-workflow_version: 1.0.0
+workflow_version: 1.1.0
 
 vendors:
   mattpocock/skills:
@@ -390,7 +390,7 @@ feature: specs/<feature>
 risk_level: S1
 current_stage: scope
 status: in_progress
-workflow_version: 1.0.0
+workflow_version: 1.1.0
 baseline_commit: <commit>
 completed_stages:
   - load
@@ -447,7 +447,7 @@ E:\memory\design-docs\SOVEI_HARNESS_WORKFLOW_DESIGN.md，
 4. Codex 使用 repo Skill，Claude 使用薄 Command Adapter，共用一个核心协议。
 5. Coverage Matrix 以 Markdown 为人工可读源，状态校验只读取 YAML 状态文件。
 
-仍待决：Baseline 中枢备份策略、历史 Feature 回放集及指标、Phase 3 其它 IDE 的最低兼容矩阵。
+仍待决：Baseline 中枢备份策略、历史 Feature 回放集及指标、其它 IDE 的最低兼容矩阵，以及外部 Skill 的安装和升级生命周期。
 
 ## 15. 分阶段实施路线
 
@@ -461,15 +461,17 @@ E:\memory\design-docs\SOVEI_HARNESS_WORKFLOW_DESIGN.md，
 
 ### Phase 2：执行闭环
 
-- 创建 `/sovei-tasks`、`/sovei-implement`、`/sovei-converge`、`/sovei-verify`。
-- 接入 Baseline impact、change manifest 和真实旅程证据。
-- 用一个真实普通 Feature 和一个长周期 Feature 回放验证。
+- [x] 创建 `/sovei-wayfind`、`/sovei-tasks`、`/sovei-implement`、`/sovei-converge`、`/sovei-verify`。
+- [x] 接入 change manifest、convergence report 和真实旅程证据契约。
+- [x] 增加确定性的 `reopen`、revision 和 workflow history。
+- [ ] 用一个真实普通 Feature 和一个长周期 Feature 回放验证。
 
 ### Phase 3：持续学习与跨工程
 
-- 创建 `/sovei-learn`、`/sovei-sync` 和规则升级审计。
-- 增加 A/B/C 工作空间冲突检查。
-- 增加 CodeBuddy、Trae、Cursor Adapter。
+- [x] 创建 `/sovei-learn`、`/sovei-sync` 和规则升级审计契约。
+- [x] 将 `sync` 的显式目标授权、前后 Diff 和保护路径检查纳入阶段门禁。
+- [x] 增加 CodeBuddy 命令/Skill 与 Trae Skill Adapter。
+- [ ] 增加 Cursor Adapter。
 
 ### Phase 4：外部 Skills 生命周期
 
@@ -479,4 +481,4 @@ E:\memory\design-docs\SOVEI_HARNESS_WORKFLOW_DESIGN.md，
 
 ## 16. 当前下一步
 
-Phase 1 已通过 `specs/001-sovei-workflow-mvp` 自举验证。下一步进入 Phase 2 前，先选择一个普通产品 Feature 回放 Phase 1，并确定 `tasks/implement/converge/verify` 的写入与人工确认门禁；在此之前这些阶段保持 future。
+Sovei 1.1 的协议、模板、Validator、Codex/Claude/CodeBuddy/Trae 适配和中枢 package 已实现。下一步从 `specs/002-sovei-workflow-phase2` 的 `wayfind` 阶段开始，按一次一个阶段的正常规则回放并调优；该回放完成前，不宣称真实普通 Feature 与长周期 Feature 的验证已经完成。Cursor Adapter 和外部 Skill 生命周期仍留待后续迭代。

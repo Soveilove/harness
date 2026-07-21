@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -93,6 +94,35 @@ def parse_yaml_subset(path):
     return result
 
 
+def dump_yaml_subset(value, indent=0):
+    prefix = " " * indent
+    lines = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, dict):
+                lines.append(f"{prefix}{key}:")
+                lines.extend(dump_yaml_subset(item, indent + 2))
+            elif isinstance(item, list):
+                if not item:
+                    lines.append(f"{prefix}{key}: []")
+                else:
+                    lines.append(f"{prefix}{key}:")
+                    for entry in item:
+                        if isinstance(entry, (dict, list)):
+                            raise ValidationError("nested list values are not supported")
+                        lines.append(f"{' ' * (indent + 2)}- {json.dumps(entry, ensure_ascii=False)}")
+            else:
+                lines.append(f"{prefix}{key}: {json.dumps(item, ensure_ascii=False)}")
+        return lines
+    raise ValidationError("YAML root must be a mapping")
+
+
+def write_yaml_subset(path, value):
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    temporary_path.write_text("\n".join(dump_yaml_subset(value)) + "\n", encoding="utf-8")
+    os.replace(temporary_path, path)
+
+
 def require_mapping(value, label):
     if not isinstance(value, dict):
         raise ValidationError(f"{label} must be a mapping")
@@ -142,6 +172,13 @@ def validate(repo_root, feature_value, expected_stage=None):
 
     stages = require_mapping(workflow.get("stages"), "workflow.stages")
     stage_order = require_list(workflow.get("stage_order"), "workflow.stage_order")
+    control_actions = require_list(workflow.get("control_actions"), "workflow.control_actions")
+    if "reopen" not in control_actions:
+        raise ValidationError("workflow must register the reopen control action")
+    rework = require_mapping(workflow.get("rework"), "workflow.rework")
+    history_artifact = rework.get("history_artifact")
+    if not isinstance(history_artifact, str) or not history_artifact:
+        raise ValidationError("workflow.rework.history_artifact must be a path")
     completed = require_list(state.get("completed_stages"), "state.completed_stages")
 
     invocation = require_mapping(workflow.get("invocation"), "workflow.invocation")
@@ -197,6 +234,8 @@ def validate(repo_root, feature_value, expected_stage=None):
         "next_stage",
         "open_decisions",
         "blocked_by",
+        "revision",
+        "reopened_stages",
         "updated_at",
     ]
     missing_fields = [name for name in required_state_fields if name not in state]
@@ -212,6 +251,16 @@ def validate(repo_root, feature_value, expected_stage=None):
         raise ValidationError("state.feature does not match selected Feature path")
     if len(completed) != len(set(completed)):
         raise ValidationError("completed_stages contains duplicates")
+    revision = state["revision"]
+    if not isinstance(revision, int) or revision < 0:
+        raise ValidationError("state.revision must be a non-negative integer")
+    reopened_stages = require_list(state["reopened_stages"], "state.reopened_stages")
+    for stage in reopened_stages:
+        if stage not in stages:
+            raise ValidationError(f"unknown reopened stage: {stage}")
+    history_path = resolve_inside(feature, history_artifact, "workflow history")
+    if revision > 0 and not history_path.is_file():
+        raise ValidationError(f"revision {revision} is missing {history_artifact}")
 
     positions = []
     for stage in completed:
@@ -229,23 +278,41 @@ def validate(repo_root, feature_value, expected_stage=None):
                 raise ValidationError(f"completed stage {stage} is missing {artifact}")
     if positions != sorted(positions):
         raise ValidationError("completed_stages is not in workflow order")
+    if completed and completed[0] != stage_order[0]:
+        raise ValidationError(f"completed_stages must start at {stage_order[0]}")
+    for previous, successor in zip(completed, completed[1:]):
+        allowed = require_list(stages[previous].get("next", []), f"workflow.stages.{previous}.next")
+        if successor not in allowed:
+            raise ValidationError(f"illegal completed transition: {previous} -> {successor}")
 
     current_stage = state["current_stage"]
     next_stage = state["next_stage"]
     if current_stage not in stages:
         raise ValidationError(f"unknown current_stage: {current_stage}")
-    if next_stage != current_stage:
-        raise ValidationError("next_stage must equal the stage waiting to execute")
+    status = state["status"]
+    if status not in {"in_progress", "completed"}:
+        raise ValidationError("state.status must be in_progress or completed")
+    is_terminal = status == "completed"
+    if is_terminal:
+        if current_stage != stage_order[-1] or next_stage is not None:
+            raise ValidationError("completed workflow must end at the final stage with next_stage null")
+        if not completed or completed[-1] != current_stage:
+            raise ValidationError("completed workflow must include the final stage")
+        final_next = require_list(stages[current_stage].get("next", []), f"workflow.stages.{current_stage}.next")
+        if final_next:
+            raise ValidationError("completed workflow final stage must not have a successor")
+    else:
+        if next_stage != current_stage:
+            raise ValidationError("next_stage must equal the stage waiting to execute")
+        if completed:
+            previous = completed[-1]
+            allowed = require_list(stages[previous].get("next", []), f"workflow.stages.{previous}.next")
+            if current_stage not in allowed:
+                raise ValidationError(f"illegal transition: {previous} -> {current_stage}")
+        elif current_stage != stage_order[0]:
+            raise ValidationError(f"new Feature must start at {stage_order[0]}")
     if expected_stage and current_stage != expected_stage:
         raise ValidationError(f"expected stage {expected_stage}, found {current_stage}")
-
-    if completed:
-        previous = completed[-1]
-        allowed = require_list(stages[previous].get("next", []), f"workflow.stages.{previous}.next")
-        if current_stage not in allowed:
-            raise ValidationError(f"illegal transition: {previous} -> {current_stage}")
-    elif current_stage != stage_order[0]:
-        raise ValidationError(f"new Feature must start at {stage_order[0]}")
 
     open_decisions = require_list(state["open_decisions"], "state.open_decisions")
     blocked_by = require_list(state["blocked_by"], "state.blocked_by")
@@ -263,8 +330,11 @@ def validate(repo_root, feature_value, expected_stage=None):
         "current_stage": current_stage,
         "next_stage": next_stage,
         "stage_status": current_contract.get("status"),
+        "status": status,
         "open_decisions": open_decisions,
         "blocked_by": blocked_by,
+        "revision": revision,
+        "reopened_stages": reopened_stages,
         "stage_skills": {
             field: current_skill_contract[field]
             for field in skill_fields

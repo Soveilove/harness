@@ -1,4 +1,4 @@
-# Phase 1 Stage Contracts
+# Sovei 1.1 Stage Contracts
 
 Every invocation executes exactly one stage and then stops. Before stage work, resolve and report the stage's internal, active third-party, candidate, and alternative Skills from `harness/workflows/sovei/skill-map.yaml`. Candidate and alternative Skills are never executed.
 
@@ -38,3 +38,54 @@ Every invocation executes exactly one stage and then stops. Before stage work, r
 - Action: Define module boundaries, state/data flow, contracts, migration strategy, and validation.
 - Output: `plan.md` with no implementation edits.
 - Stop: Return to scope when required coverage is missing; do not plan around unknowns.
+
+## tasks
+
+- Input: Valid Plan, Scope, Coverage Matrix, decisions, and current code baseline.
+- Action: Split work into independently verifiable vertical tasks small enough for one fresh context. Declare dependencies, file/contract surface, acceptance criteria, and validation for each task.
+- Output: `tasks.md`; do not modify implementation files.
+- Stop: Reopen `plan` or `scope` when a task depends on an unresolved contract or unknown impact surface.
+
+## implement
+
+- Input: One ready task, Spec, Scope, Plan, rules, and the current baseline.
+- Action: Implement only the selected ready task, preserve unrelated changes, and run focused validation proportional to risk.
+- Output: Product/tooling changes plus `change-manifest.md` recording task, files, behavior, tests, and remaining work.
+- Completion: Stay in `implement` while ready tasks remain. Add `implement` to completed stages only after every required task is done or explicitly deferred with authorization.
+- Stop: Reopen the earliest invalid stage when implementation reveals a new decision, scope, or design constraint. Never silently expand the task.
+
+## converge
+
+- Input: Spec, Scope, Plan, Tasks, Coverage Matrix, Change Manifest, baseline, and current implementation.
+- Action: Classify each gap as `missing`, `partial`, `contradicts`, or `unrequested`; append corrective tasks instead of rewriting history.
+- Output: `convergence-report.md` with evidence and disposition for every finding.
+- Stop: Return to `tasks` for implementation gaps or reopen an earlier stage for contract gaps. Do not claim completion with open high-severity findings.
+
+## verify
+
+- Input: Acceptance scenarios, Coverage Matrix, implementation, convergence result, and environment capabilities.
+- Action: Verify requirement compliance and engineering quality separately using focused tests plus real journey, request/log, or visual evidence when applicable.
+- Output: `evidence.md` with command, result, evidence location, limitations, and verdict.
+- Stop: Return to `tasks` or `converge` on failure. Async or visual behavior cannot pass on unit tests alone.
+
+## learn
+
+- Input: Decisions, implementation deviations, convergence findings, verification evidence, and current Harness knowledge.
+- Action: Classify observations as project-only, candidate/pending, stable promotion proposal, or rejected pattern. Never promote a single observation directly to stable.
+- Output: `learning-report.md` with source Feature, evidence, scope, and proposed destination.
+- Stop: Require manual review before changing stable Harness knowledge.
+
+## sync
+
+- Input: Verified Feature, reviewed learning promotions, explicit target project authorization, and current `SYNC.md` rules.
+- Action: Run target `Status` and `Diff`, review protected paths, then Pull only explicitly authorized projects and re-run Diff.
+- Output: `sync-report.md` with targets, before/after differences, protected files, command results, and skipped targets.
+- Completion: After all authorized targets pass post-sync checks, mark the workflow `completed` with `next_stage: null`.
+- Stop: No authorization, dirty/ambiguous target, protected-path conflict, or failed post-sync Diff. Never batch Pull by implication.
+
+## reopen
+
+- Input: Valid state, completed target stage, and explicit reason.
+- Action: Run the deterministic reopen script, invalidate the target and completed successors, increment revision, and append `workflow-history.md`.
+- Output: Updated `workflow-state.yaml` and `workflow-history.md` only.
+- Stop: Unknown/uncompleted target, empty reason, invalid state, or failed post-transition validation.

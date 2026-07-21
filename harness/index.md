@@ -9,17 +9,22 @@
 - 中枢内容可以向工程分发；工程实例状态不得反向覆盖中枢或其它工程。
 - 新版 Sovei 架构仍按发布阶段落地。设计文档中尚不存在的命令或能力不得假定为可用。
 
-## Sovei Workflow 0.2.0
+## Sovei Workflow 1.1.0
 
 - Codex 显式入口：`$sovei-workflow`
+- Claude Code 显式入口：`/sovei/<stage>`
+- CodeBuddy 显式入口：命令面板 `SOVEI: <stage>`
+- Trae 显式入口：自然语言要求“使用 sovei-workflow skill 执行 `<stage>`”
 - 每次调用只执行一个阶段，禁止阶段串联；下一阶段必须由用户在新调用中显式触发。
 - 阶段 Skill 依赖：`workflows/sovei/skill-map.yaml`；必须区分实际启用与候选未安装。
-- Active：`load`、`grill`、`spec`、`scope`、`plan`
-- Future：`wayfind`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync`
+- Active：`load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync`
+- 返工控制：`reopen TARGET=<stage> REASON=<reason>`，失效目标阶段及其已完成后继并记录历史
 - 状态机：`workflows/sovei/workflow.yaml`
 - 使用指引：`workflows/sovei/USAGE.md`
+- IDE Adapter 清单：`ide-adapters/sovei-adapters.yaml`
 - Feature 状态：项目 `specs/<feature>/workflow-state.yaml`，不参与分发
 - 状态与实际 Artifact 冲突时必须停止，不根据聊天历史修复或猜测
+- `sync` 完成后进入 `status: completed`、`next_stage: null` 的正式终态
 
 ## 加载顺序
 

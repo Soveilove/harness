@@ -12,8 +12,11 @@ set -euo pipefail
 # === 配置 ===
 HUB="/e/memory/harness"
 CODEBUDDY_HUB="/e/memory/.codebuddy"
+CODEBUDDY_SOVEI_COMMANDS_HUB="$CODEBUDDY_HUB/commands/sovei"
+TRAE_SOVEI_SKILL_HUB="/e/memory/.trae/skills/sovei-workflow"
 SOVEI_SKILL_HUB="/e/memory/.agents/skills/sovei-workflow"
 SOVEI_CLAUDE_COMMANDS_HUB="$HUB/ide-adapters/claude/commands/sovei"
+SOVEI_ADAPTER_MANIFEST="$HUB/ide-adapters/sovei-adapters.yaml"
 
 # 已注册项目
 PROJECTS=(
@@ -50,6 +53,7 @@ HARNESS_ROOT_FILES=(
 CODEBUDDY_FILES=(
   "rules/core-constraints/RULE.mdc"
   "skills/knowledge-loader/SKILL.md"
+  "skills/sovei-workflow/SKILL.md"
 )
 
 # 跨 IDE 适配模板（仅在新项目缺失时初始化，保护项目自己的 Skill 注册内容）
@@ -139,6 +143,24 @@ cmd_diff() {
     diff_file "$src" "$dst" || has_diff=1
   done
 
+  if [ -d "$CODEBUDDY_SOVEI_COMMANDS_HUB" ]; then
+    while IFS= read -r -d '' src; do
+      rel="${src#$CODEBUDDY_SOVEI_COMMANDS_HUB/}"
+      diff_file "$src" "$project_path/.codebuddy/commands/sovei/$rel" || has_diff=1
+    done < <(find "$CODEBUDDY_SOVEI_COMMANDS_HUB" -type f -print0)
+  fi
+
+  if [ -d "$TRAE_SOVEI_SKILL_HUB" ]; then
+    while IFS= read -r -d '' src; do
+      rel="${src#$TRAE_SOVEI_SKILL_HUB/}"
+      diff_file "$src" "$project_path/.trae/skills/sovei-workflow/$rel" || has_diff=1
+    done < <(find "$TRAE_SOVEI_SKILL_HUB" -type f -print0)
+  fi
+
+  if [ -f "$SOVEI_ADAPTER_MANIFEST" ]; then
+    diff_file "$SOVEI_ADAPTER_MANIFEST" "$spec_dir/ide-adapters/sovei-adapters.yaml" || has_diff=1
+  fi
+
   # 项目根 IDE 文件是实例资产；只检查是否缺失，不比较内容
   for ide_file in "${IDE_ADAPTER_FILES[@]}"; do
     src="$HUB/ide-adapters/$ide_file"
@@ -212,6 +234,24 @@ cmd_pull() {
       log "  已复制: .codebuddy/$cb_file"
     fi
   done
+
+  if [ -d "$CODEBUDDY_SOVEI_COMMANDS_HUB" ]; then
+    mkdir -p "$project_path/.codebuddy/commands/sovei"
+    cp -r "$CODEBUDDY_SOVEI_COMMANDS_HUB/." "$project_path/.codebuddy/commands/sovei/"
+    log "  已复制: .codebuddy/commands/sovei/"
+  fi
+
+  if [ -d "$TRAE_SOVEI_SKILL_HUB" ]; then
+    mkdir -p "$project_path/.trae/skills/sovei-workflow"
+    cp -r "$TRAE_SOVEI_SKILL_HUB/." "$project_path/.trae/skills/sovei-workflow/"
+    log "  已复制: .trae/skills/sovei-workflow/"
+  fi
+
+  if [ -f "$SOVEI_ADAPTER_MANIFEST" ]; then
+    mkdir -p "$spec_dir/ide-adapters"
+    cp "$SOVEI_ADAPTER_MANIFEST" "$spec_dir/ide-adapters/sovei-adapters.yaml"
+    log "  已复制: .specify/ide-adapters/sovei-adapters.yaml"
+  fi
 
   # 仅初始化缺失的项目根 IDE 文件，避免覆盖项目自己的 Skill 注册内容
   for ide_file in "${IDE_ADAPTER_FILES[@]}"; do
@@ -317,6 +357,32 @@ cmd_status() {
         diff_count=$((diff_count + 1))
       fi
     done
+
+    if [ -d "$CODEBUDDY_SOVEI_COMMANDS_HUB" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#$CODEBUDDY_SOVEI_COMMANDS_HUB/}"
+        dst="$path/.codebuddy/commands/sovei/$rel"
+        if [ "$(hash_file "$src")" != "$(hash_file "$dst")" ]; then
+          diff_count=$((diff_count + 1))
+        fi
+      done < <(find "$CODEBUDDY_SOVEI_COMMANDS_HUB" -type f -print0)
+    fi
+
+    if [ -d "$TRAE_SOVEI_SKILL_HUB" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#$TRAE_SOVEI_SKILL_HUB/}"
+        dst="$path/.trae/skills/sovei-workflow/$rel"
+        if [ "$(hash_file "$src")" != "$(hash_file "$dst")" ]; then
+          diff_count=$((diff_count + 1))
+        fi
+      done < <(find "$TRAE_SOVEI_SKILL_HUB" -type f -print0)
+    fi
+
+    if [ -f "$SOVEI_ADAPTER_MANIFEST" ]; then
+      if [ "$(hash_file "$SOVEI_ADAPTER_MANIFEST")" != "$(hash_file "$spec_dir/ide-adapters/sovei-adapters.yaml")" ]; then
+        diff_count=$((diff_count + 1))
+      fi
+    fi
 
     # 项目根 IDE 文件是实例资产；只检查是否存在
     for ide_file in "${IDE_ADAPTER_FILES[@]}"; do

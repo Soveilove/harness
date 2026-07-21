@@ -1,6 +1,6 @@
 ---
 name: sovei-workflow
-description: Execute or resume the repository Sovei Feature workflow with file-backed stage gates. Use only when the user explicitly invokes $sovei-workflow or asks to run, resume, inspect, or advance a Sovei stage such as load, grill, spec, scope, or plan. Do not trigger implicitly for ordinary coding tasks.
+description: Execute, resume, or reopen a repository Sovei Feature workflow with file-backed stage gates from load through sync. Use only when the user explicitly invokes $sovei-workflow or asks to run, inspect, advance, or reopen a Sovei stage. Do not trigger implicitly for ordinary coding tasks.
 ---
 
 # Sovei Workflow
@@ -38,10 +38,19 @@ Read:
 
 - If the user names a stage, execute only that stage.
 - If no stage is named, execute `load` only.
-- Supported implementation stages in version 0.2.0: `load`, `grill`, `spec`, `scope`, `plan`.
-- For later stages, validate and report state, then stop with `stage_not_implemented`.
+- Supported stages in version 1.1.0: `load`, `grill`, `wayfind`, `spec`, `scope`, `plan`, `tasks`, `implement`, `converge`, `verify`, `learn`, and `sync`.
 - Execute exactly one stage per invocation. Never chain stages, even when the user requests multiple stages or asks to finish the whole workflow.
 - When multiple stages are requested, execute only the current legal stage and report the next command the user must invoke in a new context.
+
+## Reopen A Stage
+
+Treat `reopen TARGET=<stage> REASON=<reason>` as one control action, not a stage. Run `scripts/reopen_workflow.py` after the initial validator succeeds.
+
+- Require an explicit target and non-empty reason.
+- Allow only a stage already present in `completed_stages`.
+- Invalidate the target and every completed successor, then set the target as `current_stage` and `next_stage`.
+- Preserve the baseline, decisions, and blockers; append the transition to `workflow-history.md`.
+- Execute no stage work in the same invocation. Report the reopened target as the next command.
 
 ## Resolve Skills
 
@@ -62,15 +71,16 @@ Before executing a non-load stage:
 3. Require the stage to be marked `active` in `workflow.yaml`.
 4. Stop on open blocking decisions or non-empty `blocked_by`.
 
-After producing the stage Artifact:
+After stage work:
 
-1. Check it against the stage output contract.
-2. Add the stage to `completed_stages` exactly once.
-3. Set `current_stage` and `next_stage` to one legal successor.
-4. Update `updated_at`; do not alter `baseline_commit` implicitly.
-5. Re-run the validator.
+1. Check the Artifact and stage completion criteria.
+2. If work remains within the same stage, keep `current_stage` and `next_stage` unchanged, update the Artifact, and stop with the same next command.
+3. When complete, add the stage to `completed_stages` exactly once for the current revision and move to one legal successor.
+4. After `sync` completes, set `status: completed`, keep `current_stage: sync`, and set `next_stage: null`.
+5. Update `updated_at`; do not alter `baseline_commit` implicitly.
+6. Re-run the validator.
 
-Do not mark a stage complete when its Artifact is partial, contains unresolved blocking decisions, or failed validation.
+Do not mark a stage complete when its Artifact is partial, work remains in that stage, it contains unresolved blocking decisions, or validation failed.
 
 ## Output Contract
 
@@ -82,4 +92,5 @@ Always report the Feature path, risk level, knowledge sources, current/completed
 - Never copy Feature state between A/B/C workspaces.
 - Never promote candidate knowledge to stable Harness during a stage invocation.
 - Do not invoke `grill` unless the user explicitly requested it; ask one decision question at a time.
+- Do not run `sync` Pull operations without an explicit target-project authorization in the same invocation.
 - Do not use chat history as evidence that a stage completed.

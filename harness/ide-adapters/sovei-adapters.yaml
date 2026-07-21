@@ -1,0 +1,28 @@
+schema_version: 1
+workflow_version: "1.1.0"
+adapters:
+  codex:
+    status: active
+    invocation: "$sovei-workflow <stage> FEATURE=specs/<feature>"
+    skill_path: ".agents/skills/sovei-workflow/SKILL.md"
+  claude:
+    status: active
+    invocation: "/sovei/<stage> FEATURE=specs/<feature>"
+    skill_path: ".agents/skills/sovei-workflow/SKILL.md"
+    command_source: "harness/ide-adapters/claude/commands/sovei"
+    command_target: ".claude/commands/sovei"
+  codebuddy:
+    status: active
+    invocation: "SOVEI: <stage> FEATURE=specs/<feature>"
+    skill_source: ".codebuddy/skills/sovei-workflow"
+    skill_target: ".codebuddy/skills/sovei-workflow"
+    command_source: ".codebuddy/commands/sovei"
+    command_target: ".codebuddy/commands/sovei"
+  trae:
+    status: active
+    invocation: "使用 sovei-workflow skill 执行 <stage> FEATURE=specs/<feature>"
+    skill_source: ".trae/skills/sovei-workflow"
+    skill_target: ".trae/skills/sovei-workflow"
+  cursor:
+    status: future
+

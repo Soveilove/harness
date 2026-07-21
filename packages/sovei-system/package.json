@@ -1,6 +1,6 @@
 {
   "name": "@sovei/system",
-  "version": "0.2.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Development and audit tooling for the Sovei Harness system",
   "type": "module",

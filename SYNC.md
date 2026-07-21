@@ -56,7 +56,9 @@
 - 已存在的 `.specify/feature.json` 不覆盖。
 - `specs/` 不读取、不复制、不删除。
 - 已存在的项目根 `AGENTS.md` 和 `CLAUDE.md` 不覆盖。
-- CodeBuddy 的中枢加载器和核心约束按脚本清单分发。
+- CodeBuddy 的中枢加载器、核心约束、Sovei Skill 和 `SOVEI: <stage>` 命令按脚本清单分发。
+- Trae 的 Sovei Skill 分发到 `<工程>/.trae/skills/sovei-workflow/`，通过自然语言显式调用。
+- IDE Adapter 清单分发到 `<工程>/.specify/ide-adapters/sovei-adapters.yaml`。
 - Sovei Codex Skill 只写入 `<工程>/.agents/skills/sovei-workflow/`。
 - Sovei Claude Commands 只写入 `<工程>/.claude/commands/sovei/`。
 - 其它项目 Skills、Commands 和 IDE 配置不覆盖。

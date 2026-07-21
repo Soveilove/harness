@@ -31,7 +31,7 @@
 - `../spec-harness/rejected-patterns.md` — 失败模式记录
 - `../spec-harness/failure-taxonomy.md` — 失败分类
 - `../codegraph/index.md` — 代码地图索引
-- `../workflows/sovei/workflow.yaml` — Sovei Phase 1 阶段图与 Artifact 契约
+- `../workflows/sovei/workflow.yaml` — Sovei 1.1 全阶段状态图与 Artifact 契约
 - 项目根 `.agents/skills/sovei-workflow/SKILL.md` — Codex 显式工作流入口
 
 ## 同步约定

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { parse } from "yaml";
 
@@ -27,6 +27,14 @@ async function readYaml(filePath) {
   return parse(await readFile(filePath, "utf8"));
 }
 
+function resolveRepoPath(repoRoot, relativePath, label) {
+  const resolved = path.resolve(repoRoot, relativePath);
+  if (resolved !== repoRoot && !resolved.startsWith(`${repoRoot}${path.sep}`)) {
+    throw new Error(`${label} must stay inside the repository`);
+  }
+  return resolved;
+}
+
 export async function loadSystemConfig(repoRoot) {
   const workflowPath = path.join(repoRoot, "harness", "workflows", "sovei", "workflow.yaml");
   const workflow = await readYaml(workflowPath);
@@ -50,12 +58,41 @@ export async function loadSystemConfig(repoRoot) {
     throw new Error("workflow.invocation.skill_map must stay in the Sovei workflow directory");
   }
 
+  const adapterManifestPath = path.join(repoRoot, "harness", "ide-adapters", "sovei-adapters.yaml");
+  const adapterManifest = await readYaml(adapterManifestPath);
+  const adapterArtifacts = {};
+  for (const [adapterId, adapter] of Object.entries(adapterManifest?.adapters ?? {})) {
+    const artifacts = { skill: null, commands: [] };
+    const skillValue = adapter.skill_source ?? adapter.skill_path;
+    if (skillValue) {
+      const skillPath = resolveRepoPath(repoRoot, skillValue, `${adapterId}.skill`);
+      const skillFile = path.extname(skillPath) ? skillPath : path.join(skillPath, "SKILL.md");
+      await readFile(skillFile, "utf8");
+      artifacts.skill = skillFile;
+    }
+    if (adapter.command_source) {
+      const commandDirectory = resolveRepoPath(
+        repoRoot,
+        adapter.command_source,
+        `${adapterId}.command_source`,
+      );
+      artifacts.commands = (await readdir(commandDirectory, { withFileTypes: true }))
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+        .map((entry) => path.basename(entry.name, ".md"))
+        .sort();
+    }
+    adapterArtifacts[adapterId] = artifacts;
+  }
+
   return {
     workflow,
     workflowPath,
     usagePath,
     skillMap: await readYaml(skillMapPath),
     skillMapPath,
+    adapterManifest,
+    adapterManifestPath,
+    adapterArtifacts,
   };
 }
 
@@ -66,6 +103,14 @@ export function validateSystemConfig(workflow, skillMap) {
   }
   if (invocation.report_skills !== true) {
     throw new Error("workflow must require Skill reporting");
+  }
+  const controlActions = requireArray(workflow.control_actions, "workflow.control_actions");
+  if (!controlActions.includes("reopen")) {
+    throw new Error("workflow must register the reopen control action");
+  }
+  const rework = requireRecord(workflow.rework, "workflow.rework");
+  if (rework.invalidation !== "target_and_successors" || !rework.history_artifact) {
+    throw new Error("workflow must define audited target-and-successor invalidation");
   }
   if (workflow.workflow_version !== skillMap.workflow_version) {
     throw new Error("workflow and Skill Map versions must match");
@@ -133,6 +178,48 @@ export function validateSystemConfig(workflow, skillMap) {
     third_party_skill_count: Object.values(skills).filter(
       (skill) => sources[skill.source].kind === "third_party",
     ).length,
+    active_stage_count: stageOrder.filter((stage) => workflowStages[stage].status === "active").length,
+  };
+}
+
+export function validateAdapterConfig(workflow, adapterManifest, adapterArtifacts) {
+  if (adapterManifest.workflow_version !== workflow.workflow_version) {
+    throw new Error("IDE Adapter manifest version must match the workflow version");
+  }
+
+  const adapters = requireRecord(adapterManifest.adapters, "adapter_manifest.adapters");
+  const requiredActiveAdapters = ["codex", "claude", "codebuddy", "trae"];
+  for (const adapterId of requiredActiveAdapters) {
+    const adapter = requireRecord(adapters[adapterId], `adapter_manifest.adapters.${adapterId}`);
+    if (adapter.status !== "active" || !adapter.invocation) {
+      throw new Error(`IDE Adapter ${adapterId} must be active with an invocation`);
+    }
+    if (!adapterArtifacts[adapterId]?.skill) {
+      throw new Error(`IDE Adapter ${adapterId} is missing its Skill entrypoint`);
+    }
+  }
+  if (adapters.cursor?.status !== "future") {
+    throw new Error("Cursor must remain future until its Adapter is implemented");
+  }
+
+  const expectedCommands = [...workflow.stage_order, "reopen"].sort();
+  for (const adapterId of ["claude", "codebuddy"]) {
+    const commands = adapterArtifacts[adapterId]?.commands ?? [];
+    if (
+      commands.length !== expectedCommands.length ||
+      commands.some((command, index) => command !== expectedCommands[index])
+    ) {
+      throw new Error(`${adapterId} commands must cover every stage plus reopen exactly`);
+    }
+  }
+
+  return {
+    adapter_count: Object.keys(adapters).length,
+    active_adapter_count: Object.values(adapters).filter((adapter) => adapter.status === "active")
+      .length,
+    command_adapter_count: Object.values(adapters).filter((adapter) => adapter.command_source)
+      .length,
+    active_adapters: requiredActiveAdapters,
   };
 }
 

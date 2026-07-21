@@ -3,7 +3,7 @@ feature: specs/001-sovei-workflow-mvp
 risk_level: S1
 current_stage: sync
 status: in_progress
-workflow_version: 0.2.0
+workflow_version: 1.1.0
 baseline_commit: 6007ae54aef91369fd19efdfeebfbf9fa4f29de9
 completed_stages:
   - load
@@ -21,4 +21,6 @@ next_stage: sync
 open_decisions: []
 blocked_by:
   - explicit_user_request_required_before_abc_pull
-updated_at: 2026-07-21T18:25:41+08:00
+revision: 0
+reopened_stages: []
+updated_at: 2026-07-21T20:12:06+08:00

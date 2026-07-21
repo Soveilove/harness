@@ -1,11 +1,15 @@
 schema_version: 1
-workflow_version: "0.2.0"
+workflow_version: "1.1.0"
 usage: "USAGE.md"
 invocation:
   max_stages: 1
   chaining: forbidden
   skill_map: "skill-map.yaml"
   report_skills: true
+control_actions: ["reopen"]
+rework:
+  history_artifact: "workflow-history.md"
+  invalidation: "target_and_successors"
 stage_order:
   - load
   - grill
@@ -29,7 +33,7 @@ stages:
     required_artifacts: ["decision-log.md"]
     next: ["wayfind", "spec"]
   wayfind:
-    status: future
+    status: active
     required_artifacts: ["wayfinder.md"]
     next: ["spec"]
   spec:
@@ -45,26 +49,26 @@ stages:
     required_artifacts: ["plan.md"]
     next: ["tasks"]
   tasks:
-    status: future
+    status: active
     required_artifacts: ["tasks.md"]
     next: ["implement"]
   implement:
-    status: future
-    required_artifacts: []
+    status: active
+    required_artifacts: ["change-manifest.md"]
     next: ["converge"]
   converge:
-    status: future
+    status: active
     required_artifacts: ["convergence-report.md"]
     next: ["verify"]
   verify:
-    status: future
+    status: active
     required_artifacts: ["evidence.md"]
     next: ["learn"]
   learn:
-    status: future
+    status: active
     required_artifacts: ["learning-report.md"]
     next: ["sync"]
   sync:
-    status: future
+    status: active
     required_artifacts: ["sync-report.md"]
     next: []

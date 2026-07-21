@@ -1,0 +1,17 @@
+schema_version: 1
+feature: specs/002-sovei-workflow-phase2
+risk_level: S2
+current_stage: wayfind
+status: in_progress
+workflow_version: "1.1.0"
+baseline_commit: 89c2fb588382a7cf5654b6e144f81d94cc689a3c
+completed_stages:
+  - load
+  - grill
+wayfinder: not_assessed
+next_stage: wayfind
+open_decisions: []
+blocked_by: []
+revision: 0
+reopened_stages: []
+updated_at: 2026-07-21T20:12:06+08:00

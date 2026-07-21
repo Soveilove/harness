@@ -12,16 +12,17 @@
 | `harness/` | 当前稳定 Harness 的唯一源 | 是 |
 | `.agents/`、`.codebuddy/` | 中枢自身的 Agent/IDE 适配 | 仅分发脚本明确列出的适配文件 |
 | `design-docs/SOVEI_HARNESS_WORKFLOW_DESIGN.md` | 新版 Sovei 架构基线 | 否 |
-| `.agents/skills/sovei-workflow/` | Codex 可显式调用的 Phase 1 工作流 | 按同步脚本分发 |
+| `.agents/skills/sovei-workflow/` | Sovei 1.1 核心 Skill 和确定性脚本 | 按同步脚本分发 |
+| `.codebuddy/`、`.trae/` | CodeBuddy 命令/Skill 与 Trae Skill 薄适配 | 按同步脚本分发明确列出的 Sovei 文件 |
 | `packages/sovei-system/` | 中枢系统的私有 pnpm package、依赖和审计 CLI | 否 |
 | `specs/` | 中枢自身的 Feature 实例和验证证据 | 否 |
 | `SYNC.md` | A/B/C 同步的唯一操作指引 | 否 |
 
-Sovei 0.2.0 已启用 `load`、`grill`、`spec`、`scope`、`plan`。每次调用只执行一个阶段，然后输出下一条需要在新上下文中调用的命令，禁止一次串完整条工作流。阶段的真实 Skill 依赖和可替换第三方候选统一登记在 `harness/workflows/sovei/skill-map.yaml`。
+Sovei 1.1.0 已启用 `load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync`，并支持 `reopen` 返工控制动作。Codex、Claude Code、CodeBuddy 和 Trae 共用同一状态机；每次调用只执行一个阶段，然后输出下一条需要在新上下文中调用的命令。阶段的真实 Skill 依赖和可替换第三方候选统一登记在 `harness/workflows/sovei/skill-map.yaml`。
 
 工作流的场景选择、命令格式、阶段停止条件和常见问题统一见 [Sovei 工作流使用指引](harness/workflows/sovei/USAGE.md)。
 
-当前执行任一阶段都只实际使用仓库内的 `sovei-workflow` 和 `knowledge-loader`；所有 Matt Pocock Skills 仍是 `candidate_not_installed`，不会被自动调用。`tasks` 及之后阶段、外部 Skill 生命周期、Baseline 和跨工程协调仍是 future；不得因为设计文档或 Skill Map 中出现某项候选能力，就让 Agent 假定系统已经具备该能力。
+当前执行任一阶段都只实际使用仓库内的 `sovei-workflow` 和 `knowledge-loader`；所有 Matt Pocock Skills 仍是 `candidate_not_installed`，不会被自动调用。Cursor Adapter 和外部 Skill 生命周期仍未实现；不得因为设计文档或 Skill Map 中出现某项候选能力，就让 Agent 假定系统已经具备该能力。
 
 ## 中枢 Package
 
