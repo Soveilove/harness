@@ -37,6 +37,8 @@ metadata:
 
 ---
 
+
+<!-- PROJECT-SPECIFIC: 以下 Vue 相关偏好为 pino-front 专属，换项目时替换。见 project.yaml -->
 ## Vue 开发习惯
 
 **偏好**: Vue 3 + TypeScript + Composition API
@@ -96,6 +98,8 @@ metadata:
 
 ---
 
+
+<!-- PROJECT-SPECIFIC: 以下环境约束为 pino-front 专属(Git Bash/vue-tsc/Vitest)，换项目时替换。见 project.yaml -->
 ## 验证与终端命令偏好
 
 **偏好**: 当前仓库终端按 Git Bash 环境处理；**严禁使用 PowerShell 专属命令**（如 `New-Item`、`Copy-Item`、`Out-Null`、`Remove-Item` 等）；所有 RunCommand 必须使用 gitbash/POSIX 兼容语法。验证只约束本次改动文件，避免被仓库既有全量类型错误干扰；不进行 git diff 等轻量级检查；不执行 `vue-tsc`，除非用户明确提出需要。

@@ -1,0 +1,7 @@
+interface:
+  display_name: "知识蒸馏"
+  short_description: "Scan and distill project records into knowledge candidates"
+  default_prompt: "Use $distill to scan debug records or specs and distill knowledge candidates."
+
+policy:
+  allow_implicit_invocation: false

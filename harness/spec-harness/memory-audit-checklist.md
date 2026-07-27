@@ -9,11 +9,11 @@
 
 逐条检查以下文件中的条目，判断是否已过时：
 
-- [ ] `harness/memory/vue-pitfalls.md` — 每个 pitfall 是否仍然存在（代码是否已重构/删除）
-- [ ] `harness/memory/design-decisions.md` — ADR 状态是否需更新（试运行→已采纳 / 已采纳→已废弃）
-- [ ] `harness/spec-harness/implementation-rules.md` — staging 规则是否够 3 次命中可转 stable；deprecated 规则是否需补充
-- [ ] `harness/spec-harness/rejected-patterns.md` — 被拒绝的模式是否已被采纳（需转 staging）
-- [ ] `harness/codegraph/*.md` — 代码地图引用的文件路径是否还存在（重构/重命名后容易失效）
+- [ ] `project/memory/vue-pitfalls.md` — 每个 pitfall 是否仍然存在（代码是否已重构/删除）
+- [ ] `project/memory/design-decisions.md` — ADR 状态是否需更新（试运行→已采纳 / 已采纳→已废弃）
+- [ ] `project/rules/implementation-rules.md` — staging 规则是否够 3 次命中可转 stable；deprecated 规则是否需补充
+- [ ] `project/rules/rejected-patterns.md` — 被拒绝的模式是否已被采纳（需转 staging）
+- [ ] `codegraph/*.md` — 代码地图引用的文件路径是否还存在（重构/重命名后容易失效）
 
 **判断标准**：
 - 条目引用的文件已删除/重命名 → 标记 `stale`，更新路径或删除条目
@@ -22,7 +22,7 @@
 
 ### A2: 一致性 — 条目之间是否矛盾
 
-- [ ] `MEMORY.md`（长期记忆）与 `harness/memory/MEMORY.md` 是否有同一决策的不同描述
+- [ ] `MEMORY.md`（长期记忆）与 `project/memory/MEMORY.md`（harness 内）是否有同一决策的不同描述
 - [ ] `design-decisions.md` 的 ADR 与 `implementation-rules.md` 的规则是否对齐（ADR 采纳但规则未建，或规则引用了已废弃 ADR）
 - [ ] `vue-pitfalls.md` 的踩坑记录与 `failure-taxonomy.md` 的分类是否对得上
 - [ ] `.codebuddy/memory/` 中的多条理论记忆是否互相矛盾（例：同一模块 ID 列表在不同记忆条目中范围不同）
@@ -35,7 +35,7 @@
 ### A3: 冗余性 — 是否有重复/分散信息
 
 - [ ] 同一知识点是否分散在多个文件（例：Seedance 模块 ID 在 vue-pitfalls、design-decisions、implementation-rules 各有一份）
-- [ ] `harness/memory/MEMORY.md` 与 `.codebuddy/memory/MEMORY.md` 是否有重复内容
+- [ ] `project/memory/MEMORY.md`（harness 内）与 `.codebuddy/project/memory/MEMORY.md` 是否有重复内容
 - [ ] `codegraph/` 下多个地图文件是否有重叠的链路描述
 
 **判断标准**：
@@ -56,6 +56,7 @@
 
 - [ ] `.codebuddy/rules/core-constraints/RULE.mdc` 的 `alwaysApply` 是否为 `true`
 - [ ] `.codebuddy/skills/knowledge-loader/SKILL.md` 中的文件路径是否指向 `harness/` 下真实存在的文件
+- [ ] `.codebuddy/skills/knowledge-loader/SKILL.md` 中的文件路径是否指向 harness 根下真实存在的文件
 - [ ] SKILL.md 的关键词触发表是否覆盖了新增的 harness 文件
 
 ## 审计流程

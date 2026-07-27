@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateSet("Diff", "Pull", "Status")]
     [string]$Mode = "Status",
     [string]$ProjectPath,
@@ -16,7 +16,13 @@ if (-not [string]::IsNullOrWhiteSpace($HarnessRootOverride)) {
     $HarnessRoot = $LocalHarnessRoot
 }
 $MemoryRoot = [System.IO.Path]::GetFullPath((Join-Path $HarnessRoot ".."))
-$HarnessDirectories = @("memory", "spec-harness", "codegraph", "templates", "scripts", "workflows", "extensions", "integrations")
+$HarnessDirectories = @("project", "spec-harness", "templates", "scripts", "workflows", "extensions", "integrations")
+# 分发只扫描 $HarnessDirectories,以下工程目录/文件不受 sync 读写,属于工程实例状态:
+# - specs/           Feature 实例和验证证据
+# - .debug-records/  缺陷修复记录(IDE 无关,蒸馏 skill 原料)
+# - .specify/feature.json  已通过 Protected 标志保护
+# - 项目根 AGENTS.md / CLAUDE.md  已通过 Protected 标志保护
+# Diff/Pull 不会删除工程中中枢没有的文件;发现遗留文件时必须单独审查。
 $Projects = @(
     @{ Id = "pino-front-a"; Path = "E:\project\holopix\pino-front" },
     @{ Id = "pino-front-b"; Path = "D:\holopix\pino-front-b" },

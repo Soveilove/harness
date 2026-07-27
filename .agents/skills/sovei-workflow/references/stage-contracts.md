@@ -1,6 +1,6 @@
 # Sovei 1.1 Stage Contracts
 
-Every invocation executes exactly one stage and then stops. Before stage work, resolve and report the stage's internal, active third-party, candidate, and alternative Skills from `harness/workflows/sovei/skill-map.yaml`. Candidate and alternative Skills are never executed.
+Every invocation executes exactly one stage and then stops. Before stage work, resolve and report the stage's internal, active third-party, candidate, and alternative Skills from `workflows/sovei/skill-map.yaml` (relative to harness root: `harness/` in central, `.specify/` in project). Candidate and alternative Skills are never executed.
 
 ## load
 

@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # 失败模式 / 负反馈记录（Rejected Patterns）
 
 > 记录 AI 或人在开发过程中做错的事情、修复方案和事后提炼的规则。

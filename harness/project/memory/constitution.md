@@ -51,6 +51,8 @@ TypeScript types MUST be defined for all inputs and outputs. Untrusted data MUST
 
 **How to apply**: Define types in `types.ts`. Validate external data in service layers before it reaches components. Use Zod or similar for runtime validation when needed.
 
+
+<!-- PROJECT-SPECIFIC: 以下 Vue 开发标准为 pino-front 专属，换项目时替换为对应框架标准。见 project.yaml -->
 ## Vue Development Standards
 
 ### VI. Composition API with TypeScript

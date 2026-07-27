@@ -4,6 +4,8 @@ description: 自由画布功能面板统一使用 GenerateButton 组件
 metadata:
   type: project
 ---
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
+
 
 # 自由画布功能面板生成按钮组件复用规范
 

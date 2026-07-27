@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # Figma MCP 配置
 
 **问题/偏好**: 项目使用 Figma MCP 访问设计稿

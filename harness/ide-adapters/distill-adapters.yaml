@@ -1,0 +1,27 @@
+schema_version: 1
+skill_version: "1.0.0"
+adapters:
+  codex:
+    status: active
+    invocation: "$distill --source <path> --type <debug|specs>"
+    skill_path: ".agents/skills/distill/SKILL.md"
+  claude:
+    status: active
+    invocation: "/distill --source <path> --type <debug|specs>"
+    skill_path: ".agents/skills/distill/SKILL.md"
+    command_source: "harness/ide-adapters/claude/commands/distill.md"
+    command_target: ".claude/commands/distill.md"
+  codebuddy:
+    status: active
+    invocation: "DISTILL: --source <path> --type <debug|specs>"
+    skill_source: ".codebuddy/skills/distill"
+    skill_target: ".codebuddy/skills/distill"
+    command_source: ".codebuddy/commands/distill.md"
+    command_target: ".codebuddy/commands/distill.md"
+  trae:
+    status: active
+    invocation: "使用 distill skill 扫描 --source <path> --type <debug|specs>"
+    skill_source: ".trae/skills/distill"
+    skill_target: ".trae/skills/distill"
+  cursor:
+    status: future

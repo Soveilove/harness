@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # 设计工具
 
 **问题/偏好**: 项目使用 Figma 进行 UI 设计，不是 Pencil

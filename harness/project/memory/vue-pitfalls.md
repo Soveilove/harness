@@ -7,6 +7,22 @@ metadata:
   created: 2026-06-09
   originSessionId: 666b2e67-d2d9-466e-92c1-bcc0931c534e
 ---
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
+
+## 记录模板
+
+```markdown
+### [坑点标题]
+- **发现日期**: YYYY-MM-DD
+- **状态**: active
+- **症状**: [bug 表现]
+- **根因**: [为什么会发生]
+- **正确做法**: [应该怎么做]
+- **相关文件**: [涉及哪些文件]
+- **Failure 类型**: F[1-8]
+```
+
+模板来源: systematic-debugging.md 第 5 步 + distill-formats.md
 
 ## defineProps 外部类型导入问题
 

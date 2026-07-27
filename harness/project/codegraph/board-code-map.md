@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # 自由画布 Code Map
 
 > 目标：沉淀自由画布长期高频入口、关键数据流和复杂面板参数链路。近期总览仍保留在 `recent-work-code-map.md`，自由画布深水区优先看本文件。

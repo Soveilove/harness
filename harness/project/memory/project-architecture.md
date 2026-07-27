@@ -7,6 +7,8 @@ metadata:
   created: 2026-06-09
   originSessionId: 666b2e67-d2d9-466e-92c1-bcc0931c534e
 ---
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
+
 
 ## 技术栈
 

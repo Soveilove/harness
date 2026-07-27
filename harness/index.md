@@ -1,6 +1,17 @@
-# Pino Front 稳定 Harness
+# Sovei Harness — 本地知识管理 CLI
 
-本目录是 A/B/C 工程共享的稳定发布源。这里只保存经过审查、适用于三个工程的知识、规则、导航、模板和工具。
+本目录是一个本地知识管理 CLI。它定义"怎么沉淀知识"(工作流 + 蒸馏 + 晋级机制)，不定义"知识是什么"(那是项目专属内容)。换项目时壳原样复用，料清空重填。
+
+## 壳料分离
+
+本系统分两层：
+
+| 层 | 内容 | 换项目时 |
+|---|---|---|
+| 壳(工具层) | 工作流、模板、脚本、skill、IDE 适配、分类法、审计清单 | 原样保留 |
+| 料(项目层) | 踩坑库、代码地图、架构文档、ADR、实现规则、宪法 Vue 段、环境约束 | 清空重填 |
+
+当前项目声明见 [project.yaml](project.yaml)。料文件头部标有 `<!-- PROJECT-SPECIFIC -->` 标注。
 
 ## 所有权边界
 
@@ -11,6 +22,7 @@
 
 ## Sovei Workflow 1.1.0
 
+- 研发工作流总手册(场景选择 + 知识飞轮)：`workflows/USAGE.md`
 - Codex 显式入口：`$sovei-workflow`
 - Claude Code 显式入口：`/sovei/<stage>`
 - CodeBuddy 显式入口：命令面板 `SOVEI: <stage>`
@@ -28,15 +40,16 @@
 
 ## 加载顺序
 
-1. 读取 `memory/MEMORY.md` 了解可用知识。
-2. 读取 `memory/user-preferences.md` 和 `memory/constitution.md`。
-3. 按任务类型加载：
-   - Bug：`memory/vue-pitfalls.md`、`workflows/systematic-debugging.md`
-   - 架构：`memory/project-architecture.md`
-   - 技术决策：`memory/design-decisions.md`
-   - 实现：`spec-harness/implementation-rules.md`
-   - 代码导航：`codegraph/index.md` 及其直接链接的地图
-4. 在产品工程中，再读取该工程自己的 `.specify/feature.json` 和当前 `specs/<feature>/`。
+1. 读取 `project/memory/MEMORY.md` 了解可用知识。
+2. 读取 `project/memory/user-preferences.md` 和 `project/memory/constitution.md`。
+3. 选工作流：新功能/需求变更走 Sovei，缺陷修复走 systematic-debugging，场景对照见 [研发工作流使用手册](workflows/USAGE.md)。
+4. 按任务类型加载知识：
+   - Bug：`project/memory/vue-pitfalls.md`、`workflows/systematic-debugging.md`
+   - 架构：`project/memory/project-architecture.md`
+   - 技术决策：`project/memory/design-decisions.md`
+   - 实现：`project/rules/implementation-rules.md`
+   - 代码导航：`project/codegraph/index.md` 及其直接链接的地图
+5. 在产品工程中，再读取该工程自己的 `.specify/feature.json` 和当前 `specs/<feature>/`。
 
 只加载当前任务需要的直接资料，不把全部 Memory、Code Map 或历史 Spec 一次性注入上下文。
 
@@ -58,15 +71,18 @@
 ```text
 harness/
 ├── index.md
-├── memory/              # 稳定知识、偏好、宪法、ADR、领域 Skill
-├── spec-harness/        # stable/pending/rejected 规则与审计清单
-├── codegraph/           # 当前共享代码导航
-├── templates/           # SpecKit 文档模板
-├── scripts/             # 工程脚本和同步脚本
-├── workflows/           # 已注册且真实存在的工作流
-├── extensions/          # SpecKit 扩展
-├── integrations/        # 集成清单
-└── ide-adapters/        # 仅用于缺失时初始化的项目规则模板
+├── project/             # 料(项目专属，换项目清空重填)
+│   ├── project.yaml     # 项目声明(项目名、技术栈、料文件清单)
+│   ├── memory/          # 知识库(踩坑、架构、ADR、宪法、偏好)
+│   ├── codegraph/       # 代码地图
+│   └── rules/           # 规则库(implementation-rules / rejected-patterns / pending-rules)
+├── spec-harness/        # 壳(分类法 failure-taxonomy + 审计清单 memory-audit)
+├── templates/           # 壳(SpecKit 文档模板)
+├── scripts/             # 壳(脚本，含 sync-harness.ps1 + init-project.ps1)
+├── workflows/           # 壳(工作流: Sovei / debugging / speckit + USAGE.md 总手册)
+├── extensions/          # 壳(SpecKit 扩展)
+├── integrations/        # 壳(集成清单)
+└── ide-adapters/        # 壳(IDE 适配: Codex / Claude / CodeBuddy / Trae)
 ```
 
 ABC 的同步命令、保护范围和晋级流程只以 `E:\memory\SYNC.md` 为准。

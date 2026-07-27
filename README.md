@@ -1,9 +1,34 @@
 # Sovei Harness 中枢
 
-`E:\memory` 只承担两件事：
+`E:\memory` 是一个本地知识管理 CLI。它只承担两件事：
 
-1. 在 `harness/` 维护经过确认的稳定开发知识、规则、模板和工具。
+1. 在 `harness/` 维护工具层(壳: 工作流、模板、脚本、skill)和项目层(料: 踩坑库、代码地图、规则)。
 2. 按 [SYNC.md](SYNC.md) 将稳定 Harness 分发到 A/B/C 工程。
+
+## 壳料分离
+
+| 层 | 内容 | 换项目时 |
+|---|---|---|
+| 壳 | 工作流、模板、脚本、skill、IDE 适配、分类法 | 原样保留 |
+| 料 | 踩坑库、代码地图、架构文档、ADR、实现规则 | 清空重填 |
+
+当前项目声明见 [harness/project.yaml](harness/project.yaml)。料文件头部标有 `PROJECT-SPECIFIC` 标注。
+
+### 换项目流程
+
+```powershell
+# 方式一：空白初始化（新项目，不继承现有知识）
+& harness\scripts\powershell\init-project.ps1 -ProjectPath D:\new-project -Blank
+
+# 方式二：继承初始化（复用当前项目知识作为起点）
+& harness\scripts\powershell\init-project.ps1 -ProjectPath D:\new-project
+```
+
+init 会在新项目下创建 `.specify/` 目录：
+- 分发壳文件(workflows/templates/scripts/spec-harness/skills/commands)
+- Blank 模式创建空白 project.yaml，不复制知识内容
+- 非 Blank 模式复制当前项目知识作为起点
+- 之后用 `sync-harness.ps1 -Mode Diff` 验证同步状态
 
 ## 生效边界
 
@@ -20,7 +45,7 @@
 
 Sovei 1.1.0 已启用 `load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync`，并支持 `reopen` 返工控制动作。Codex、Claude Code、CodeBuddy 和 Trae 共用同一状态机；每次调用只执行一个阶段，然后输出下一条需要在新上下文中调用的命令。阶段的真实 Skill 依赖和可替换第三方候选统一登记在 `harness/workflows/sovei/skill-map.yaml`。
 
-工作流的场景选择、命令格式、阶段停止条件和常见问题统一见 [Sovei 工作流使用指引](harness/workflows/sovei/USAGE.md)。
+工作流的场景选择(新功能走 Sovei、缺陷修复走 systematic-debugging)、知识复用闭环和知识飞轮统一见 [研发工作流使用手册](harness/workflows/USAGE.md);各工作流的阶段命令和停止条件见各自的子手册。
 
 当前执行任一阶段都只实际使用仓库内的 `sovei-workflow` 和 `knowledge-loader`；所有 Matt Pocock Skills 仍是 `candidate_not_installed`，不会被自动调用。Cursor Adapter 和外部 Skill 生命周期仍未实现；不得因为设计文档或 Skill Map 中出现某项候选能力，就让 Agent 假定系统已经具备该能力。
 

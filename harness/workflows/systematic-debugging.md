@@ -1,7 +1,7 @@
 # 系统化调试流程（Systematic Debugging SOP）
 
 > 遇到 bug 时按此流程排查，避免凭直觉跳跃式调试。
-> 流程结束时必须产出踩坑记录或规则更新，形成闭环。
+> 修完必留痕(第 5 步记录)，攒够再蒸馏(第 6 步)，形成闭环。
 
 ## 调试阶段
 
@@ -23,11 +23,11 @@
 
 按优先级查阅：
 
-1. **`harness/memory/vue-pitfalls.md`** — 搜索相关关键词，是否有同类坑
-2. **`harness/spec-harness/implementation-rules.md`** — 是否有规则被违反
-3. **`harness/spec-harness/failure-taxonomy.md`** — 初步归类到 F1-F8
-4. **`harness/memory/design-decisions.md`** — 是否有 ADR 解释了当前行为
-5. **`harness/codegraph/*.md`** — 相关模块的数据流链路和文件职责
+1. **`project/memory/vue-pitfalls.md`** — 搜索相关关键词，是否有同类坑
+2. **`project/rules/implementation-rules.md`** — 是否有规则被违反
+3. **`spec-harness/failure-taxonomy.md`** — 初步归类到 F1-F8
+4. **`project/memory/design-decisions.md`** — 是否有 ADR 解释了当前行为
+5. **`codegraph/*.md`** — 相关模块的数据流链路和文件职责
 
 **如果找到相关记录**：
 - 确认记录是否仍然准确（代码可能已变更）
@@ -67,59 +67,73 @@
 - [ ] 修复后确认 `read_lints` 无新增类型错误
 - [ ] 如果修复涉及架构模式（注册表/状态管理），对照 `implementation-rules.md` 确认合规
 
-### 第 5 步：知识沉淀（必须完成）
+### 第 5 步：记录（必须完成）
 
-**目标**：把本次调试经验固化到 harness，防止重复踩坑。
+**目标**：修完立刻留痕，不判断通用性。
 
-根据 bug 类型和严重程度，选择沉淀方式：
+- [ ] 在工程根下 `.debug-records/` 写一条结构化记录（IDE 无关，与 `specs/` 同级，不参与 sync 分发）
+- [ ] 只记事实：症状、根因、修复、相关文件、F 类型
+- [ ] 不判断"值不值得进 wiki"——那是蒸馏阶段的事
 
-#### 情况 A：典型 Vue 陷阱 / 框架特性坑
-
-→ 追加到 `harness/memory/vue-pitfalls.md`
+记录模板：
 
 ```markdown
-### [坑点标题]
-- **发现日期**: YYYY-MM-DD
-- **状态**: active
+### [bug 标题]
+- **日期**: YYYY-MM-DD
+- **F 类型**: F[1-8]
 - **症状**: [bug 表现]
-- **根因**: [为什么会发生]
-- **正确做法**: [应该怎么做]
+- **根因**: [因为 X 没有处理 Y，导致 Z]
+- **修复**: [改了什么]
 - **相关文件**: [涉及哪些文件]
-- **Failure 类型**: F[1-8]
 ```
 
-#### 情况 B：违反了已有规则但规则不够明确
+> 为什么不当场判断？修完那个瞬间，判断不出这条经验是模式还是偶然。很多坑要重复出现两三次才知道。先记，后判。
 
-→ 更新 `harness/spec-harness/implementation-rules.md` 对应规则，补充具体要求
+### 第 6 步：蒸馏（批量，手动触发）
 
-#### 情况 C：新发现的架构模式问题
+**目标**：攒一批记录后，聚类、判断、提议进 harness。
 
-→ 追加到 `harness/spec-harness/rejected-patterns.md`（被拒绝的模式）
+这不是每次修 bug 都做。攒到一定量（建议 ≥10 条或每月一次）后手动触发蒸馏：
 
-#### 情况 D：重要架构决策
+1. 扫描 `.debug-records/` 全部记录
+2. 按 F 类型 / 根因聚类
+3. 重复出现的簇 → 提议进 `pending-rules.md`（P-XXX）或 `rejected-patterns.md`（RP-XXX），都是**候选**
+4. 单次出现的 → 归档，不进 harness
 
-→ 追加到 `harness/memory/design-decisions.md` 新 ADR
+蒸馏时的 A-E 分发（判断落点）：
 
-#### 情况 E：临时性 bug，无通用价值
+| 情况 | 落点 | 例子 |
+|------|------|------|
+| A:典型 Vue 陷阱 / 框架特性坑 | `project/memory/vue-pitfalls.md` | watch 时序、ref 解包 |
+| B:违反已有规则但规则不够明确 | `project/rules/implementation-rules.md` 补充 | 规则缺具体要求 |
+| C:新发现的架构模式问题 | `project/rules/rejected-patterns.md` RP-XXX | 多入口绕过组件 handler |
+| D:重要架构决策 | `project/memory/design-decisions.md` 新 ADR | 模块边界调整 |
+| E:临时性，无通用价值 | 不进 harness，记录归档即可 | 一次性数据问题 |
 
-→ 只记录到当日 `.codebuddy/memory/YYYY-MM-DD.md` 工作日志，不上 harness
-
-### 第 6 步：关联检查
+蒸馏后做关联检查：
 
 - [ ] 如果新增/更新了 pitfall，检查 `implementation-rules.md` 是否需要同步新增规则
-- [ ] 如果新增了规则，检查 `knowledge-loader/SKILL.md` 的关键词触发表是否需要补充
+- [ ] 如果新增了规则，检查 `knowledge-loader` SKILL 的关键词触发表是否需要补充
 - [ ] 如果修改了架构决策，检查 `codegraph/*.md` 的相关链路描述是否需要更新
+
+> 蒸馏是共享能力，debug 记录、Sovei learn、specs 蒸馏共用一个 skill。详见 [研发工作流使用手册](USAGE.md) §5。
+- **路径约定**:本文档内 `memory/`、`spec-harness/`、`codegraph/` 均指 harness 根下的相对路径，分发到工程后对应 `.specify/` 下的同名子目录。
 
 ## 流程速查
 
 ```
-复现定位 → 查 harness 知识 → 根因分析(归类 F1-F8) → 最小修复 → 知识沉淀 → 关联检查
-                ↑                                                        |
-                └──────────── 下次同类 bug 直接命中 ────────────────────┘
+复现定位 → 查 harness 知识 → 根因分析(归类 F1-F8) → 最小修复 → 记录(必做)
+                                                                    ↓
+                                          蒸馏(批量): 聚类 → 提议候选 → 关联检查
+                                                                    ↓
+                                          候选 → ≥3次命中 → 人工确认 → stable 规则
+                 ↑                                                 |
+                 └──────────── 下次同类 bug 直接命中 ─────────────┘
 ```
 
 ## 使用方式
 
-- **手动触发**：遇到 bug 时按此流程走，不要跳过知识沉淀步骤
+- **手动触发**：遇到 bug 时按此流程走，第 5 步记录不可跳过
 - **CodeBuddy 触发**：在 prompt 中说「按 systematic-debugging 流程排查这个 bug」
 - **关键词**：`debug` / `bug` / `排查` / `为什么报错` / `不生效` / `报错了`
+- **蒸馏触发**：攒够记录后，使用蒸馏 skill 扫描 `.debug-records/`，详见 USAGE.md §5

@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # 中枢工作记忆
 
 - `E:\memory\harness` 是当前稳定发布源。

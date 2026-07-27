@@ -6,6 +6,8 @@ metadata:
   created: 2026-06-23
   updated: 2026-07-07
 ---
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
+
 
 # 自由画布作品详情弹窗字段映射规范
 

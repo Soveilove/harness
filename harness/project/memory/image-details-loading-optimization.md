@@ -6,6 +6,8 @@ metadata:
   type: feedback
   created: 2026-06-25
 ---
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
+
 
 ## ImageDetails 详情弹窗图片渲染链路
 

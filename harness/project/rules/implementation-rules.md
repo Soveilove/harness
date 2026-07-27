@@ -1,3 +1,4 @@
+<!-- PROJECT-SPECIFIC: 本文件内容为项目专属(pino-front)，换项目时需清空重填。见 project.yaml -->
 # 开发规则库（Spec Harness Rules）
 
 > 通用实现规则库，适用于所有 specs 的实现阶段。
