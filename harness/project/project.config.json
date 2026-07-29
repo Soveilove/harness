@@ -1,0 +1,11 @@
+{
+  "project": {
+    "name": "untitled",
+    "description": "New project - configure me",
+    "techStack": {},
+    "started": "2026-07-29"
+  },
+  "workflow": {
+    "version": "2.0.0"
+  }
+}
