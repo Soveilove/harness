@@ -1,11 +1,11 @@
-# <Feature> Spec
+# <Feature> 功能规格
 
-## Problem
+## 问题
 
-## User Stories
+## 用户故事
 
-## Functional Requirements
+## 功能需求
 
-## Acceptance Scenarios
+## 验收场景
 
-## Explicit Exclusions
+## 明确排除

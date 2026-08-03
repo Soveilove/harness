@@ -1,0 +1,22 @@
+{
+  "id": "D-002",
+  "title": "定义知识快照版本",
+  "question": "知识来源、扫描器、schema、chunk、embedding 和索引版本如何表达与判定过期",
+  "type": "task",
+  "interaction": "HITL",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "快照记录 schemaVersion、indexVersion、projectId、sourceRevision、sourceHash、scannerVersion、chunkerVersion、embeddingProvider/model/dimensions、createdAt；内容或生成链版本变化即 stale",
+  "evidence": [
+    "knowledge/schemas.ts",
+    "current-version-gap"
+  ],
+  "contextPointers": [
+    "harness/project/knowledge"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-03T13:16:17.563Z",
+  "updatedAt": "2026-08-03T13:17:14.897Z",
+  "resolvedAt": "2026-08-03T13:17:14.897Z"
+}

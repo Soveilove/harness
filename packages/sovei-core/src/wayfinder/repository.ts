@@ -261,25 +261,25 @@ export class WayfinderRepository {
   }
 
   private renderMarkdown(state: WayfinderState): string {
-    const lines = ['# Wayfinder', '', '## Destination', ''];
+    const lines = ['# 决策地图', '', '## 目标', ''];
     if (state.notRequiredReason) {
-      lines.push('Not required: ' + state.notRequiredReason, '');
+      lines.push('无需建立决策地图：' + state.notRequiredReason, '');
     } else {
-      lines.push(state.destination, '', '## Notes', '', state.notes || '(none)', '');
+      lines.push(state.destination, '', '## 备注', '', state.notes || '（无）', '');
     }
-    lines.push('## Decisions So Far', '');
+    lines.push('## 已完成决策', '');
     const resolved = Object.values(state.tickets).filter((ticket) => ticket.status === 'resolved');
-    if (!resolved.length) lines.push('(none)');
+    if (!resolved.length) lines.push('（无）');
     for (const ticket of resolved) {
       const gist = (ticket.resolution ?? '').replace(/\s+/g, ' ').slice(0, 160);
       lines.push(`- [${ticket.title}](decision-tickets/${ticket.id}.json) - ${gist}`);
     }
-    lines.push('', '## Not Yet Specified', '');
-    if (!state.fog.length) lines.push('(none)');
+    lines.push('', '## 尚未明确', '');
+    if (!state.fog.length) lines.push('（无）');
     for (const fog of state.fog) lines.push(`- ${fog.id}: ${fog.summary}`);
-    lines.push('', '## Out Of Scope', '');
+    lines.push('', '## 范围外', '');
     const excluded = Object.values(state.tickets).filter((ticket) => ticket.status === 'excluded');
-    if (!excluded.length) lines.push('(none)');
+    if (!excluded.length) lines.push('（无）');
     for (const ticket of excluded) {
       lines.push(`- [${ticket.title}](decision-tickets/${ticket.id}.json) - ${ticket.exclusionReason}`);
     }

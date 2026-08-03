@@ -1,4 +1,4 @@
-# Workflow History
+# 工作流历史
 
-| Timestamp | Revision | Action | From | Target | Reason |
+| 时间戳 | revision | 操作 | 来源 | 目标 | 原因 |
 |---|---:|---|---|---|---|

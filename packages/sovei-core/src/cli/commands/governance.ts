@@ -1,7 +1,8 @@
-import type { Command } from 'commander';
+﻿import type { Command } from 'commander';
 import { ChangeControlRepository } from '../../change-control/repository.js';
 import { container, TOKENS } from '../../providers/container.js';
 import type { StorageBackend } from '../../storage/types.js';
+import { resolve } from 'node:path';
 
 function repository(): ChangeControlRepository {
   return new ChangeControlRepository(container.inject<StorageBackend>(TOKENS.Storage));
@@ -53,5 +54,43 @@ export function registerGovernanceCommands(program: Command): void {
     .action(async (id: string, options: { reason: string }) => {
       const entry = await repository().deactivateRedline(id.toUpperCase(), options.reason);
       console.log(`\n  Deactivated redline ${entry.id}.\n`);
+    })
+
+  redline
+    .command('import')
+    .argument('<file>', 'JSON file with redline definitions')
+    .description('Batch import redlines from a JSON array file')
+    .action(async (file: string) => {
+      const resolvedFile = resolve(file);
+      const content = await import('node:fs/promises').then((m) => m.readFile(resolvedFile, 'utf8'));
+      let items: Array<{ id: string; title: string; rule: string; enforcement?: string }>;
+      try {
+        const parsed = JSON.parse(content);
+        // Support both raw array and versioned seed object { redlines: [...] }
+        items = Array.isArray(parsed) ? parsed : (parsed?.redlines ?? []);
+      } catch {
+        throw new Error('Invalid JSON in ' + file);
+      }
+      if (!Array.isArray(items)) {
+        throw new Error('Expected a JSON array or a seed object with a redlines array');
+      }
+      const repo = repository();
+      let added = 0;
+      let skipped = 0;
+      for (const item of items) {
+        try {
+          await repo.addRedline({
+            id: item.id.toUpperCase(),
+            title: item.title,
+            rule: item.rule,
+            enforcement: (item.enforcement as 'absolute' | 'approval-required') || 'absolute',
+          });
+          added++;
+        } catch {
+          skipped++;
+        }
+      }
+      console.log(`\n  已导入 ${added} 条红线，跳过 ${skipped} 条重复。\n`);
     });
+;
 }

@@ -1,6 +1,6 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -46,6 +46,45 @@ test('project init writes to its path argument, not the global root', async () =
   });
 });
 
+test('workflow CLI uses Simplified Chinese guidance while preserving commands', async () => {
+  await fixture(async (root) => {
+    const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'bootstrap', '001-chinese-output']);
+    assert.match(stdout, /已初始化 Feature：001-chinese-output/);
+    assert.match(stdout, /Sovei 工作流状态/);
+    assert.match(stdout, /下一步命令：\s+sovei workflow load 001-chinese-output/);
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output', '--complete']);
+    const grill = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'grill', '001-chinese-output']);
+    assert.match(grill.stdout, /grill 已触发：CLI 负责生成决策提示契约/);
+    assert.match(grill.stdout, /区分事实核实.*范围性决策.*decision-log\.md.*--complete/);
+  });
+});
+
+test('static Sovei Markdown templates use Simplified Chinese review headings', async () => {
+  const templateDir = join(import.meta.dirname, '..', '..', '..', 'harness', 'templates', 'sovei');
+  const expectedHeadings = {
+    'change-manifest-template.md': '# 变更清单',
+    'convergence-report-template.md': '# 收敛报告',
+    'coverage-matrix-template.md': '# 覆盖矩阵',
+    'decision-log-template.md': '# 决策日志',
+    'evidence-template.md': '# 验证证据',
+    'learning-report-template.md': '# 学习报告',
+    'plan-template.md': '# 实施计划',
+    'scope-template.md': '# 影响范围',
+    'spec-template.md': '# <Feature> 功能规格',
+    'sync-report-template.md': '# 同步报告',
+    'tasks-template.md': '# 任务清单',
+    'wayfinder-template.md': '# 决策地图',
+    'workflow-history-template.md': '# 工作流历史',
+  };
+  const files = await readdir(templateDir);
+  assert.deepEqual(files.filter((file) => file.endsWith('.md')).sort(), Object.keys(expectedHeadings).sort());
+  for (const [file, heading] of Object.entries(expectedHeadings)) {
+    const content = await readFile(join(templateDir, file), 'utf8');
+    assert.ok(content.startsWith(heading + '\n'));
+    assert.doesNotMatch(content, /^# (Change|Convergence|Coverage|Decision|Verification|Learning|Plan|Scope|Sync|Tasks|Wayfinder|Workflow)/m);
+  }
+});
+
 test('onboard is idempotent for generated candidate knowledge', async () => {
   await fixture(async (root) => {
     await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'existing-app', dependencies: { vue: '^3.0.0' } }), 'utf8');
@@ -60,5 +99,37 @@ test('onboard is idempotent for generated candidate knowledge', async () => {
     assert.equal(second.length, first.length);
     assert.deepEqual(second.map((entry) => entry.id), first.map((entry) => entry.id));
     assert.equal(second[0].lifecycle, 'stable');
+  });
+});
+
+test('onboard reports nested packages while preserving root project identity', async () => {
+  await fixture(async (root) => {
+    await writeFile(join(root, 'package.json'), JSON.stringify({
+      name: 'root-project',
+      description: 'Root authority',
+    }), 'utf8');
+    const packageDir = join(root, 'packages', 'tool');
+    await mkdir(join(packageDir, 'src'), { recursive: true });
+    await writeFile(join(packageDir, 'package.json'), JSON.stringify({
+      name: '@example/tool',
+      type: 'module',
+      bin: { tool: 'dist/cli.js' },
+    }), 'utf8');
+    await writeFile(join(packageDir, 'tsconfig.json'), JSON.stringify({ compilerOptions: {} }), 'utf8');
+    await writeFile(join(packageDir, 'src', 'index.ts'), 'export const tool = true;', 'utf8');
+
+    const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'onboard']);
+
+    assert.match(stdout, /发现的软件包/);
+    assert.match(stdout, /packages\/tool \(@example\/tool\)/);
+    assert.match(stdout, /入口：packages\/tool\/dist\/cli\.js/);
+    const declaration = JSON.parse(await readFile(join(root, 'harness', 'project', 'project.config.json'), 'utf8'));
+    assert.equal(declaration.project.name, 'root-project');
+    assert.equal(declaration.project.description, 'Root authority');
+    assert.equal(declaration.project.techStack.language, 'TypeScript');
+    const codeMap = JSON.parse(await readFile(join(root, 'harness', 'project', 'knowledge', 'code-map.json'), 'utf8'));
+    assert.equal(codeMap[0].lifecycle, 'candidate');
+    assert.match(codeMap[0].content, /packages\/tool \(`@example\/tool`\)/);
+    assert.match(codeMap[0].content, /packages\/tool\/dist\/cli\.js/);
   });
 });

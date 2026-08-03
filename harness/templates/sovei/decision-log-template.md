@@ -1,9 +1,9 @@
-# Decision Log
+# 决策日志
 
-## D-001 <decision>
+## D-001 <决策>
 
-- Context:
-- Decision:
-- Rationale:
-- Rejected alternatives:
-- Status: proposed | accepted | blocked
+- 背景：
+- 决策：
+- 理由：
+- 被拒绝方案：
+- 状态：proposed | accepted | blocked

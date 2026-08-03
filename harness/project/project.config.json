@@ -1,11 +1,30 @@
 {
   "project": {
-    "name": "untitled",
-    "description": "New project - configure me",
-    "techStack": {},
+    "name": "sovei-engine",
+    "description": "Portable TypeScript development workflow and knowledge engine",
+    "techStack": {
+      "framework": "Node.js CLI",
+      "language": "TypeScript",
+      "state": "Event Sourcing + typed JSON",
+      "build": "pnpm + tsc"
+    },
     "started": "2026-07-29"
   },
   "workflow": {
-    "version": "2.0.0"
+    "version": "2.0.0",
+    "stageOrder": [
+      "load",
+      "grill",
+      "wayfind",
+      "spec",
+      "scope",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "verify",
+      "learn",
+      "sync"
+    ]
   }
 }

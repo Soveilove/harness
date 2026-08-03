@@ -1,0 +1,22 @@
+{
+  "id": "D-001",
+  "title": "确认宿主 Agent 边界",
+  "question": "Sovei 与 Codex、Claude Code、CodeBuddy、Trae 各自负责什么，哪些能力禁止重复实现",
+  "type": "task",
+  "interaction": "HITL",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "宿主 Agent 负责推理、对话、编辑和工具执行；Sovei 只提供工作流、版本化知识、检索上下文、治理与证据门禁，禁止实现第二套执行型 Agent",
+  "evidence": [
+    "decision-log.md",
+    "user-approved-boundary"
+  ],
+  "contextPointers": [
+    "packages/sovei-core/src/adapters/registry.ts"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-03T13:16:16.836Z",
+  "updatedAt": "2026-08-03T13:17:13.677Z",
+  "resolvedAt": "2026-08-03T13:17:13.677Z"
+}

@@ -1,8 +1,8 @@
-# Tasks
+# 任务清单
 
-| ID | Ready | Depends On | Scope | Acceptance | Validation |
+| ID | 已就绪 | 依赖 | 范围 | 验收 | 验证 |
 |---|---|---|---|---|---|
 
-## Frontier
+## 就绪前沿
 
-## Deferred
+## 延期项

@@ -1,15 +1,15 @@
-# Scope
+# 影响范围
 
-## Entry And Roles
+## 入口与角色
 
-## State And Data Flow
+## 状态与数据流
 
-## I/O And Contracts
+## I/O 与契约
 
-## Async And Recovery Paths
+## 异步与恢复路径
 
-## Consumers And Compatibility
+## 消费者与兼容性
 
-## Verification Surfaces
+## 验证面
 
-## Candidates And Unknowns
+## 候选项与未知项

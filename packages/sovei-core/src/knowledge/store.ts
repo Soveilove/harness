@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Knowledge Store
  * Inspired by Redux: pure reducer + dispatch + selectors + subscriptions.
  *
@@ -172,7 +172,7 @@ export class KnowledgeStore {
     this.entries.clear();
     const files = await this.storage.list(this.knowledgeDir);
     for (const file of files) {
-      if (!file.endsWith('.json')) continue;
+      if (!file.endsWith('.json') || file.startsWith('.')) continue;
       const content = await this.storage.read(`${this.knowledgeDir}/${file}`);
       if (!content) continue;
       let entries: KnowledgeEntry[];

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Project Commands
  * init     - New project: create structure + seed knowledge based on tech stack
  * onboard  - Existing project: scan codebase, detect stack, bootstrap knowledge
@@ -34,26 +34,26 @@ function generateId(type: string, title: string): string {
 }
 
 function printStack(stack: DetectedStack): void {
-  console.log('  Tech Stack:');
+  console.log('  技术栈：');
   for (const [key, value] of Object.entries(stack)) {
     if (value) console.log('    ' + key + ': ' + value);
   }
 }
 
 export function registerProjectCommands(program: Command): void {
-  const project = program.command('project').description('Project management commands');
+  const project = program.command('project').description('项目管理命令');
 
   // ── init (new project) ──
   project
     .command('init')
-    .argument('<path>', 'Project path')
-    .option('--blank', 'Blank initialization (no seed knowledge)')
-    .option('--name <name>', 'Project name')
-    .option('--framework <framework>', 'Tech stack framework (vue/react/svelte/express)')
-    .option('--language <language>', 'Tech stack language (typescript/javascript)')
-    .option('--state <state>', 'State management (pinia/redux/zustand)')
-    .option('--build <build>', 'Build tool (vite/webpack)')
-    .option('--force', 'Replace an existing Sovei project declaration')
+    .argument('<path>', '项目路径')
+    .option('--blank', '空白初始化（不写入种子知识）')
+    .option('--name <name>', '项目名称')
+    .option('--framework <framework>', '技术栈框架（vue/react/svelte/express）')
+    .option('--language <language>', '技术栈语言（typescript/javascript）')
+    .option('--state <state>', '状态管理（pinia/redux/zustand）')
+    .option('--build <build>', '构建工具（vite/webpack）')
+    .option('--force', '替换现有 Sovei 项目声明')
     .action(async (targetPath: string, opts: {
       blank?: boolean; name?: string; framework?: string; language?: string; state?: string; build?: string; force?: boolean;
     }) => {
@@ -69,7 +69,7 @@ export function registerProjectCommands(program: Command): void {
         build: opts.build,
       };
 
-      console.log('\n  Initializing Sovei project at: ' + resolvedTarget + '\n');
+      console.log('\n  正在初始化 Sovei 项目：' + resolvedTarget + '\n');
 
       // Create directory structure
       const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/templates'];
@@ -79,7 +79,7 @@ export function registerProjectCommands(program: Command): void {
       }
       for (const dir of dirs) {
         await storage.write(dir + '/.gitkeep', '');
-        console.log('  · Created ' + dir + '/');
+        console.log('  · 已创建 ' + dir + '/');
       }
 
       // Create project.config.json
@@ -88,7 +88,7 @@ export function registerProjectCommands(program: Command): void {
         workflow: { version: '2.0.0' },
       };
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
-      console.log('  · Created harness/project/project.config.json');
+      console.log('  · 已创建 harness/project/project.config.json');
 
       // Create knowledge files
       const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
@@ -96,12 +96,12 @@ export function registerProjectCommands(program: Command): void {
         const knowledgePath = 'harness/project/knowledge/' + type + '.json';
         if (!(await storage.exists(knowledgePath))) {
           await storage.write(knowledgePath, '[]');
-          console.log('  · Created ' + knowledgePath);
+          console.log('  · 已创建 ' + knowledgePath);
         }
       }
       if (!(await storage.exists('harness/project/governance/redlines.json'))) {
         await storage.write('harness/project/governance/redlines.json', '[]');
-        console.log('  · Created harness/project/governance/redlines.json');
+        console.log('  · 已创建 harness/project/governance/redlines.json');
       }
 
       // Seed knowledge based on tech stack (unless --blank)
@@ -118,20 +118,20 @@ export function registerProjectCommands(program: Command): void {
             }
           }
           await knowledgeStore.persist();
-          console.log('  · Seeded ' + seeds.length + ' knowledge entries based on tech stack');
+          console.log('  · 已按技术栈写入 ' + seeds.length + ' 条种子知识');
           printStack(stack);
         }
       }
 
-      console.log('\n  ✓ Project initialized.\n');
-      console.log('  Next steps:');
-      console.log('    1. Edit harness/project/project.config.json');
+      console.log('\n  ✓ 项目已初始化。\n');
+      console.log('  后续步骤：');
+      console.log('    1. 编辑 harness/project/project.config.json');
       if (!opts.blank && stack.framework) {
-        console.log('    2. Review seed knowledge: sovei knowledge list');
-        console.log('    3. Start a feature: sovei workflow bootstrap 001-my-feature');
+        console.log('    2. 审查种子知识：sovei knowledge list');
+        console.log('    3. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       } else {
-        console.log('    2. Add knowledge: sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
-        console.log('    3. Start a feature: sovei workflow bootstrap 001-my-feature');
+        console.log('    2. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
+        console.log('    3. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       }
       console.log('');
     });
@@ -139,46 +139,59 @@ export function registerProjectCommands(program: Command): void {
   // ── onboard (existing project) ──
   project
     .command('onboard')
-    .description('Scan an existing project and bootstrap knowledge')
-    .option('--depth <n>', 'Max scan depth', '4')
+    .description('扫描已有项目并初始化知识')
+    .option('--depth <n>', '最大扫描深度', '4')
     .action(async (opts: { depth: string }) => {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
       const maxDepth = parseInt(opts.depth, 10) || 4;
 
-      console.log('\n  Scanning project for onboarding...\n');
+      console.log('\n  正在扫描项目以完成初始化……\n');
 
       // Run scanner
       const scanner = new ProjectScanner(storage);
       const result = await scanner.scan(maxDepth);
 
       // Print detected info
-      console.log('  ── Detected Tech Stack ──');
+      console.log('  ── 检测到的技术栈 ──');
       printStack(result.techStack);
       console.log('');
 
-      console.log('  ── Entry Points ──');
+      console.log('  ── 发现的软件包 ──');
+      if (result.packages.length > 0) {
+        for (const pkg of result.packages) {
+          console.log('    · ' + pkg.path + (pkg.name ? ' (' + pkg.name + ')' : ''));
+          for (const entry of pkg.entryPoints) {
+            console.log('      入口：' + entry);
+          }
+        }
+      } else {
+        console.log('    （未检测到）');
+      }
+      console.log('');
+
+      console.log('  ── 入口 ──');
       if (result.entryPoints.length > 0) {
         for (const entry of result.entryPoints) {
           console.log('    · ' + entry);
         }
       } else {
-        console.log('    (none detected)');
+        console.log('    （未检测到）');
       }
       console.log('');
 
-      console.log('  ── Detected Patterns ──');
+      console.log('  ── 检测到的模式 ──');
       if (result.detectedPatterns.length > 0) {
         for (const pattern of result.detectedPatterns) {
           console.log('    · ' + pattern);
         }
       } else {
-        console.log('    (none detected)');
+        console.log('    （未检测到）');
       }
       console.log('');
 
-      console.log('  ── Directory Structure (depth ' + maxDepth + ') ──');
+      console.log('  ── 目录结构（深度 ' + maxDepth + '）──');
       for (const node of result.directoryMap.slice(0, 50)) {
         const indent = '    ' + '  '.repeat(node.depth);
         const icon = node.type === 'dir' ? '[D]' : '[F]';
@@ -186,7 +199,7 @@ export function registerProjectCommands(program: Command): void {
         console.log(indent + icon + ' ' + node.path.split('/').pop() + note);
       }
       if (result.directoryMap.length > 50) {
-        console.log('    ... and ' + (result.directoryMap.length - 50) + ' more');
+        console.log('    ……另有 ' + (result.directoryMap.length - 50) + ' 项');
       }
       console.log('');
 
@@ -205,7 +218,12 @@ export function registerProjectCommands(program: Command): void {
         workflow: currentConfig.workflow,
       };
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
-      console.log('  · Updated harness/project/project.config.json');
+      console.log('  · 已更新 harness/project/project.config.json');
+      // Ensure governance infrastructure exists (same as project init)
+      if (!(await storage.exists('harness/project/governance/redlines.json'))) {
+        await storage.write('harness/project/governance/redlines.json', '[]');
+        console.log('  · 已创建 harness/project/governance/redlines.json');
+      }
 
       // Write generated knowledge entries
       const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
@@ -227,15 +245,69 @@ export function registerProjectCommands(program: Command): void {
         }
       }
       await knowledgeStore.persist();
-      console.log('  · Added ' + added + ', refreshed ' + updated + ', preserved ' + preserved + ' reviewed entries');
+      console.log('  · 已新增 ' + added + ' 条，刷新 ' + updated + ' 条，保留 ' + preserved + ' 条已审核知识');
+      // Write candidate redlines to seed file for human review (never auto-activate)
+      const seedPath = 'harness/project/governance/redlines-seed.json';
+      const seedData = {
+        schemaVersion: 1 as const,
+        generatedAt: new Date().toISOString(),
+        scannerVersion: '2.1.0-dev.2',
+        redlines: (result.candidateRedlines ?? []).map((rl) => ({
+          id: rl.id,
+          title: rl.title,
+          rule: rl.rule,
+          enforcement: rl.enforcement,
+          source: rl.source,
+          category: rl.category,
+          confidence: rl.confidence,
+        })),
+      };
+      await storage.write(seedPath, JSON.stringify(seedData, null, 2));
+      console.log('  · 已写入 ' + seedPath + '（' + seedData.redlines.length + ' 条候选，未激活）');
 
-      console.log('\n  ✓ Onboarding complete.\n');
-      console.log('  Generated knowledge is all candidate lifecycle.');
-      console.log('  Review and promote as you verify patterns:');
+      // Display candidate redlines grouped by category and confidence
+      if (result.candidateRedlines && result.candidateRedlines.length > 0) {
+        console.log('');
+        console.log('  · 检测到 ' + result.candidateRedlines.length + ' 条候选业务红线：');
+        console.log('');
+        // Group by confidence then category
+        const byConfidence: Record<string, typeof result.candidateRedlines> = { high: [], medium: [], low: [] };
+        for (const rl of result.candidateRedlines) {
+          (byConfidence[rl.confidence] ||= []).push(rl);
+        }
+        for (const conf of ['high', 'medium', 'low']) {
+          const items = byConfidence[conf];
+          if (!items || !items.length) continue;
+          console.log('    [' + conf + ' 置信度]');
+          for (const rl of items.slice(0, 8)) {
+            console.log('      ' + rl.category + ': ' + rl.title);
+            console.log('        规则：' + rl.rule.slice(0, 100));
+            console.log('        来源：' + rl.source);
+          }
+          if (items.length > 8) {
+            console.log('      ……另有 ' + (items.length - 8) + ' 条');
+          }
+          console.log('');
+        }
+        console.log('  审查并导入：');
+        console.log('    sovei governance redline list');
+        console.log('    sovei governance redline add <id> --title "..." --rule "..."');
+        console.log('    sovei governance redline import <file>');
+        console.log('');
+      } else {
+        console.log('');
+        console.log('  未检测到候选业务红线，可手动添加：');
+        console.log('    sovei governance redline add BILLING_REQUIRED --title "..." --rule "..."');
+        console.log('');
+      }
+
+      console.log('\n  ✓ 项目初始化扫描完成。\n');
+      console.log('  所有生成知识均为 candidate 生命周期。');
+      console.log('  审查并在验证模式后晋级：');
       console.log('    sovei knowledge list --lifecycle candidate');
       console.log('    sovei knowledge promote <id> --feature <feature> --description "verified"');
       console.log('');
-      console.log('  Start tracking work:');
+      console.log('  开始跟踪工作：');
       console.log('    sovei workflow bootstrap 001-first-feature');
       console.log('');
     });
@@ -243,40 +315,40 @@ export function registerProjectCommands(program: Command): void {
   // ── status ──
   project
     .command('status')
-    .description('Show current project status')
+    .description('显示当前项目状态')
     .action(async () => {
       const storage = getStorage();
       const config = getConfig();
 
-      console.log('\n  Sovei Project Status');
+      console.log('\n  Sovei 项目状态');
       console.log('  ────────────────────────');
-      console.log('  Root:        ' + config.rootPath);
+      console.log('  根目录：      ' + config.rootPath);
 
       // Read project.config.json for real project info
       const projContent = await storage.read('harness/project/project.config.json');
       if (projContent) {
         try {
           const proj = JSON.parse(projContent);
-          console.log('  Project:     ' + proj.project.name);
-          console.log('  Description: ' + proj.project.description);
+          console.log('  项目：        ' + proj.project.name);
+          console.log('  描述：        ' + proj.project.description);
           const stack = proj.project.techStack || {};
           const stackParts = Object.entries(stack).filter(([, v]) => v).map(([k, v]) => k + '=' + v);
-          console.log('  Tech Stack:  ' + (stackParts.length ? stackParts.join(', ') : '—'));
-          console.log('  Started:     ' + (proj.project.started || '—'));
+          console.log('  技术栈：      ' + (stackParts.length ? stackParts.join(', ') : '—'));
+          console.log('  开始日期：    ' + (proj.project.started || '—'));
         } catch {
-          console.log('  Project:     (invalid config)');
+          console.log('  项目：        （配置无效）');
         }
       } else {
-        console.log('  Project:     (not configured - run "sovei project init" or "sovei project onboard")');
+        console.log('  项目：        （尚未配置，请运行 "sovei project init" 或 "sovei project onboard"）');
       }
-      console.log('  Workflow:    v' + config.workflow.version);
+      console.log('  工作流：      v' + config.workflow.version);
 
       // List specs
       const specs = await storage.list('specs');
       const realSpecs = specs.filter((s) => s !== '.gitkeep');
       if (realSpecs.length > 0) {
         console.log('');
-        console.log('  Active Features:');
+        console.log('  活动 Feature：');
         for (const spec of realSpecs) {
           console.log('    · ' + spec);
         }
@@ -299,11 +371,24 @@ export function registerProjectCommands(program: Command): void {
           } catch { /* skip */ }
         }
       }
-      console.log('  Knowledge:   ' + totalKnowledge + ' entries');
+      console.log('  知识：        ' + totalKnowledge + ' 条');
       if (totalKnowledge > 0) {
         const parts = Object.entries(byLifecycle).map(([k, v]) => k + '=' + v);
         console.log('               ' + parts.join(', '));
       }
+
+      // Count redlines
+      const redlineContent = await storage.read('harness/project/governance/redlines.json');
+      let activeRedlines = 0;
+      let totalRedlines = 0;
+      if (redlineContent) {
+        try {
+          const redlines = JSON.parse(redlineContent) as any[];
+          totalRedlines = redlines.length;
+          activeRedlines = redlines.filter((r) => r.active).length;
+        } catch { /* skip */ }
+      }
+      console.log('  红线：        ' + activeRedlines + ' 条已启用' + (totalRedlines > activeRedlines ? '（' + (totalRedlines - activeRedlines) + ' 条未启用）' : '') + (activeRedlines === 0 ? '；可运行 sovei governance redline add 添加' : ''));
 
       // Check workspaces
       const wsContent = await storage.read('harness/project/workspaces.json');

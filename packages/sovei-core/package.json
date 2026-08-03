@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "@soveilove/sovei",
-  "version": "2.1.0-dev.1",
-  "description": "Sovei Workflow Engine - portable development SOP with typed knowledge management",
+  "version": "2.1.0-dev.2",
+  "description": "Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",

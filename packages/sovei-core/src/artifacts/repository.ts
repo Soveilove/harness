@@ -56,7 +56,7 @@ export class ArtifactRepository {
       const content = await this.read(name);
       if (!content?.trim()) {
         missing.push(name);
-      } else if (content.includes('AI agent: replace this template with actual content')) {
+      } else if (content.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
         placeholders.push(name);
       }
     }

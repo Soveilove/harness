@@ -1,0 +1,23 @@
+{
+  "id": "D-005",
+  "title": "确定发布边界",
+  "question": "下一个开发版必须交付哪些可验证能力，哪些外部模型与向量实现延期",
+  "type": "task",
+  "interaction": "HITL",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "下个开发版交付红线候选落盘、知识快照清单、确定性 context build/status、四宿主能力画像、Provider 接口、中文文档和测试；具体向量数据库、云 LLM SDK、自动 IDE 安装与发布操作延期",
+  "evidence": [
+    "decision-log.md",
+    "current-source-inventory"
+  ],
+  "contextPointers": [
+    "packages/sovei-core/package.json",
+    "README.md"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-03T13:16:19.544Z",
+  "updatedAt": "2026-08-03T13:17:19.294Z",
+  "resolvedAt": "2026-08-03T13:17:19.294Z"
+}

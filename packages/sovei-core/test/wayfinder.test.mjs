@@ -129,6 +129,9 @@ test('small efforts can explicitly skip Wayfinder', async () => {
   const path = 'specs/003-small';
   await repository.skip(path, '003-small', 'Single-file correction with no unresolved decisions.', 'planner');
   assert.equal((await repository.validateCompletion(path)).valid, true);
+  const markdown = await storage.read(`${path}/wayfinder.md`);
+  assert.match(markdown, /^# 决策地图/m);
+  assert.match(markdown, /无需建立决策地图/);
   await assert.rejects(repository.addTicket(path, {
     title: 'Unexpected ticket', question: 'Should not exist?', type: 'task', interaction: 'AFK', blockedBy: [],
   }, 'planner'), /skipped map cannot accept tickets/);

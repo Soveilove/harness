@@ -1,0 +1,29 @@
+[
+  {
+    "id": "AUTH_REQUIRED",
+    "title": "Protected actions require authentication",
+    "rule": "All purchase and account mutations require authenticated identity",
+    "enforcement": "absolute",
+    "active": true,
+    "createdAt": "2026-08-03T08:18:52.584Z",
+    "updatedAt": "2026-08-03T08:18:52.584Z"
+  },
+  {
+    "id": "BILLING_CONTRACT",
+    "title": "Billing contract changes require approval",
+    "rule": "Price, renewal, refund, and entitlement semantics require business approval",
+    "enforcement": "approval-required",
+    "active": true,
+    "createdAt": "2026-08-03T08:18:52.589Z",
+    "updatedAt": "2026-08-03T08:18:52.589Z"
+  },
+  {
+    "id": "NO_SILENT_DATA_LOSS",
+    "title": "No silent data loss on upgrade",
+    "rule": "CLI upgrades must not silently rewrite project data in harness/project/ or specs/",
+    "enforcement": "absolute",
+    "active": true,
+    "createdAt": "2026-08-03T08:18:52.591Z",
+    "updatedAt": "2026-08-03T08:18:52.591Z"
+  }
+]

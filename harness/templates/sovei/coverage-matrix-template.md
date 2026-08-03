@@ -1,7 +1,7 @@
-# Coverage Matrix
+# 覆盖矩阵
 
-| ID | Requirement / boundary | Status | Evidence |
+| ID | 需求 / 边界 | 状态 | 证据 |
 |---|---|---|---|
-| FR-001 | <requirement> | discovered | <source> |
+| FR-001 | <需求> | discovered | <来源> |
 
-Allowed statuses: `discovered`, `planned`, `implemented`, `verified`, `excluded`, `candidate`.
+允许的机器状态值：`discovered`、`planned`、`implemented`、`verified`、`excluded`、`candidate`。

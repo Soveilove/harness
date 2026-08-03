@@ -1,0 +1,22 @@
+{
+  "id": "D-003",
+  "title": "定义上下文包契约",
+  "question": "确定性知识与可选检索结果如何排序、引用并交付宿主 Agent",
+  "type": "task",
+  "interaction": "HITL",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "context-pack 分 required 与 suggested；required 确定性包含 active redlines、适用 stable rules 和当前 Feature 契约，suggested 使用本地文本评分并携带来源引用与生命周期；语义 Provider 只扩展 suggested",
+  "evidence": [
+    "decision-log.md",
+    "knowledge/store.ts"
+  ],
+  "contextPointers": [
+    "packages/sovei-core/src/knowledge"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-03T13:16:18.318Z",
+  "updatedAt": "2026-08-03T13:17:16.139Z",
+  "resolvedAt": "2026-08-03T13:17:16.139Z"
+}

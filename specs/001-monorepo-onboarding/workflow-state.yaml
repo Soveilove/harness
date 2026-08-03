@@ -1,0 +1,29 @@
+featureId: "001-monorepo-onboarding"
+status: completed
+currentStage: null
+nextStage: null
+completedStages:
+  - "load"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+  - "implement"
+  - "converge"
+  - "verify"
+  - "learn"
+  - "sync"
+reopenedStages:
+  - "grill"
+completedTaskIds:
+  - "TASK-003"
+  - "TASK-004"
+  - "TASK-005"
+activeChangeId: null
+revision: 1
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-03T10:35:55.354Z"

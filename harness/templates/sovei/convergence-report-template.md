@@ -1,8 +1,8 @@
-# Convergence Report
+# 收敛报告
 
-| ID | Classification | Severity | Evidence | Disposition |
+| ID | 分类 | 严重度 | 证据 | 处置 |
 |---|---|---|---|---|
 
-## Added Tasks
+## 新增任务
 
-## Open Findings
+## 未关闭发现

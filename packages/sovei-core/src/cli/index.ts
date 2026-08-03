@@ -1,8 +1,10 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerArchitectureCommands } from './commands/architecture.js';
+import { registerContextCommands } from './commands/context.js';
+import { registerAgentCommands } from './commands/agent.js';
 import { registerKnowledgeCommands } from './commands/knowledge.js';
 import { registerProjectCommands } from './commands/project.js';
 import { registerWorkflowCommands } from './commands/workflow.js';
@@ -17,7 +19,7 @@ const program = new Command();
 
 program
   .name('sovei')
-  .description('Sovei Workflow Engine - Portable development SOP')
+  .description('Sovei 工作流引擎 - 可移植开发 SOP')
   .version(packageJson.version)
   .option('--root <path>', 'Workspace root path', process.cwd());
 
@@ -32,9 +34,11 @@ registerWorkspaceCommands(program);
 registerGovernanceCommands(program);
 registerWayfinderCommands(program);
 registerArchitectureCommands(program);
+registerContextCommands(program);
+registerAgentCommands(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`\n  Error: ${message}\n`);
+  console.error(`\n  错误：${message}\n`);
   process.exitCode = 1;
 });

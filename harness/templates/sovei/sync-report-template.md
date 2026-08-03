@@ -1,8 +1,8 @@
-# Sync Report
+# 同步报告
 
-| Target | Authorized | Before | Result | After | Protected Paths |
+| 目标 | 已授权 | 同步前 | 结果 | 同步后 | 受保护路径 |
 |---|---|---|---|---|---|
 
-## Skipped Targets
+## 跳过目标
 
-## Failures And Follow-up
+## 失败与后续处理

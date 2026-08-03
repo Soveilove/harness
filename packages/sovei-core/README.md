@@ -1,13 +1,10 @@
-# Sovei
+﻿# Sovei
 
-Sovei is a portable TypeScript workflow engine for development SOPs, typed
-project knowledge, decision mapping, material change control, and evolutionary
-architecture governance.
+Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、决策地图、重大变更控制和演进式架构治理。
 
-This package is currently published on the `next` channel for Sovei 2.1 field
-testing. It is not yet a stable release.
+当前通过 npm `next` 通道发布 Sovei 2.1 开发版，用于实地试用，尚未进入稳定发行。
 
-## Install
+## 安装
 
 ```bash
 pnpm add --global @soveilove/sovei@next
@@ -15,17 +12,16 @@ sovei --version
 sovei --help
 ```
 
-## Workflow
+## 工作流
 
-Each invocation executes one stage:
+每次调用只执行一个阶段：
 
 ```text
 load -> grill -> wayfind -> spec -> scope -> plan -> tasks -> implement
 -> converge -> verify -> learn -> sync
 ```
 
-Project data stays in `harness/project/` and Feature artifacts stay in
-`specs/`. Installing or upgrading the CLI must not silently rewrite either.
+项目数据保存在 `harness/project/`，Feature 产物保存在 `specs/`。安装或升级 CLI 只替换工具壳，不会静默重写项目数据。
 
-Source and development documentation:
+源码与开发文档：
 https://github.com/Soveilove/harness

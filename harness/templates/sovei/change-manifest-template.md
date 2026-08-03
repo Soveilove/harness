@@ -1,11 +1,11 @@
-# Change Manifest
+# 变更清单
 
-## Task
+## 任务
 
-## Changed Files
+## 变更文件
 
-## Behavioral Contract
+## 行为契约
 
-## Validation
+## 验证
 
-## Remaining Work
+## 剩余工作

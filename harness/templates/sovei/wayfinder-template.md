@@ -1,14 +1,14 @@
-# Wayfinder
+# 决策地图
 
-## Destination
+## 目标
 
-## Decision Tickets
+## 决策票据
 
-| ID | Decision | Depends On | Status | Evidence |
+| ID | 决策 | 依赖 | 状态 | 证据 |
 |---|---|---|---|---|
 
-## Frontier
+## 决策前沿
 
-## Unknowns
+## 未知项
 
-## Out Of Scope
+## 范围外

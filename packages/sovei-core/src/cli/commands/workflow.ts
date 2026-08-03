@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Workflow Commands
  * 12 stage commands + bootstrap + reopen + status + list-stages
  * Each stage executes exactly one step and reports the next command.
@@ -25,51 +25,51 @@ function getEngine(): WorkflowEngine {
 function printState(state: any): void {
   console.log('');
   console.log('  ┌──────────────────────────────────────┐');
-  console.log('  │  Sovei Workflow Status                │');
+  console.log('  │  Sovei 工作流状态                     │');
   console.log('  └──────────────────────────────────────┘');
-  console.log('  Feature:      ' + state.featureId);
-  console.log('  Status:       ' + state.status);
-  console.log('  Revision:     ' + state.revision);
-  console.log('  Risk Level:   ' + state.riskLevel);
-  console.log('  Completed:    [' + state.completedStages.join(', ') + ']');
-  console.log('  Current:      ' + (state.currentStage || '—'));
-  console.log('  Next:         ' + (state.nextStage || '—'));
+  console.log('  Feature：     ' + state.featureId);
+  console.log('  状态：        ' + state.status);
+  console.log('  revision：    ' + state.revision);
+  console.log('  风险等级：    ' + state.riskLevel);
+  console.log('  已完成：      [' + state.completedStages.join(', ') + ']');
+  console.log('  当前阶段：    ' + (state.currentStage || '—'));
+  console.log('  下一阶段：    ' + (state.nextStage || '—'));
   if (state.reopenedStages.length > 0) {
-  console.log('  Reopened:     [' + state.reopenedStages.join(', ') + ']');
+  console.log('  已重开：      [' + state.reopenedStages.join(', ') + ']');
   }
   if (state.completedTaskIds?.length > 0) {
-    console.log('  Tasks done:   [' + state.completedTaskIds.join(', ') + ']');
+    console.log('  已完成任务：  [' + state.completedTaskIds.join(', ') + ']');
   }
   if (state.activeChangeId) {
-    console.log('  Active change: ' + state.activeChangeId);
+    console.log('  当前变更：    ' + state.activeChangeId);
   }
   if (state.blockers.length > 0) {
-    console.log('  Blockers:     ' + state.blockers.join('; '));
+    console.log('  阻塞项：      ' + state.blockers.join('; '));
   }
-  console.log('  Updated:      ' + state.updatedAt);
+  console.log('  更新时间：    ' + state.updatedAt);
   console.log('');
 }
 
 function printNextCommand(state: any, feature: string): void {
   if (state.currentStage && state.status !== 'completed') {
-    console.log('  Next command:  sovei workflow ' + state.currentStage + ' ' + feature + '\n');
+    console.log('  下一步命令：  sovei workflow ' + state.currentStage + ' ' + feature + '\n');
   } else if (state.status === 'completed') {
-    console.log('  ✓ Workflow completed.\n');
+    console.log('  ✓ 工作流已完成。\n');
   }
 }
 
 export function registerWorkflowCommands(program: Command): void {
-  const workflow = program.command('workflow').description('Workflow stage commands');
+  const workflow = program.command('workflow').description('工作流阶段命令');
 
   // ── bootstrap ──
   workflow
     .command('bootstrap')
-    .argument('<feature>', 'Feature ID to create')
-    .description('Create a new feature with initial workflow state')
+    .argument('<feature>', '要创建的 Feature ID')
+    .description('创建带初始工作流状态的新 Feature')
     .action(async (feature: string) => {
       const engine = getEngine();
       const state = await engine.bootstrap(feature);
-      console.log('\n  ✓ Bootstrapped feature: ' + feature + '\n');
+      console.log('\n  ✓ 已初始化 Feature：' + feature + '\n');
       printState(state);
       printNextCommand(state, feature);
     });
@@ -77,7 +77,7 @@ export function registerWorkflowCommands(program: Command): void {
   // ── status ──
   workflow
     .command('status')
-    .argument('<feature>', 'Feature ID (e.g. 001-my-feature)')
+    .argument('<feature>', 'Feature ID（例如 001-my-feature）')
     .action(async (feature: string) => {
       const engine = getEngine();
       const state = await engine.getState(feature);
@@ -91,8 +91,8 @@ export function registerWorkflowCommands(program: Command): void {
     workflow
       .command(stageName)
       .argument('<feature>', 'Feature ID')
-      .option('--complete', 'Validate artifacts and complete the stage')
-      .option('--task <id>', 'Selected task ID for the implement stage')
+      .option('--complete', '校验产物并完成该阶段')
+      .option('--task <id>', 'implement 阶段选择的任务 ID')
       .description(stage.description)
       .action(async (feature: string, opts: { complete?: boolean; task?: string }) => {
         const engine = getEngine();
@@ -104,8 +104,8 @@ export function registerWorkflowCommands(program: Command): void {
             ? await engine.completeTask(feature, opts.task)
             : await engine.completeStage(feature, stageName);
           const message = stageName === 'implement' && opts.task
-            ? `Task '${opts.task}' completed; implement stage remains active.`
-            : `Stage '${stageName}' completed.`;
+            ? `任务 '${opts.task}' 已完成；implement 阶段继续保持活动。`
+            : `阶段 '${stageName}' 已完成。`;
           console.log('\n  ✓ ' + message + '\n');
           printState(state);
           printNextCommand(state, feature);
@@ -115,22 +115,25 @@ export function registerWorkflowCommands(program: Command): void {
           throw new Error("implement preparation requires --task <id>");
         }
         const result = await engine.prepareStage(feature, stageName);
-        console.log('\n  Prepared stage \'' + stageName + '\'. No workflow state was advanced.\n');
-        if (opts.task) console.log('  Selected task: ' + opts.task + '\n');
+        console.log('\n  已准备阶段 \'' + stageName + '\'；工作流状态未推进。\n');
+        if (opts.task) console.log('  已选择任务：' + opts.task + '\n');
+        if (stageName === 'grill') {
+          console.log('  grill 已触发：CLI 负责生成决策提示契约；AI/IDE 应区分事实核实、可推断决策与范围性决策，将结果记录到 decision-log.md，再运行 --complete。范围性决策逐个提问并附推荐答案。\n');
+        }
         if (result.artifactsWritten.length > 0) {
-          console.log('  Artifacts written:');
+          console.log('  已写入产物：');
           for (const a of result.artifactsWritten) {
             console.log('    · ' + a);
           }
         }
         if (result.prompt) {
           console.log('');
-          console.log('  ── Prompt Contract ──');
+          console.log('  ── 提示契约 ──');
           console.log(result.prompt);
         }
         const state = await engine.getState(feature);
         printState(state);
-        console.log('  Complete with: sovei workflow ' + stageName + ' ' + feature + ' --complete' + (opts.task ? ' --task ' + opts.task : '') + '\n');
+        console.log('  完成命令：sovei workflow ' + stageName + ' ' + feature + ' --complete' + (opts.task ? ' --task ' + opts.task : '') + '\n');
       });
   }
 
@@ -191,18 +194,18 @@ export function registerWorkflowCommands(program: Command): void {
   // ── list-stages ──
   workflow
     .command('list-stages')
-    .description('List all registered workflow stages')
+    .description('列出所有已注册的工作流阶段')
     .action(() => {
-      console.log('\n  Sovei Workflow Stages:');
+      console.log('\n  Sovei 工作流阶段：');
       console.log('  ────────────────────────────────────────────');
       for (const name of STAGE_NAMES) {
         const stage = stageRegistry.get(name);
         const req = stage.contract.requiredArtifacts.length > 0
-          ? 'requires: ' + stage.contract.requiredArtifacts.join(', ')
-          : 'requires: (none)';
+          ? '依赖产物：' + stage.contract.requiredArtifacts.join(', ')
+          : '依赖产物：（无）';
         const prod = stage.contract.producesArtifacts.length > 0
-          ? 'produces: ' + stage.contract.producesArtifacts.join(', ')
-          : 'produces: (none)';
+          ? '生成产物：' + stage.contract.producesArtifacts.join(', ')
+          : '生成产物：（无）';
         console.log('  ' + name.padEnd(12) + ' ' + stage.description);
         console.log('  ' + ' '.repeat(12) + ' ' + req);
         console.log('  ' + ' '.repeat(12) + ' ' + prod);

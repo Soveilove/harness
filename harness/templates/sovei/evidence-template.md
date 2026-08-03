@@ -1,10 +1,10 @@
-# Verification Evidence
+# 验证证据
 
-| Scenario | Evidence Type | Command/Journey | Result | Evidence Location |
+| 场景 | 证据类型 | 命令 / 流程 | 结果 | 证据位置 |
 |---|---|---|---|---|
 
-## Requirement Verdict
+## 需求结论
 
-## Engineering Verdict
+## 工程结论
 
-## Limitations
+## 限制

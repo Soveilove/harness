@@ -1,6 +1,6 @@
-# Learning Report
+# 学习报告
 
-| Observation | Classification | Evidence | Scope | Proposed Destination |
+| 观察 | 分类 | 证据 | 范围 | 建议目标 |
 |---|---|---|---|---|
 
-## Manual Review Required
+## 需要人工审查

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "001-monorepo-onboarding",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "Bounded scanner defect: repository evidence, compatibility constraints, and verification fixtures are resolved in decision-log.md",
+  "revision": 0,
+  "updatedAt": "2026-08-03T08:52:35.856Z",
+  "ticketIndex": [],
+  "fog": []
+}

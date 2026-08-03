@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @sovei/core - Sovei Workflow Engine
  * Portable development SOP with typed knowledge management.
  *
@@ -53,3 +53,11 @@ export * from './change-control/index.js';
 
 // Large-effort decision maps
 export * from './wayfinder/index.js';
+
+
+// Context & Knowledge Runtime
+export * from './context/builder.js';
+export * from './context/snapshot.js';
+export { adapterRegistry } from './adapters/registry.js';
+export type { IDEAdapter, AdapterCapabilities } from './adapters/registry.js';
+export type { EmbeddingProvider, LLMProvider, ScoredItem } from './providers/contracts.js';

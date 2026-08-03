@@ -109,9 +109,9 @@ test('applying a reviewed change archives stale artifacts and reopens the earlie
   );
 
   const prepared = await engine.prepareStage(featureId, 'spec');
-  assert.match(prepared.prompt, new RegExp(`Active change: ${request.id}`));
-  assert.match(prepared.prompt, /history\/.*superseded evidence/);
-  assert.match(await storage.read(`${featurePath}/spec.md`), /replace this template/);
+  assert.match(prepared.prompt, new RegExp(`当前变更：${request.id}`));
+  assert.match(prepared.prompt, /history\/.*已失效证据/);
+  assert.match(await storage.read(`${featurePath}/spec.md`), /请依据下方提示契约/);
 });
 
 test('draft change remains blocked until all active redlines and affected surfaces are reviewed', async () => {
@@ -172,5 +172,5 @@ test('pending material change freezes ordinary workflow until applied or cancell
   const cancelled = await engine.cancelChange('006-freeze', request.id, 'Product retained the original direction');
   assert.equal(cancelled.status, 'cancelled');
   const prepared = await engine.prepareStage('006-freeze', 'load');
-  assert.match(prepared.prompt, /Only current top-level Feature artifacts are authoritative/);
+  assert.match(prepared.prompt, /仅当前顶层 Feature 产物具有权威性/);
 });
