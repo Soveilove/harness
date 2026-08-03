@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerArchitectureCommands } from './commands/architecture.js';
 import { registerKnowledgeCommands } from './commands/knowledge.js';
@@ -10,12 +11,14 @@ import { registerGovernanceCommands } from './commands/governance.js';
 import { registerWayfinderCommands } from './commands/wayfinder.js';
 import { bootstrap } from '../providers/bootstrap.js';
 
+const require = createRequire(import.meta.url);
+const packageJson = require('../../package.json') as { version: string };
 const program = new Command();
 
 program
   .name('sovei')
   .description('Sovei Workflow Engine - Portable development SOP')
-  .version('2.1.0')
+  .version(packageJson.version)
   .option('--root <path>', 'Workspace root path', process.cwd());
 
 program.hook('preAction', (command) => {

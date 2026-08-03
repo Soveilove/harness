@@ -1,20 +1,37 @@
 {
-  "name": "@sovei/core",
-  "version": "2.1.0",
-  "private": true,
+  "name": "@soveilove/sovei",
+  "version": "2.1.0-dev.1",
   "description": "Sovei Workflow Engine - portable development SOP with typed knowledge management",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Soveilove/harness.git",
+    "directory": "packages/sovei-core"
+  },
+  "homepage": "https://github.com/Soveilove/harness#readme",
+  "bugs": {
+    "url": "https://github.com/Soveilove/harness/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
   },
+  "files": [
+    "dist"
+  ],
   "bin": {
-    "sovei": "./dist/cli/index.js"
+    "sovei": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli/index.ts",
     "test": "pnpm run build && node --test test/*.test.mjs",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "prepack": "pnpm run check && pnpm test"
   },
   "dependencies": {
     "commander": "^12.1.0",

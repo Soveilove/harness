@@ -57,6 +57,37 @@ node packages/sovei-core/dist/cli/index.js workflow status 001-my-feature
 node packages/sovei-core/dist/cli/index.js workflow reopen 001-my-feature --target scope --reason "发现遗漏"
 ```
 
+## 安装 2.1 开发发行版
+
+2.1 阶段通过 npm 的 `next` 通道安装真实 CLI，用于持续试用和发现升级问题。
+开发版本使用 `2.1.0-dev.N`，稳定前不占用正式 `2.1.0`。打包时会自动执行类型检查、
+构建和全量测试，安装包只包含 `dist`、包级 README 与 npm 必需元数据。
+
+```bash
+pnpm add --global @soveilove/sovei@next
+sovei --version
+sovei --help
+```
+
+开发过程中修复问题后发布下一个 `2.1.0-dev.N`，再执行同一条全局安装命令即可升级。
+正式发行前再冻结 `2.1.0`、补齐数据迁移并按 SemVer 切换到 `latest` 标签。
+安装或升级 CLI 只替换工具壳，不得静默修改 `harness/project/`、`specs/` 或其他项目数据。
+
+```bash
+# 开发版递增：2.1.0-dev.1 -> 2.1.0-dev.2
+npm --prefix packages/sovei-core version prerelease --preid=dev --no-git-tag-version
+npm --prefix packages/sovei-core publish --access public --tag next
+
+# 候选版与正式版必须显式指定版本和标签
+npm --prefix packages/sovei-core version 2.1.0-rc.1 --no-git-tag-version
+npm --prefix packages/sovei-core publish --access public --tag next
+npm --prefix packages/sovei-core version 2.1.0 --no-git-tag-version
+npm --prefix packages/sovei-core publish --access public --tag latest
+```
+
+npm 版本不可覆盖。每次发布前必须提交对应的 `package.json` 版本和验证结果；发布后使用
+`npm view @soveilove/sovei version dist-tags` 核对 registry，再从目标 tag 安装做仓库外烟雾测试。
+
 ## 工作流阶段
 
 Sovei 2.0 共 12 个阶段，每次调用只执行一个：
