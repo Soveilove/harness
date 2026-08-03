@@ -6,7 +6,7 @@
  * All changes go through typed actions. State is persisted as typed JSON.
  */
 
-import type { KnowledgeEntry, KnowledgeType, Lifecycle } from './schemas.js';
+import { KnowledgeEntry as KnowledgeEntrySchema, type KnowledgeEntry, type KnowledgeType, type Lifecycle } from './schemas.js';
 import {
   canTransition,
   MIN_EVIDENCE_COUNT,
@@ -49,13 +49,15 @@ export class KnowledgeStore {
   dispatch(action: KnowledgeAction): void {
     switch (action.type) {
       case 'ADD': {
-        this.entries.set(action.entry.id, action.entry);
+        if (this.entries.has(action.entry.id)) throw new Error(`Knowledge entry already exists: ${action.entry.id}`);
+        const entry = KnowledgeEntrySchema.parse(action.entry);
+        this.entries.set(entry.id, entry);
         break;
       }
       case 'UPDATE': {
         const existing = this.entries.get(action.id);
         if (!existing) throw new Error(`Knowledge entry not found: ${action.id}`);
-        const updated = { ...existing, ...action.patch, updatedAt: new Date().toISOString() };
+        const updated = KnowledgeEntrySchema.parse({ ...existing, ...action.patch, updatedAt: new Date().toISOString() });
         this.entries.set(action.id, updated);
         break;
       }
@@ -82,24 +84,26 @@ export class KnowledgeStore {
               verified: false,
             }]
           : entry.evidence;
-        this.entries.set(action.id, {
+        const promoted = KnowledgeEntrySchema.parse({
           ...entry,
           lifecycle: action.to,
           evidence: newEvidence,
           promotedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        this.entries.set(action.id, promoted);
         break;
       }
       case 'DEPRECATE': {
         const entry = this.entries.get(action.id);
         if (!entry) throw new Error(`Knowledge entry not found: ${action.id}`);
-        this.entries.set(action.id, {
+        const deprecated = KnowledgeEntrySchema.parse({
           ...entry,
           lifecycle: 'deprecated',
           deprecatedReason: action.reason,
           updatedAt: new Date().toISOString(),
         });
+        this.entries.set(action.id, deprecated);
         break;
       }
       case 'DELETE': {
@@ -165,18 +169,23 @@ export class KnowledgeStore {
   }
 
   async load(): Promise<void> {
+    this.entries.clear();
     const files = await this.storage.list(this.knowledgeDir);
     for (const file of files) {
       if (!file.endsWith('.json')) continue;
       const content = await this.storage.read(`${this.knowledgeDir}/${file}`);
       if (!content) continue;
+      let entries: KnowledgeEntry[];
       try {
-        const entries = JSON.parse(content) as KnowledgeEntry[];
-        for (const entry of entries) {
-          this.entries.set(entry.id, entry);
+        entries = KnowledgeEntrySchema.array().parse(JSON.parse(content));
+      } catch (error) {
+        throw new Error(`Invalid knowledge file ${this.knowledgeDir}/${file}: ${(error as Error).message}`);
+      }
+      for (const entry of entries) {
+        if (this.entries.has(entry.id)) {
+          throw new Error(`Duplicate knowledge id '${entry.id}' while loading ${file}`);
         }
-      } catch {
-        // skip invalid files
+        this.entries.set(entry.id, entry);
       }
     }
   }

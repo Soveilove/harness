@@ -3,7 +3,7 @@
  * Default implementation using Node.js fs/promises
  */
 
-import { readFile, writeFile, appendFile, mkdir, unlink, readdir, stat, access } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, unlink, readdir, stat, access, open } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import type { StorageBackend } from './types.js';
 
@@ -26,6 +26,23 @@ export class FilesystemStorage implements StorageBackend {
     const full = this.resolve(filePath);
     await mkdir(dirname(full), { recursive: true });
     await writeFile(full, content, 'utf8');
+  }
+
+  async writeIfAbsent(filePath: string, content: string): Promise<boolean> {
+    const full = this.resolve(filePath);
+    await mkdir(dirname(full), { recursive: true });
+    try {
+      const handle = await open(full, 'wx');
+      try {
+        await handle.writeFile(content, 'utf8');
+      } finally {
+        await handle.close();
+      }
+      return true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
+      throw error;
+    }
   }
 
   async append(filePath: string, content: string): Promise<void> {

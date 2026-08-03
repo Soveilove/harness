@@ -131,12 +131,17 @@ Determine Destination, then build a decision map.
 Distinguish: current decision tickets, blocking relations, frontier,
 unknown zone, and out of scope.
 One session resolves one decision ticket; independent research can parallelize.
+Use the typed Wayfinder commands: chart or skip, ticket add, fog add/graduate,
+frontier, claim, resolve, release, and exclude. Claim before resolving.
+The map is an index; ticket JSON is the single source for decision detail.
 
 ## Output
-wayfinder.md with decision map.
+wayfinder-events.jsonl as source of truth, wayfinder.json as the low-resolution
+index, decision-tickets/*.json for details, and generated wayfinder.md for humans.
 
 ## Stop
 Goal is to eliminate pre-planning unknown decisions, not to implement.
+Complete only when every decision ticket is resolved or excluded and fog is empty.
 `,
     };
   },
@@ -212,11 +217,14 @@ export const scopeStage = defineStage({
       prompt: `# Stage: scope
 
 ## Input
-Valid Spec and current source tree.
+Valid Spec, current source tree, and the latest architecture health snapshot when available.
 
 ## Action
 Trace real entry, state, parameters, I/O, async lifecycle, consumers,
 recovery paths, compatibility paths, and verification surfaces.
+For every touched module, record existing architecture pressure. Do not expand
+the Feature merely because a module is large; escalate only when multiple
+signals (size, churn, coupling, complexity, responsibility) overlap.
 
 ## Output
 scope.md and coverage-matrix.md; mark unsupported claims as 'candidate'.
@@ -310,7 +318,8 @@ one fresh context. Declare dependencies, file/contract surface, acceptance
 criteria, and validation for each task.
 
 ## Output
-tasks.md; do not modify implementation files.
+tasks.md; use stable checklist IDs such as "- [ ] TASK-001: description".
+Do not modify implementation files.
 
 ## Stop
 Reopen plan or scope when a task depends on an unresolved contract or
@@ -394,11 +403,13 @@ export const convergeStage = defineStage({
 
 ## Input
 Spec, Scope, Plan, Tasks, Coverage Matrix, Change Manifest, baseline,
-and current implementation.
+current implementation, and architecture health for touched modules.
 
 ## Action
 Classify each gap as 'missing', 'partial', 'contradicts', or 'unrequested'.
 Append corrective tasks instead of rewriting history.
+Detect whether this Feature increased an existing hotspot, introduced a new
+dependency cycle, or continued adding responsibilities to a candidate module.
 
 ## Output
 convergence-report.md with evidence and disposition for every finding.
@@ -478,11 +489,13 @@ export const learnStage = defineStage({
 
 ## Input
 Decisions, implementation deviations, convergence findings, verification
-evidence, and current Harness knowledge.
+evidence, current Harness knowledge, and architecture health changes.
 
 ## Action
 Classify observations as project-only, candidate/pending, stable promotion
 proposal, or rejected pattern. Never promote a single observation directly to stable.
+When repeated Feature work touches the same hotspot, propose an architecture
+debt entry with evidence instead of silently normalizing the growth.
 
 ## Output
 learning-report.md with source Feature, evidence, scope, and proposed destination.

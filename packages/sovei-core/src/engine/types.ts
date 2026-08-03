@@ -17,6 +17,8 @@ export interface WorkflowState {
   nextStage: string | null;
   completedStages: string[];
   reopenedStages: string[];
+  completedTaskIds: string[];
+  activeChangeId: string | null;
   revision: number;
   riskLevel: RiskLevel;
   blockers: string[];
@@ -27,6 +29,8 @@ export interface WorkflowState {
 export type WorkflowEvent =
   | { type: 'BOOTSTRAP'; featureId: string }
   | { type: 'STAGE_COMPLETE'; stage: string; artifacts: string[] }
+  | { type: 'TASK_COMPLETE'; taskId: string; artifact: string }
+  | { type: 'CHANGE_DECLARED'; changeId: string; target: string; summary: string }
   | { type: 'REOPEN'; target: string; reason: string }
   | { type: 'BLOCK'; reason: string }
   | { type: 'RESUME' };

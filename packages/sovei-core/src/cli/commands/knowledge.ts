@@ -4,9 +4,10 @@
  */
 
 import type { Command } from 'commander';
+import { createHash } from 'node:crypto';
 import { container, TOKENS } from '../../providers/container.js';
 import type { KnowledgeStore } from '../../knowledge/store.js';
-import type { KnowledgeEntry, KnowledgeType, Lifecycle } from '../../knowledge/schemas.js';
+import { KnowledgeType, Lifecycle, type KnowledgeEntry } from '../../knowledge/schemas.js';
 import { getStats, searchEntries, groupByType } from '../../knowledge/selectors.js';
 import { validatePromotion, nextLifecycle } from '../../knowledge/lifecycle.js';
 
@@ -16,7 +17,7 @@ function getStore(): KnowledgeStore {
 
 function generateId(type: string, title: string): string {
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const hash = Date.now().toString(36).slice(-6);
+  const hash = createHash('sha1').update(`${type}\0${title}`).digest('hex').slice(0, 8);
   return `${type}-${slug}-${hash}`;
 }
 
@@ -71,22 +72,21 @@ export function registerKnowledgeCommands(program: Command): void {
     .requiredOption('--title <title>', 'Entry title')
     .requiredOption('--content <content>', 'Entry content (markdown)')
     .option('--tags <tags>', 'Tags (comma-separated)')
-    .option('--feature <feature>', 'Source feature ID')
+    .requiredOption('--feature <feature>', 'Source feature ID or observation source')
     .action(async (opts: { type: string; title: string; content: string; tags?: string; feature?: string }) => {
       const store = getStore();
       await store.load();
 
-      const id = generateId(opts.type, opts.title);
+      const type = KnowledgeType.parse(opts.type);
+      const id = generateId(type, opts.title);
       const now = new Date().toISOString();
       const entry: KnowledgeEntry = {
         id,
-        type: opts.type as KnowledgeType,
+        type,
         title: opts.title,
         content: opts.content,
         lifecycle: 'candidate',
-        evidence: opts.feature
-          ? [{ feature: opts.feature, date: now, description: 'Initial observation', verified: false }]
-          : [],
+        evidence: [{ feature: opts.feature!, date: now, description: 'Initial observation', verified: false }],
         tags: opts.tags ? opts.tags.split(',').map((t) => t.trim()) : [],
         scope: 'project',
         createdAt: now,
@@ -117,7 +117,7 @@ export function registerKnowledgeCommands(program: Command): void {
         return;
       }
 
-      const target = (opts.to ?? nextLifecycle(entry)) as Lifecycle | null;
+      const target = opts.to ? Lifecycle.parse(opts.to) : nextLifecycle(entry);
       if (!target) {
         console.error(`\n  ✗ Entry is already at max lifecycle: ${entry.lifecycle}\n`);
         process.exitCode = 1;

@@ -12,7 +12,10 @@
  */
 
 import type { StorageBackend } from '../storage/types.js';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
+import { FilesystemStorage } from '../storage/filesystem.js';
+import { KnowledgeEntry as KnowledgeEntrySchema, type KnowledgeEntry } from '../knowledge/schemas.js';
+import { Redline as RedlineSchema } from '../change-control/schemas.js';
 
 export interface WorkspaceEntry {
   id: string;          // short identifier (e.g. "main", "exp", "ci")
@@ -26,6 +29,7 @@ export interface WorkspaceEntry {
 
 export interface WorkspaceRegistry {
   hubPath: string;
+  projectName?: string;
   workspaces: WorkspaceEntry[];
 }
 
@@ -40,7 +44,10 @@ export class WorkspaceManager {
     if (!content) {
       return { hubPath: '', workspaces: [] };
     }
-    return JSON.parse(content) as WorkspaceRegistry;
+    const registry = JSON.parse(content) as WorkspaceRegistry;
+    const ids = registry.workspaces.map((workspace) => workspace.id);
+    if (new Set(ids).size !== ids.length) throw new Error('Workspace registry contains duplicate IDs');
+    return registry;
   }
 
   /** Save the workspace registry */
@@ -51,31 +58,55 @@ export class WorkspaceManager {
   /** Register a workspace. First workspace becomes the hub. */
   async register(entry: Omit<WorkspaceEntry, 'registeredAt'>): Promise<WorkspaceEntry> {
     const registry = await this.loadRegistry();
+    const canonicalPath = this.canonicalPath(entry.path);
+    const targetStorage = new FilesystemStorage(canonicalPath);
+    const declaration = await targetStorage.read('harness/project/project.config.json');
+    if (!declaration) throw new Error('Workspace is not a Sovei project: ' + canonicalPath);
+    const projectName = (JSON.parse(declaration) as { project?: { name?: string } }).project?.name;
+    if (!projectName) throw new Error('Workspace project declaration has no project.name: ' + canonicalPath);
+    let expectedProjectName = registry.projectName;
+    if (!expectedProjectName && registry.workspaces.length) {
+      const existingHub = registry.workspaces.find((workspace) => workspace.role === 'hub');
+      const existingDeclaration = existingHub
+        ? await new FilesystemStorage(existingHub.path).read('harness/project/project.config.json')
+        : null;
+      expectedProjectName = existingDeclaration
+        ? (JSON.parse(existingDeclaration) as { project?: { name?: string } }).project?.name
+        : undefined;
+    }
+    if (expectedProjectName && expectedProjectName !== projectName) {
+      throw new Error(`Workspace belongs to project '${projectName}', expected '${expectedProjectName}'`);
+    }
+    if (registry.workspaces.some((w) => w.id === entry.id)) {
+      throw new Error('Workspace ID already registered: ' + entry.id);
+    }
 
     // Check for duplicate path
-    if (registry.workspaces.some((w) => w.path === entry.path)) {
-      throw new Error('Workspace already registered at: ' + entry.path);
+    if (registry.workspaces.some((w) => this.pathKey(w.path) === this.pathKey(canonicalPath))) {
+      throw new Error('Workspace already registered at: ' + canonicalPath);
     }
 
     const fullEntry: WorkspaceEntry = {
       ...entry,
+      path: canonicalPath,
       registeredAt: new Date().toISOString(),
     };
 
     // First workspace is always the hub
     if (registry.workspaces.length === 0) {
       fullEntry.role = 'hub';
-      registry.hubPath = entry.path;
+      registry.hubPath = canonicalPath;
     } else if (entry.role === 'hub') {
       // Demote existing hub
       const oldHub = registry.workspaces.find((w) => w.role === 'hub');
       if (oldHub) {
         oldHub.role = 'satellite';
       }
-      registry.hubPath = entry.path;
+      registry.hubPath = canonicalPath;
     }
 
     registry.workspaces.push(fullEntry);
+    registry.projectName = expectedProjectName ?? projectName;
     await this.saveRegistry(registry);
     return fullEntry;
   }
@@ -125,29 +156,45 @@ export class WorkspaceManager {
     let synced = 0;
     let skipped = 0;
 
+    const hubStorage = new FilesystemStorage(hub.path);
+    const pendingWrites: Array<{ path: string; content: string }> = [];
+    const hubRedlines = await hubStorage.read('harness/project/governance/redlines.json');
+    if (hubRedlines) {
+      const redlines = RedlineSchema.array().parse(JSON.parse(hubRedlines));
+      pendingWrites.push({
+        path: 'harness/project/governance/redlines.json',
+        content: JSON.stringify(redlines, null, 2),
+      });
+    }
     for (const type of knowledgeTypes) {
-      const hubContent = await this.storage.read('harness/project/knowledge/' + type + '.json');
+      const hubContent = await hubStorage.read('harness/project/knowledge/' + type + '.json');
       if (!hubContent) continue;
 
-      const entries = JSON.parse(hubContent) as any[];
+      const entries = this.parseKnowledge(hubContent, `hub ${type}`);
       // Only sync stable entries
       const stableEntries = entries.filter((e) => e.lifecycle === 'stable');
 
       // Merge with satellite's existing entries
       const satContent = await satelliteStorage.read('harness/project/knowledge/' + type + '.json');
-      const satEntries = satContent ? JSON.parse(satContent) as any[] : [];
+      const satEntries = satContent ? this.parseKnowledge(satContent, `satellite ${type}`) : [];
 
       // Merge: stable from hub + all local (candidate/pending/deprecated)
       const localOnly = satEntries.filter((e) => e.lifecycle !== 'stable');
+      const stableIds = new Set(stableEntries.map((entry) => entry.id));
+      const conflicts = localOnly.filter((entry) => stableIds.has(entry.id));
+      if (conflicts.length) {
+        throw new Error(`Knowledge conflict in ${type}: ${conflicts.map((entry) => entry.id).join(', ')}`);
+      }
       const merged = [...stableEntries, ...localOnly];
 
-      await satelliteStorage.write(
-        'harness/project/knowledge/' + type + '.json',
-        JSON.stringify(merged, null, 2),
-      );
+      pendingWrites.push({
+        path: 'harness/project/knowledge/' + type + '.json',
+        content: JSON.stringify(merged, null, 2),
+      });
       synced += stableEntries.length;
       skipped += entries.length - stableEntries.length;
     }
+    for (const write of pendingWrites) await satelliteStorage.write(write.path, write.content);
 
     // Update lastSyncedAt
     satellite.lastSyncedAt = new Date().toISOString();
@@ -169,42 +216,76 @@ export class WorkspaceManager {
     if (!satellite) throw new Error('Satellite not found: ' + satelliteId);
 
     const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
+    const hub = await this.getHub();
+    if (!hub) throw new Error('No hub workspace registered');
+    const hubStorage = new FilesystemStorage(hub.path);
     let promoted = 0;
+    const pendingWrites: Array<{ path: string; content: string }> = [];
 
     for (const type of knowledgeTypes) {
       const satContent = await satelliteStorage.read('harness/project/knowledge/' + type + '.json');
       if (!satContent) continue;
 
-      const satEntries = JSON.parse(satContent) as any[];
+      const satEntries = this.parseKnowledge(satContent, `satellite ${type}`);
       // Find candidate entries that don't exist in hub
       const candidates = satEntries.filter((e) => e.lifecycle === 'candidate');
 
       if (candidates.length === 0) continue;
 
-      const hubContent = await this.storage.read('harness/project/knowledge/' + type + '.json');
-      const hubEntries = hubContent ? JSON.parse(hubContent) as any[] : [];
+      const hubContent = await hubStorage.read('harness/project/knowledge/' + type + '.json');
+      const hubEntries = hubContent ? this.parseKnowledge(hubContent, `hub ${type}`) : [];
 
       for (const candidate of candidates) {
         // Check if already exists in hub (by id)
-        if (!hubEntries.some((e) => e.id === candidate.id)) {
+        const existing = hubEntries.find((e) => e.id === candidate.id);
+        if (existing && !this.sameKnowledge(existing, candidate)) {
+          throw new Error(`Knowledge ID conflict in ${type}: ${candidate.id}`);
+        }
+        if (!existing) {
           // Add evidence that this came from a satellite
-          candidate.evidence.push({
+          const promotedCandidate = { ...candidate, evidence: [...candidate.evidence, {
             feature: 'workspace:' + satelliteId,
             date: new Date().toISOString(),
             description: 'Promoted from workspace ' + satellite.name,
             verified: false,
-          });
-          hubEntries.push(candidate);
+          }] };
+          hubEntries.push(promotedCandidate);
           promoted++;
         }
       }
 
-      await this.storage.write(
-        'harness/project/knowledge/' + type + '.json',
-        JSON.stringify(hubEntries, null, 2),
-      );
+      pendingWrites.push({
+        path: 'harness/project/knowledge/' + type + '.json',
+        content: JSON.stringify(hubEntries, null, 2),
+      });
     }
 
+    for (const write of pendingWrites) await hubStorage.write(write.path, write.content);
+
     return { promoted };
+  }
+
+  private canonicalPath(path: string): string {
+    return resolve(path).replace(/[\\/]+$/, '');
+  }
+
+  private pathKey(path: string): string {
+    const canonical = this.canonicalPath(path);
+    return process.platform === 'win32' ? canonical.toLowerCase() : canonical;
+  }
+
+  private sameKnowledge(left: any, right: any): boolean {
+    return left.type === right.type
+      && left.title === right.title
+      && left.content === right.content
+      && left.lifecycle === right.lifecycle;
+  }
+
+  private parseKnowledge(content: string, source: string): KnowledgeEntry[] {
+    try {
+      return KnowledgeEntrySchema.array().parse(JSON.parse(content));
+    } catch (error) {
+      throw new Error(`Invalid knowledge data in ${source}: ${(error as Error).message}`);
+    }
   }
 }

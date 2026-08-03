@@ -1,6 +1,6 @@
 {
   "name": "@sovei/core",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Sovei Workflow Engine - portable development SOP with typed knowledge management",
   "type": "module",
@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli/index.ts",
-    "test": "node --test",
+    "test": "pnpm run build && node --test test/*.test.mjs",
     "check": "tsc --noEmit"
   },
   "dependencies": {

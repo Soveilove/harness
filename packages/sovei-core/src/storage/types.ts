@@ -11,6 +11,9 @@ export interface StorageBackend {
   /** Write string content to file (creates dirs). */
   write(filePath: string, content: string): Promise<void>;
 
+  /** Atomically create a file only when it does not exist. */
+  writeIfAbsent(filePath: string, content: string): Promise<boolean>;
+
   /** Append string to file (creates if not exists). */
   append(filePath: string, content: string): Promise<void>;
 

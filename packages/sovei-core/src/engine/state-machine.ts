@@ -20,6 +20,8 @@ export function createInitialState(featureId: string): WorkflowState {
     nextStage: 'grill',
     completedStages: [],
     reopenedStages: [],
+    completedTaskIds: [],
+    activeChangeId: null,
     revision: 0,
     riskLevel: 'S1',
     blockers: [],
@@ -38,7 +40,7 @@ export function workflowReducer(
 ): WorkflowState {
   switch (event.type) {
     case 'BOOTSTRAP': {
-      return createInitialState(event.featureId);
+      throw new Error(`Duplicate BOOTSTRAP event for feature '${event.featureId}'`);
     }
 
     case 'STAGE_COMPLETE': {
@@ -69,6 +71,45 @@ export function workflowReducer(
       };
     }
 
+    case 'TASK_COMPLETE': {
+      if (state.currentStage !== 'implement') {
+        throw new Error(`Tasks can only complete during implement, current stage is '${state.currentStage}'`);
+      }
+      if (state.completedTaskIds.includes(event.taskId)) {
+        return state;
+      }
+      return {
+        ...state,
+        completedTaskIds: [...state.completedTaskIds, event.taskId],
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'CHANGE_DECLARED': {
+      if (!workflow.stages[event.target]) throw new Error(`Unknown change target: ${event.target}`);
+      const targetIndex = workflow.stageOrder.indexOf(event.target);
+      const remaining = state.completedStages.filter(
+        (stage) => workflow.stageOrder.indexOf(stage) < targetIndex,
+      );
+      return {
+        ...state,
+        status: 'in_progress',
+        currentStage: event.target,
+        nextStage: workflow.stageOrder[targetIndex + 1] ?? null,
+        completedStages: remaining,
+        reopenedStages: state.reopenedStages.includes(event.target)
+          ? state.reopenedStages
+          : [...state.reopenedStages, event.target],
+        completedTaskIds: targetIndex <= workflow.stageOrder.indexOf('implement')
+          ? []
+          : state.completedTaskIds,
+        activeChangeId: event.changeId,
+        revision: state.revision + 1,
+        blockers: [],
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
     case 'REOPEN': {
       // Guard: target must be a known stage
       if (!workflow.stages[event.target]) {
@@ -93,6 +134,9 @@ export function workflowReducer(
         reopenedStages: state.reopenedStages.includes(event.target)
           ? state.reopenedStages
           : [...state.reopenedStages, event.target],
+        completedTaskIds: targetIndex <= workflow.stageOrder.indexOf('implement')
+          ? []
+          : state.completedTaskIds,
         status: 'in_progress',
         revision: state.revision + 1,
         blockers: [],

@@ -1,42 +1,37 @@
 #!/usr/bin/env node
 
-/**
- * Sovei CLI - Main entry point
- * Commander.js-based CLI with three command groups:
- * 1. Workflow stages (load, grill, spec, ..., sync, reopen)
- * 2. Knowledge management (list, add, promote, query)
- * 3. Project management (init, status)
- */
-
 import { Command } from 'commander';
-import { bootstrap, container, TOKENS } from '../providers/bootstrap.js';
-import { registerWorkflowCommands } from './commands/workflow.js';
+import { registerArchitectureCommands } from './commands/architecture.js';
 import { registerKnowledgeCommands } from './commands/knowledge.js';
 import { registerProjectCommands } from './commands/project.js';
+import { registerWorkflowCommands } from './commands/workflow.js';
 import { registerWorkspaceCommands } from './commands/workspace.js';
-import { ConsoleLogger } from '../providers/tokens.js';
+import { registerGovernanceCommands } from './commands/governance.js';
+import { registerWayfinderCommands } from './commands/wayfinder.js';
+import { bootstrap } from '../providers/bootstrap.js';
 
 const program = new Command();
 
 program
   .name('sovei')
   .description('Sovei Workflow Engine - Portable development SOP')
-  .version('2.0.0')
+  .version('2.1.0')
   .option('--root <path>', 'Workspace root path', process.cwd());
 
-program.hook('preAction', (cmd) => {
-  const rootPath = cmd.opts().root;
-  bootstrap(rootPath);
+program.hook('preAction', (command) => {
+  bootstrap(command.optsWithGlobals().root as string);
 });
 
-// Register command groups
 registerWorkflowCommands(program);
 registerKnowledgeCommands(program);
 registerProjectCommands(program);
 registerWorkspaceCommands(program);
+registerGovernanceCommands(program);
+registerWayfinderCommands(program);
+registerArchitectureCommands(program);
 
-// Parse and execute
-program.parseAsync(process.argv).catch((err) => {
-  console.error(`\n  ✗  ${err.message}\n`);
+program.parseAsync(process.argv).catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`\n  Error: ${message}\n`);
   process.exitCode = 1;
 });

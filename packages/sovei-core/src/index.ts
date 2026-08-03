@@ -44,3 +44,12 @@ export { ArtifactRepository } from './artifacts/repository.js';
 // Config
 export { loadConfig, getFeaturePath } from './config/loader.js';
 export type { SoveiConfig, ProjectDeclaration } from './config/types.js';
+
+// Evolutionary architecture
+export * from './architecture/index.js';
+
+// Material change and business redline governance
+export * from './change-control/index.js';
+
+// Large-effort decision maps
+export * from './wayfinder/index.js';

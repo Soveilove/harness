@@ -11,6 +11,7 @@ import { stageRegistry } from '../../stages/registry.js';
 
 // Import side-effect: registers all stages
 import '../../stages/index.js';
+import { ChangeDimension, type ChangeDimension as ChangeDimensionType } from '../../change-control/schemas.js';
 
 const STAGE_NAMES = [
   'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
@@ -34,7 +35,13 @@ function printState(state: any): void {
   console.log('  Current:      ' + (state.currentStage || '—'));
   console.log('  Next:         ' + (state.nextStage || '—'));
   if (state.reopenedStages.length > 0) {
-    console.log('  Reopened:     [' + state.reopenedStages.join(', ') + ']');
+  console.log('  Reopened:     [' + state.reopenedStages.join(', ') + ']');
+  }
+  if (state.completedTaskIds?.length > 0) {
+    console.log('  Tasks done:   [' + state.completedTaskIds.join(', ') + ']');
+  }
+  if (state.activeChangeId) {
+    console.log('  Active change: ' + state.activeChangeId);
   }
   if (state.blockers.length > 0) {
     console.log('  Blockers:     ' + state.blockers.join('; '));
@@ -84,11 +91,32 @@ export function registerWorkflowCommands(program: Command): void {
     workflow
       .command(stageName)
       .argument('<feature>', 'Feature ID')
+      .option('--complete', 'Validate artifacts and complete the stage')
+      .option('--task <id>', 'Selected task ID for the implement stage')
       .description(stage.description)
-      .action(async (feature: string) => {
+      .action(async (feature: string, opts: { complete?: boolean; task?: string }) => {
         const engine = getEngine();
-        const result = await engine.executeStage(feature, stageName);
-        console.log('\n  ✓ Stage \'' + stageName + '\' completed.\n');
+        if (stageName !== 'implement' && opts.task) {
+          throw new Error('--task is only valid for the implement stage');
+        }
+        if (opts.complete) {
+          const state = stageName === 'implement' && opts.task
+            ? await engine.completeTask(feature, opts.task)
+            : await engine.completeStage(feature, stageName);
+          const message = stageName === 'implement' && opts.task
+            ? `Task '${opts.task}' completed; implement stage remains active.`
+            : `Stage '${stageName}' completed.`;
+          console.log('\n  ✓ ' + message + '\n');
+          printState(state);
+          printNextCommand(state, feature);
+          return;
+        }
+        if (stageName === 'implement' && !opts.task) {
+          throw new Error("implement preparation requires --task <id>");
+        }
+        const result = await engine.prepareStage(feature, stageName);
+        console.log('\n  Prepared stage \'' + stageName + '\'. No workflow state was advanced.\n');
+        if (opts.task) console.log('  Selected task: ' + opts.task + '\n');
         if (result.artifactsWritten.length > 0) {
           console.log('  Artifacts written:');
           for (const a of result.artifactsWritten) {
@@ -102,7 +130,7 @@ export function registerWorkflowCommands(program: Command): void {
         }
         const state = await engine.getState(feature);
         printState(state);
-        printNextCommand(state, feature);
+        console.log('  Complete with: sovei workflow ' + stageName + ' ' + feature + ' --complete' + (opts.task ? ' --task ' + opts.task : '') + '\n');
       });
   }
 
@@ -118,6 +146,46 @@ export function registerWorkflowCommands(program: Command): void {
       console.log('\n  ↻ Reopened \'' + opts.target + '\' (revision ' + state.revision + ')\n');
       printState(state);
       printNextCommand(state, feature);
+    });
+
+  workflow
+    .command('change')
+    .argument('<feature>', 'Feature ID')
+    .requiredOption('--target <stage>', 'Earliest stage invalidated by the material change')
+    .requiredOption('--summary <summary>', 'Concise description of the new direction')
+    .requiredOption('--reason <reason>', 'Why the previous requirements are no longer valid')
+    .requiredOption('--dimensions <dimensions>', 'Comma-separated material change dimensions')
+    .description('Create a draft material-change request and redline review matrix')
+    .action(async (feature: string, opts: { target: string; summary: string; reason: string; dimensions: string }) => {
+      const dimensions = opts.dimensions.split(',').map((value) => ChangeDimension.parse(value.trim())) as ChangeDimensionType[];
+      const request = await getEngine().prepareChange(feature, opts.target, opts.summary, opts.reason, dimensions);
+      console.log(`\n  Draft change request: ${request.id}`);
+      console.log(`  File: specs/${feature}/change-requests/${request.id}.json`);
+      console.log('  Fill affectedSurfaces, authorization fields, supersedes, and every redline assessment before applying.');
+      console.log(`  Apply: sovei workflow apply-change ${feature} ${request.id}\n`);
+    });
+
+  workflow
+    .command('apply-change')
+    .argument('<feature>', 'Feature ID')
+    .argument('<change-id>', 'Reviewed Change Request ID')
+    .description('Apply a reviewed change, archive stale artifacts, and reopen its target stage')
+    .action(async (feature: string, changeId: string) => {
+      const state = await getEngine().applyChange(feature, changeId);
+      console.log(`\n  Applied change '${changeId}'. Superseded artifacts were archived.\n`);
+      printState(state);
+      printNextCommand(state, feature);
+    });
+
+  workflow
+    .command('cancel-change')
+    .argument('<feature>', 'Feature ID')
+    .argument('<change-id>', 'Draft Change Request ID')
+    .requiredOption('--reason <reason>', 'Why this material change is no longer being pursued')
+    .description('Cancel a draft material change and unfreeze the ordinary workflow')
+    .action(async (feature: string, changeId: string, options: { reason: string }) => {
+      await getEngine().cancelChange(feature, changeId, options.reason);
+      console.log(`\n  Cancelled change '${changeId}'. Ordinary workflow commands are available again.\n`);
     });
 
   // ── list-stages ──

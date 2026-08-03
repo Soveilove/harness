@@ -14,7 +14,8 @@ import { KnowledgeStore } from '../../knowledge/store.js';
 import { FilesystemStorage } from '../../storage/filesystem.js';
 import { ProjectScanner } from '../../config/scanner.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from '../../config/tech-stack.js';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -28,7 +29,7 @@ function getLogger(): Logger {
 
 function generateId(type: string, title: string): string {
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const hash = Date.now().toString(36).slice(-6);
+  const hash = createHash('sha1').update(`${type}\0${title}`).digest('hex').slice(0, 8);
   return type + '-' + slug + '-' + hash;
 }
 
@@ -52,11 +53,13 @@ export function registerProjectCommands(program: Command): void {
     .option('--language <language>', 'Tech stack language (typescript/javascript)')
     .option('--state <state>', 'State management (pinia/redux/zustand)')
     .option('--build <build>', 'Build tool (vite/webpack)')
+    .option('--force', 'Replace an existing Sovei project declaration')
     .action(async (targetPath: string, opts: {
-      blank?: boolean; name?: string; framework?: string; language?: string; state?: string; build?: string;
+      blank?: boolean; name?: string; framework?: string; language?: string; state?: string; build?: string; force?: boolean;
     }) => {
       const logger = getLogger();
-      const projectName = opts.name || targetPath.split(/[\\/]/).pop() || 'untitled';
+      const resolvedTarget = resolve(targetPath);
+      const projectName = opts.name || resolvedTarget.split(/[\\/]/).pop() || 'untitled';
 
       // Build detected stack from options
       const stack: DetectedStack = {
@@ -66,11 +69,14 @@ export function registerProjectCommands(program: Command): void {
         build: opts.build,
       };
 
-      console.log('\n  Initializing Sovei project at: ' + targetPath + '\n');
+      console.log('\n  Initializing Sovei project at: ' + resolvedTarget + '\n');
 
       // Create directory structure
-      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/templates'];
-      const storage = getStorage();
+      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/templates'];
+      const storage = new FilesystemStorage(resolvedTarget);
+      if (await storage.exists('harness/project/project.config.json') && !opts.force) {
+        throw new Error('Sovei project already exists at target. Use --force to replace its declaration.');
+      }
       for (const dir of dirs) {
         await storage.write(dir + '/.gitkeep', '');
         console.log('  · Created ' + dir + '/');
@@ -87,8 +93,15 @@ export function registerProjectCommands(program: Command): void {
       // Create knowledge files
       const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
       for (const type of knowledgeTypes) {
-        await storage.write('harness/project/knowledge/' + type + '.json', '[]');
-        console.log('  · Created harness/project/knowledge/' + type + '.json');
+        const knowledgePath = 'harness/project/knowledge/' + type + '.json';
+        if (!(await storage.exists(knowledgePath))) {
+          await storage.write(knowledgePath, '[]');
+          console.log('  · Created ' + knowledgePath);
+        }
+      }
+      if (!(await storage.exists('harness/project/governance/redlines.json'))) {
+        await storage.write('harness/project/governance/redlines.json', '[]');
+        console.log('  · Created harness/project/governance/redlines.json');
       }
 
       // Seed knowledge based on tech stack (unless --blank)
@@ -100,7 +113,9 @@ export function registerProjectCommands(program: Command): void {
           await knowledgeStore.load();
           for (const entry of entries) {
             const fullEntry = { ...entry, id: generateId(entry.type, entry.title) };
-            knowledgeStore.dispatch({ type: 'ADD', entry: fullEntry as any });
+            if (!knowledgeStore.selectById(fullEntry.id)) {
+              knowledgeStore.dispatch({ type: 'ADD', entry: fullEntry as any });
+            }
           }
           await knowledgeStore.persist();
           console.log('  · Seeded ' + seeds.length + ' knowledge entries based on tech stack');
@@ -115,7 +130,7 @@ export function registerProjectCommands(program: Command): void {
         console.log('    2. Review seed knowledge: sovei knowledge list');
         console.log('    3. Start a feature: sovei workflow bootstrap 001-my-feature');
       } else {
-        console.log('    2. Add knowledge: sovei knowledge add --type pitfall --title "..." --content "..."');
+        console.log('    2. Add knowledge: sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
         console.log('    3. Start a feature: sovei workflow bootstrap 001-my-feature');
       }
       console.log('');
@@ -128,6 +143,7 @@ export function registerProjectCommands(program: Command): void {
     .option('--depth <n>', 'Max scan depth', '4')
     .action(async (opts: { depth: string }) => {
       const storage = getStorage();
+      const currentConfig = getConfig();
       const logger = getLogger();
       const maxDepth = parseInt(opts.depth, 10) || 4;
 
@@ -177,12 +193,16 @@ export function registerProjectCommands(program: Command): void {
       // Write project.config.json from detected info
       const projectConfig = {
         project: {
-          name: result.packageJson?.name || 'onboarded-project',
-          description: result.packageJson?.description || 'Onboarded from existing codebase',
-          techStack: result.techStack,
-          started: result.packageJson?.createdAt || new Date().toISOString().split('T')[0],
+          name: currentConfig.project.name !== 'untitled'
+            ? currentConfig.project.name
+            : result.packageJson?.name || 'onboarded-project',
+          description: currentConfig.project.description !== 'New project - configure me'
+            ? currentConfig.project.description
+            : result.packageJson?.description || 'Onboarded from existing codebase',
+          techStack: { ...currentConfig.project.techStack, ...result.techStack },
+          started: currentConfig.project.started || result.packageJson?.createdAt || new Date().toISOString().split('T')[0],
         },
-        workflow: { version: '2.0.0' },
+        workflow: currentConfig.workflow,
       };
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
       console.log('  · Updated harness/project/project.config.json');
@@ -191,15 +211,23 @@ export function registerProjectCommands(program: Command): void {
       const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
       await knowledgeStore.load();
       let added = 0;
+      let updated = 0;
+      let preserved = 0;
       for (const entry of result.generatedKnowledge) {
         const fullEntry = { ...entry, id: generateId(entry.type, entry.title) };
-        if (!knowledgeStore.selectById(fullEntry.id)) {
+        const existing = knowledgeStore.selectById(fullEntry.id);
+        if (existing?.lifecycle === 'candidate') {
+          knowledgeStore.dispatch({ type: 'UPDATE', id: fullEntry.id, patch: fullEntry as any });
+          updated++;
+        } else if (existing) {
+          preserved++;
+        } else {
           knowledgeStore.dispatch({ type: 'ADD', entry: fullEntry as any });
           added++;
         }
       }
       await knowledgeStore.persist();
-      console.log('  · Added ' + added + ' knowledge entries (all as candidate)');
+      console.log('  · Added ' + added + ', refreshed ' + updated + ', preserved ' + preserved + ' reviewed entries');
 
       console.log('\n  ✓ Onboarding complete.\n');
       console.log('  Generated knowledge is all candidate lifecycle.');

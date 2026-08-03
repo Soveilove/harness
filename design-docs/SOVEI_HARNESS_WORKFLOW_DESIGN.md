@@ -123,13 +123,13 @@ IDE 适配层
 
 ### 5.1 阶段 Skill 依赖
 
-机器真相位于 `harness/workflows/sovei/skill-map.yaml`。下表中的“当前实际第三方”为空，表示目前没有安装或执行任何第三方 Skill；候选项仅用于后续评估和替换。
+机器真相位于 `harness/workflows/sovei/skill-map.yaml`。下表中的“当前实际第三方”为空，表示没有安装或运行时执行第三方 Skill。`wayfind` 已吸收 Wayfinder 的决策地图策略，但实现由 Sovei 自己的 Stage、事件存储和类型化 JSON 承载，不形成第三方运行时依赖。
 
 | 阶段 | 当前实际内部 Skills | 当前实际第三方 | 候选/替换第三方 Skills |
 |---|---|---|---|
 | `load` | `sovei-workflow`, `knowledge-loader` | 无 | 无 |
 | `grill` | `sovei-workflow`, `knowledge-loader` | 无 | `mattpocock/grilling`; 备选 `grill-me`, `grill-with-docs` |
-| `wayfind` | `sovei-workflow`, `knowledge-loader` | 无 | `mattpocock/wayfinder` |
+| `wayfind` | `sovei-workflow`, `knowledge-loader` | 无（已内化 Wayfinder 策略） | `mattpocock/wayfinder` 仅作为上游思想来源 |
 | `spec` | `sovei-workflow`, `knowledge-loader` | 无 | `mattpocock/domain-modeling`, `mattpocock/to-spec` |
 | `scope` | `sovei-workflow`, `knowledge-loader` | 无 | `mattpocock/domain-modeling` |
 | `plan` | `sovei-workflow`, `knowledge-loader` | 无 | `mattpocock/domain-modeling` |
@@ -176,6 +176,12 @@ IDE 适配层
 - 先确定 Destination，再建立决策地图。
 - 区分当前可回答的 decision tickets、阻塞关系、frontier、未知区和 out of scope。
 - 一次会话只解决一张决策票；独立 research 可并行。
+- 决策地图是低分辨率索引，单张 `decision-tickets/*.json` 是该决策的详情来源；决策票不等于实现任务。
+- frontier 只包含未解决、未被有效租约认领且依赖已就绪的票据；工作前必须 claim，结束时 resolve 或 release。
+- `research` 使用 AFK，`prototype` 和 `grilling` 使用 HITL；HITL/调研结论必须带证据或上下文引用。
+- 当前无法具体化的问题进入 fog，条件成熟后毕业为票据；超出 Destination 的问题显式 exclude。
+- S0/S1 若无需地图，必须使用 `wayfinder skip --reason ...`，空地图不能完成阶段。
+- `wayfinder-events.jsonl` 是规范事件流，`wayfinder.json`、票据 JSON 和 `wayfinder.md` 都是可重建投影。
 - 目标是消除规划前的未知决策，不直接完成最终实现。
 
 ### 6.4 `/sovei-spec`

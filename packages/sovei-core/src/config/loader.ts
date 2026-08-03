@@ -4,6 +4,7 @@
  */
 
 import type { SoveiConfig } from './types.js';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DEFAULT_STAGE_ORDER = [
@@ -28,9 +29,37 @@ const DEFAULT_CONFIG: Omit<SoveiConfig, 'rootPath'> = {
 };
 
 export function loadConfig(rootPath: string): SoveiConfig {
+  const configPath = join(rootPath, 'harness', 'project', 'project.config.json');
+  let configured: Partial<SoveiConfig> = {};
+  try {
+    configured = JSON.parse(readFileSync(configPath, 'utf8')) as Partial<SoveiConfig>;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw new Error(`Invalid project configuration at ${configPath}: ${(error as Error).message}`);
+    }
+  }
+  const configuredOrder = configured.workflow?.stageOrder;
+  if (configuredOrder) {
+    const unknown = configuredOrder.filter((stage) => !DEFAULT_STAGE_ORDER.includes(stage));
+    if (
+      unknown.length
+      || configuredOrder.length !== DEFAULT_STAGE_ORDER.length
+      || new Set(configuredOrder).size !== configuredOrder.length
+      || DEFAULT_STAGE_ORDER.some((stage) => !configuredOrder.includes(stage))
+    ) {
+      throw new Error(`Invalid workflow.stageOrder in ${configPath}`);
+    }
+  }
   return {
     ...DEFAULT_CONFIG,
+    ...configured,
     rootPath,
+    project: { ...DEFAULT_CONFIG.project, ...configured.project },
+    workflow: {
+      ...DEFAULT_CONFIG.workflow,
+      ...configured.workflow,
+      stageOrder: configuredOrder ?? DEFAULT_STAGE_ORDER,
+    },
   };
 }
 

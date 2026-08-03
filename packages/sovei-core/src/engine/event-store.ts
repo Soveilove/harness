@@ -70,7 +70,7 @@ export class EventStore {
     }
 
     let state = createInitialState(firstEntry.event.featureId);
-    for (const entry of events) {
+    for (const entry of events.slice(1)) {
       state = workflowReducer(state, entry.event, workflow);
     }
     return state;
@@ -106,6 +106,9 @@ export class EventStore {
       ...state.completedStages.map((s) => `  - ${JSON.stringify(s)}`),
       `reopenedStages:`,
       ...(state.reopenedStages.length ? state.reopenedStages.map((s) => `  - ${JSON.stringify(s)}`) : ['  []']),
+      `completedTaskIds:`,
+      ...(state.completedTaskIds.length ? state.completedTaskIds.map((s) => `  - ${JSON.stringify(s)}`) : ['  []']),
+      `activeChangeId: ${state.activeChangeId ? JSON.stringify(state.activeChangeId) : 'null'}`,
       `revision: ${state.revision}`,
       `riskLevel: ${state.riskLevel}`,
       `blockers:`,
@@ -120,6 +123,8 @@ export class EventStore {
     const state: Partial<WorkflowState> = {
       completedStages: [],
       reopenedStages: [],
+      completedTaskIds: [],
+      activeChangeId: null,
       blockers: [],
     };
     let currentList: string[] | null = null;
@@ -158,6 +163,12 @@ export class EventStore {
           break;
         case 'reopenedStages':
           currentList = state.reopenedStages!;
+          break;
+        case 'completedTaskIds':
+          currentList = state.completedTaskIds!;
+          break;
+        case 'activeChangeId':
+          state.activeChangeId = value === 'null' ? null : JSON.parse(value);
           break;
         case 'revision':
           state.revision = parseInt(value, 10);

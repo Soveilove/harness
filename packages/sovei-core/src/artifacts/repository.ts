@@ -47,4 +47,19 @@ export class ArtifactRepository {
     }
     return { missing };
   }
+
+  /** Produced artifacts must contain real work, not the generated prompt template. */
+  async validateProduced(names: string[]): Promise<{ missing: string[]; placeholders: string[] }> {
+    const missing: string[] = [];
+    const placeholders: string[] = [];
+    for (const name of names) {
+      const content = await this.read(name);
+      if (!content?.trim()) {
+        missing.push(name);
+      } else if (content.includes('AI agent: replace this template with actual content')) {
+        placeholders.push(name);
+      }
+    }
+    return { missing, placeholders };
+  }
 }

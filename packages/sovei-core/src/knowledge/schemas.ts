@@ -49,6 +49,15 @@ export const KnowledgeEntry = z.object({
   updatedAt: z.string(),
   promotedAt: z.string().nullable(),
   deprecatedReason: z.string().nullable(),
+}).superRefine((entry, ctx) => {
+  const minimum = MIN_EVIDENCE_COUNT[entry.lifecycle];
+  if (entry.evidence.length < minimum) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['evidence'],
+      message: `${entry.lifecycle} knowledge requires at least ${minimum} evidence item(s)`,
+    });
+  }
 });
 export type KnowledgeEntry = z.infer<typeof KnowledgeEntry>;
 

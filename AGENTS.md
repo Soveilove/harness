@@ -11,6 +11,10 @@
 - Stage 使用 `defineStage()` 定义，有 preExecute/execute/postExecute/cleanup 生命周期 hooks。
 - DI 容器在 `providers/container.ts`，通过 `TOKENS` 注入。
 - `harness/project/project.config.json` 是项目声明，换项目时第一个修改。
+- 演进式架构治理通过 `architecture scan/status/inspect/accept/dismiss/check` 完成，不新增工作流阶段。
+- 不得仅凭文件行数要求重构；`refactor-required` 至少需要两个压力维度叠加。
+- 架构扫描数据位于 `harness/project/architecture/`；自动扫描只能创建候选和快照，不能自动重写业务代码。
+- 高 churn、多职责模块优先使用 `expand-migrate-contract`；高扇入或循环依赖优先使用 `branch-by-abstraction`。
 
 ## 构建和验证
 
@@ -18,4 +22,5 @@
 pnpm --dir packages/sovei-core install
 pnpm --dir packages/sovei-core run build
 pnpm --dir packages/sovei-core run check
+pnpm --dir packages/sovei-core test
 ```
