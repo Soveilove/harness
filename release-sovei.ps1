@@ -100,9 +100,19 @@ try {
         Pop-Location
     }
 
-    $published = (& npm view "$packageName@$version" version).Trim()
-    if ($LASTEXITCODE -ne 0 -or $published -ne $version) {
-        throw '发布命令已结束，但远端版本校验失败。'
+    # npm publish 成功后 registry 元数据传播可能有数秒延迟,立即 npm view 会 404
+    # 误报失败(实际已发布)。重试几次,避免假失败。
+    $published = $null
+    for ($i = 0; $i -lt 6; $i++) {
+        $viewOut = & npm view "$packageName@$version" version 2>$null
+        if ($LASTEXITCODE -eq 0 -and $viewOut -and $viewOut.Trim() -eq $version) {
+            $published = $version
+            break
+        }
+        Start-Sleep -Seconds 5
+    }
+    if ($published -ne $version) {
+        throw "发布命令已结束,但远端版本校验失败(可能仍在传播)。稍后用 'npm view $packageName@$version version' 确认。"
     }
 
     Write-Host ""
