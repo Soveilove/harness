@@ -10,10 +10,11 @@ import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } fr
 import { RedlineScanner, type CandidateRedline } from './redline-scanner.js';
 import { BusinessMapScanner, type BusinessMap } from './business-map-scanner.js';
 import { parseProjectJson } from './json.js';
+import { VERSION } from './version.js';
 export type { CandidateRedline };
 import type { KnowledgeEntry } from '../knowledge/schemas.js';
 
-export const PROJECT_SCANNER_VERSION = '2.1.0-dev.2';
+export const PROJECT_SCANNER_VERSION = VERSION;
 
 export interface ScanCoverage {
   maxDepth: number;

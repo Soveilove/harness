@@ -13,6 +13,7 @@ import type { Logger } from '../../providers/tokens.js';
 import { KnowledgeStore } from '../../knowledge/store.js';
 import { FilesystemStorage } from '../../storage/filesystem.js';
 import { ProjectScanner } from '../../config/scanner.js';
+import { VERSION } from '../../config/version.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from '../../config/tech-stack.js';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -295,7 +296,7 @@ export function registerProjectCommands(program: Command): void {
       const seedData = {
         schemaVersion: 1 as const,
         generatedAt: new Date().toISOString(),
-        scannerVersion: '2.1.0-dev.2',
+        scannerVersion: VERSION,
         redlines: (result.candidateRedlines ?? []).map((rl) => ({
           id: rl.id,
           title: rl.title,

@@ -15,6 +15,7 @@ import { getFeaturePath } from '../../config/loader.js';
 import { buildContextPack, renderContextPackMarkdown } from '../../context/builder.js';
 import { buildSnapshot, saveSnapshot, loadSnapshot, isStale, computeSourceHash } from '../../context/snapshot.js';
 import { ProjectRulesRepository, resolveProjectRules } from '../../rules/repository.js';
+import { VERSION } from '../../config/version.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -66,8 +67,8 @@ export function registerContextCommands(program: Command): void {
       // Load or build snapshot
       const snapshot = await loadSnapshot(storage);
       const freshSnapshot = buildSnapshot(knowledge, config.project.name, {
-        engineVersion: '2.1.0-dev.2',
-        scannerVersion: '2.1.0-dev.2',
+        engineVersion: VERSION,
+        scannerVersion: VERSION,
       });
 
       const pack = buildContextPack({
