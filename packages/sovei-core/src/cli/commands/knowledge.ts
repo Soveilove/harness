@@ -3,9 +3,10 @@
  * list, add, promote, deprecate, query, stats
  */
 
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 import { createHash } from 'node:crypto';
 import { container, TOKENS } from '../../providers/container.js';
+import type { StorageBackend } from '../../storage/types.js';
 import type { KnowledgeStore } from '../../knowledge/store.js';
 import { KnowledgeType, Lifecycle, type KnowledgeEntry } from '../../knowledge/schemas.js';
 import { getStats, searchEntries, groupByType } from '../../knowledge/selectors.js';
@@ -68,84 +69,90 @@ export function registerKnowledgeCommands(program: Command): void {
   // ── add ──
   knowledge
     .command('add')
-    .requiredOption('--type <type>', 'Knowledge type (pitfall/rule/decision/code-map/architecture/preference/constitution)')
+    .addOption(new Option('--type <type>', 'Knowledge type').choices(KnowledgeType.options).makeOptionMandatory())
     .requiredOption('--title <title>', 'Entry title')
     .requiredOption('--content <content>', 'Entry content (markdown)')
     .option('--tags <tags>', 'Tags (comma-separated)')
     .requiredOption('--feature <feature>', 'Source feature ID or observation source')
     .action(async (opts: { type: string; title: string; content: string; tags?: string; feature?: string }) => {
       const store = getStore();
-      await store.load();
+      const storage = container.inject<StorageBackend>(TOKENS.Storage);
+      await storage.withLock('harness/project/knowledge', async () => {
+        await store.load();
 
-      const type = KnowledgeType.parse(opts.type);
-      const id = generateId(type, opts.title);
-      const now = new Date().toISOString();
-      const entry: KnowledgeEntry = {
-        id,
-        type,
-        title: opts.title,
-        content: opts.content,
-        lifecycle: 'candidate',
-        evidence: [{ feature: opts.feature!, date: now, description: 'Initial observation', verified: false }],
-        tags: opts.tags ? opts.tags.split(',').map((t) => t.trim()) : [],
-        scope: 'project',
-        createdAt: now,
-        updatedAt: now,
-        promotedAt: null,
-        deprecatedReason: null,
-      };
+        const type = KnowledgeType.parse(opts.type);
+        const id = generateId(type, opts.title);
+        const now = new Date().toISOString();
+        const entry: KnowledgeEntry = {
+          id,
+          type,
+          title: opts.title,
+          content: opts.content,
+          lifecycle: 'candidate',
+          evidence: [{ feature: opts.feature!, date: now, description: 'Initial observation', verified: false }],
+          tags: opts.tags ? opts.tags.split(',').map((t) => t.trim()) : [],
+          scope: 'project',
+          createdAt: now,
+          updatedAt: now,
+          promotedAt: null,
+          deprecatedReason: null,
+        };
 
-      store.dispatch({ type: 'ADD', entry });
-      await store.persist();
-      console.log(`\n  ✓ Added knowledge entry: ${id}\n`);
+        store.dispatch({ type: 'ADD', entry });
+        await store.persist();
+        console.log(`\n  ✓ Added knowledge entry: ${id}\n`);
+      });
     });
 
   // ── promote ──
   knowledge
     .command('promote')
     .argument('<id>', 'Entry ID')
-    .option('--to <lifecycle>', 'Target lifecycle (pending/stable)')
+    .addOption(new Option('--to <lifecycle>', 'Target lifecycle (pending/stable)').choices(Lifecycle.options))
     .option('--feature <feature>', 'Evidence source feature')
     .option('--description <description>', 'Evidence description')
     .action(async (id: string, opts: { to?: string; feature?: string; description?: string }) => {
       const store = getStore();
-      await store.load();
-      const entry = store.selectById(id);
-      if (!entry) {
-        console.error(`\n  ✗ Entry not found: ${id}\n`);
-        process.exitCode = 1;
-        return;
-      }
+      const storage = container.inject<StorageBackend>(TOKENS.Storage);
+      await storage.withLock('harness/project/knowledge', async () => {
+        await store.load();
+        const entry = store.selectById(id);
+        if (!entry) {
+          console.error(`\n  ✗ Entry not found: ${id}\n`);
+          process.exitCode = 1;
+          return;
+        }
 
-      const target = opts.to ? Lifecycle.parse(opts.to) : nextLifecycle(entry);
-      if (!target) {
-        console.error(`\n  ✗ Entry is already at max lifecycle: ${entry.lifecycle}\n`);
-        process.exitCode = 1;
-        return;
-      }
+        const target = opts.to ? Lifecycle.parse(opts.to) : nextLifecycle(entry);
+        if (!target) {
+          console.error(`\n  ✗ Entry is already at max lifecycle: ${entry.lifecycle}\n`);
+          process.exitCode = 1;
+          return;
+        }
 
-      // Dry-run validation
-      const validation = validatePromotion(
-        entry,
-        target,
-        !!(opts.feature && opts.description),
-      );
-      if (!validation.valid) {
-        console.error(`\n  ✗ Promotion blocked: ${validation.reason}\n`);
-        process.exitCode = 1;
-        return;
-      }
+        // Dry-run validation
+        const validation = validatePromotion(
+          entry,
+          target,
+          !!(opts.feature && opts.description),
+        );
+        if (!validation.valid) {
+          console.error(`\n  ✗ Promotion blocked: ${validation.reason}\n`);
+          process.exitCode = 1;
+          return;
+        }
 
-      store.dispatch({
-        type: 'PROMOTE',
-        id,
-        to: target,
-        evidence: opts.feature && opts.description
-          ? { feature: opts.feature, description: opts.description }
-          : undefined,
+        store.dispatch({
+          type: 'PROMOTE',
+          id,
+          to: target,
+          evidence: opts.feature && opts.description
+            ? { feature: opts.feature, description: opts.description }
+            : undefined,
+        });
+        await store.persist();
+        console.log(`\n  ✓ Promoted '${entry.title}' to ${target}\n`);
       });
-      await store.persist();
-      console.log(`\n  ✓ Promoted '${entry.title}' to ${target}\n`);
     });
 
   // ── deprecate ──
@@ -155,10 +162,13 @@ export function registerKnowledgeCommands(program: Command): void {
     .requiredOption('--reason <reason>', 'Deprecation reason')
     .action(async (id: string, opts: { reason: string }) => {
       const store = getStore();
-      await store.load();
-      store.dispatch({ type: 'DEPRECATE', id, reason: opts.reason });
-      await store.persist();
-      console.log(`\n  ✗ Deprecated: ${id}\n`);
+      const storage = container.inject<StorageBackend>(TOKENS.Storage);
+      await storage.withLock('harness/project/knowledge', async () => {
+        await store.load();
+        store.dispatch({ type: 'DEPRECATE', id, reason: opts.reason });
+        await store.persist();
+        console.log(`\n  ✗ Deprecated: ${id}\n`);
+      });
     });
 
   // ── query ──

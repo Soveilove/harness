@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { StorageBackend } from '../storage/types.js';
+import { parseJson } from '../storage/json.js';
 import { createWayfinderState, wayfinderReducer } from './reducer.js';
 import {
   DecisionTicket as DecisionTicketSchema,
@@ -220,7 +221,7 @@ export class WayfinderRepository {
   private async readEvents(featurePath: string): Promise<WayfinderEventEntry[]> {
     const content = await this.storage.read(this.eventsPath(featurePath));
     if (!content?.trim()) return [];
-    const entries = content.trim().split(/\r?\n/).map((line) => WayfinderEventEntrySchema.parse(JSON.parse(line)));
+    const entries = content.trim().split(/\r?\n/).map((line) => WayfinderEventEntrySchema.parse(parseJson(line, 'Wayfinder 事件日志')));
     entries.forEach((entry, index) => {
       if (entry.revision !== index) throw new Error(`Invalid Wayfinder event revision: expected ${index}, got ${entry.revision}`);
     });

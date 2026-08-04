@@ -82,4 +82,9 @@ export class MemoryStorage implements StorageBackend {
       .filter((k) => k.startsWith(prefix))
       .sort();
   }
+
+  async withLock<T>(_key: string, fn: () => Promise<T>): Promise<T> {
+    // In-memory backend is single-process; no cross-process race to guard.
+    return fn();
+  }
 }

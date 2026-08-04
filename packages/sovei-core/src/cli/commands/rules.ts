@@ -1,4 +1,4 @@
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 import { container, TOKENS } from '../../providers/container.js';
 import type { SoveiConfig } from '../../config/types.js';
 import type { StorageBackend } from '../../storage/types.js';
@@ -61,7 +61,7 @@ export function registerRulesCommands(program: Command): void {
     });
 
   rules.command('list')
-    .option('--lifecycle <value>', 'candidate/active/deprecated')
+    .addOption(new Option('--lifecycle <value>', 'candidate/active/deprecated').choices(RuleLifecycleSchema.options))
     .option('--stage <stage>', '按工作流阶段筛选')
     .option('--paths <paths>', '按逗号分隔的项目相对路径筛选')
     .option('--json', '输出 JSON')

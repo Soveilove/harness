@@ -2,7 +2,7 @@
   "name": "@soveilove/sovei",
   "version": "2.1.0-dev.2",
   "description": "Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Soveilove/harness.git",
@@ -21,7 +21,8 @@
     "node": ">=20"
   },
   "files": [
-    "dist/release/sovei.js"
+    "dist/release/sovei.js",
+    "LICENSE.md"
   ],
   "bin": {
     "sovei": "dist/release/sovei.js"
@@ -35,19 +36,18 @@
     "verify:package": "node scripts/verify-package.mjs",
     "prepack": "pnpm run check && pnpm test && pnpm run verify:package"
   },
-  "dependencies": {
-    "commander": "^12.1.0",
-    "jsonc-parser": "^3.3.1",
-    "minimatch": "^10.0.3",
-    "yaml": "^2.8.1",
-    "zod": "^3.23.8"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "commander": "^12.1.0",
     "esbuild": "^0.28.1",
     "javascript-obfuscator": "^5.5.0",
+    "jsonc-parser": "^3.3.1",
+    "minimatch": "^10.0.3",
     "tsx": "^4.16.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "yaml": "^2.8.1",
+    "zod": "^3.23.8"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

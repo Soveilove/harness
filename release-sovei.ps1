@@ -38,6 +38,10 @@ if ($ExpectedVersion -and $ExpectedVersion -ne $version) {
     throw "版本不一致：期望 $ExpectedVersion，package.json 实际为 $version"
 }
 
+if ($Tag -eq 'latest' -and $version -match '-') {
+    throw "预发布版本 $version 不允许发布到 latest tag。预发布版本请使用 -Tag next；latest 仅接受稳定版本（不含预发布后缀）。"
+}
+
 Write-Host ""
 Write-Host "准备发布 $packageName@$version（tag: $Tag）"
 Write-Host ""

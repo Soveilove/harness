@@ -34,4 +34,10 @@ export interface StorageBackend {
 
   /** List all entries (files and dirs) in a directory. */
   listEntries(dirPath: string): Promise<{ name: string; isDirectory: boolean }[]>;
+
+  /**
+   * Run fn holding an exclusive lock on `key`, preventing concurrent
+   * read-modify-write races across processes. No-op for non-filesystem backends.
+   */
+  withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
 }

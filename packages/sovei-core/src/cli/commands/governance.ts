@@ -77,6 +77,7 @@ export function registerGovernanceCommands(program: Command): void {
       const repo = repository();
       let added = 0;
       let skipped = 0;
+      const failed: string[] = [];
       for (const item of items) {
         try {
           await repo.addRedline({
@@ -86,11 +87,18 @@ export function registerGovernanceCommands(program: Command): void {
             enforcement: (item.enforcement as 'absolute' | 'approval-required') || 'absolute',
           });
           added++;
-        } catch {
-          skipped++;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (/already exists/i.test(message)) {
+            skipped++;
+          } else {
+            failed.push(`${item.id ?? '<无 id>'}: ${message}`);
+          }
         }
       }
-      console.log(`\n  已导入 ${added} 条红线，跳过 ${skipped} 条重复。\n`);
+      for (const failure of failed) console.error(`  ✗ ${failure}`);
+      console.log(`\n  已导入 ${added} 条红线，跳过 ${skipped} 条重复${failed.length ? '，失败 ' + failed.length + ' 条' : ''}。\n`);
+      if (failed.length) process.exitCode = 1;
     });
 ;
 }

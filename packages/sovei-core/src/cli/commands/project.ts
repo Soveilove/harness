@@ -152,7 +152,8 @@ export function registerProjectCommands(program: Command): void {
     .option('--depth <n>', '最大扫描深度', '4')
     .option('--max-entries <n>', '目录扫描最大条目数', '20000')
     .option('--max-business-files <n>', '业务地图最大源码读取数', '500')
-    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string }) => {
+    .option('--dry-run', '只扫描并打印报告，不写盘')
+    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean }) => {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
@@ -222,6 +223,11 @@ export function registerProjectCommands(program: Command): void {
       console.log('    状态：' + (result.coverage.truncated ? '部分覆盖' : '完整覆盖'));
       for (const reason of result.coverage.reasons) console.log('    · ' + reason);
       console.log('');
+
+      if (opts.dryRun) {
+        console.log('  --dry-run：仅扫描并打印报告，未写入任何文件。\n');
+        return;
+      }
 
       // Write project.config.json from detected info
       const projectConfig = {

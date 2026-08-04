@@ -44,11 +44,18 @@ export class EventStore {
     const content = await this.storage.read(eventsPath);
     if (!content) return [];
 
-    return content
-      .trim()
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => JSON.parse(line) as WorkflowEventEntry);
+    const entries: WorkflowEventEntry[] = [];
+    for (const line of content.trim().split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        entries.push(JSON.parse(line) as WorkflowEventEntry);
+      } catch (error) {
+        // Append-only log: a corrupt line is usually a half-written tail
+        // from a crash. Skip it (with a warning) rather than abort replay.
+        console.error(`警告:跳过无法解析的事件日志行:${(error as Error).message}`);
+      }
+    }
+    return entries;
   }
 
   /**
@@ -88,7 +95,13 @@ export class EventStore {
     const statePath = `${featurePath}/${STATE_FILE}`;
     const content = await this.storage.read(statePath);
     if (!content) return null;
-    return this.parseStateYaml(content);
+    try {
+      return this.parseStateYaml(content);
+    } catch (error) {
+      // State file is only a cache; on corruption, return null so callers replay.
+      console.error(`警告:工作流状态缓存已损坏,将重新回放事件重建:${(error as Error).message}`);
+      return null;
+    }
   }
 
   private async nextRevision(featurePath: string): Promise<number> {

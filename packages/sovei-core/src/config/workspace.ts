@@ -14,6 +14,7 @@
 import type { StorageBackend } from '../storage/types.js';
 import { resolve } from 'node:path';
 import { FilesystemStorage } from '../storage/filesystem.js';
+import { parseJson } from '../storage/json.js';
 import { KnowledgeEntry as KnowledgeEntrySchema, type KnowledgeEntry } from '../knowledge/schemas.js';
 import { Redline as RedlineSchema } from '../change-control/schemas.js';
 
@@ -44,7 +45,7 @@ export class WorkspaceManager {
     if (!content) {
       return { hubPath: '', workspaces: [] };
     }
-    const registry = JSON.parse(content) as WorkspaceRegistry;
+    const registry = parseJson(content, REGISTRY_FILE) as WorkspaceRegistry;
     const ids = registry.workspaces.map((workspace) => workspace.id);
     if (new Set(ids).size !== ids.length) throw new Error('Workspace registry contains duplicate IDs');
     return registry;
@@ -62,7 +63,7 @@ export class WorkspaceManager {
     const targetStorage = new FilesystemStorage(canonicalPath);
     const declaration = await targetStorage.read('harness/project/project.config.json');
     if (!declaration) throw new Error('Workspace is not a Sovei project: ' + canonicalPath);
-    const projectName = (JSON.parse(declaration) as { project?: { name?: string } }).project?.name;
+    const projectName = (parseJson(declaration, 'project.config.json') as { project?: { name?: string } }).project?.name;
     if (!projectName) throw new Error('Workspace project declaration has no project.name: ' + canonicalPath);
     let expectedProjectName = registry.projectName;
     if (!expectedProjectName && registry.workspaces.length) {
@@ -71,7 +72,7 @@ export class WorkspaceManager {
         ? await new FilesystemStorage(existingHub.path).read('harness/project/project.config.json')
         : null;
       expectedProjectName = existingDeclaration
-        ? (JSON.parse(existingDeclaration) as { project?: { name?: string } }).project?.name
+        ? (parseJson(existingDeclaration, 'project.config.json') as { project?: { name?: string } }).project?.name
         : undefined;
     }
     if (expectedProjectName && expectedProjectName !== projectName) {
@@ -160,7 +161,7 @@ export class WorkspaceManager {
     const pendingWrites: Array<{ path: string; content: string }> = [];
     const hubRedlines = await hubStorage.read('harness/project/governance/redlines.json');
     if (hubRedlines) {
-      const redlines = RedlineSchema.array().parse(JSON.parse(hubRedlines));
+      const redlines = RedlineSchema.array().parse(parseJson(hubRedlines, 'hub redlines.json'));
       pendingWrites.push({
         path: 'harness/project/governance/redlines.json',
         content: JSON.stringify(redlines, null, 2),

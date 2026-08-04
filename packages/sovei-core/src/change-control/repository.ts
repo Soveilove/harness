@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { StorageBackend } from '../storage/types.js';
+import { parseJson } from '../storage/json.js';
 import {
   ChangeRequest as ChangeRequestSchema,
   Redline as RedlineSchema,
@@ -10,6 +11,7 @@ import {
 } from './schemas.js';
 
 const REDLINES_FILE = 'harness/project/governance/redlines.json';
+const REDLINES_LOCK = 'harness/project/governance/redlines';
 const REDLINE_EVENTS_FILE = 'harness/project/governance/redline-events.jsonl';
 
 const DIMENSION_MINIMUM_STAGE: Record<ChangeDimension, string> = {
@@ -32,7 +34,7 @@ export class ChangeControlRepository {
       await this.storage.write(REDLINES_FILE, '[]');
       return [];
     }
-    return RedlineSchema.array().parse(JSON.parse(content));
+    return RedlineSchema.array().parse(parseJson(content, REDLINES_FILE));
   }
 
   async saveRedlines(redlines: Redline[]): Promise<void> {
@@ -40,34 +42,38 @@ export class ChangeControlRepository {
   }
 
   async addRedline(input: Pick<Redline, 'id' | 'title' | 'rule' | 'enforcement'>): Promise<Redline> {
-    const redlines = await this.loadRedlines();
-    if (redlines.some((redline) => redline.id === input.id)) {
-      throw new Error(`Redline already exists: ${input.id}`);
-    }
-    const now = new Date().toISOString();
-    const redline = RedlineSchema.parse({ ...input, active: true, createdAt: now, updatedAt: now });
-    await this.saveRedlines([...redlines, redline]);
-    await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
-      type: 'REDLINE_ADDED',
-      timestamp: now,
-      redline,
-    }) + '\n');
-    return redline;
+    return this.storage.withLock(REDLINES_LOCK, async () => {
+      const redlines = await this.loadRedlines();
+      if (redlines.some((redline) => redline.id === input.id)) {
+        throw new Error(`Redline already exists: ${input.id}`);
+      }
+      const now = new Date().toISOString();
+      const redline = RedlineSchema.parse({ ...input, active: true, createdAt: now, updatedAt: now });
+      await this.saveRedlines([...redlines, redline]);
+      await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
+        type: 'REDLINE_ADDED',
+        timestamp: now,
+        redline,
+      }) + '\n');
+      return redline;
+    });
   }
 
   async deactivateRedline(id: string, reason: string): Promise<Redline> {
-    const redlines = await this.loadRedlines();
-    const existing = redlines.find((redline) => redline.id === id);
-    if (!existing) throw new Error(`Redline not found: ${id}`);
-    const updated = { ...existing, active: false, updatedAt: new Date().toISOString() };
-    await this.saveRedlines(redlines.map((redline) => redline.id === id ? updated : redline));
-    await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
-      type: 'REDLINE_DEACTIVATED',
-      timestamp: updated.updatedAt,
-      redlineId: id,
-      reason,
-    }) + '\n');
-    return updated;
+    return this.storage.withLock(REDLINES_LOCK, async () => {
+      const redlines = await this.loadRedlines();
+      const existing = redlines.find((redline) => redline.id === id);
+      if (!existing) throw new Error(`Redline not found: ${id}`);
+      const updated = { ...existing, active: false, updatedAt: new Date().toISOString() };
+      await this.saveRedlines(redlines.map((redline) => redline.id === id ? updated : redline));
+      await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
+        type: 'REDLINE_DEACTIVATED',
+        timestamp: updated.updatedAt,
+        redlineId: id,
+        reason,
+      }) + '\n');
+      return updated;
+    });
   }
 
   async createRequest(
@@ -120,7 +126,7 @@ export class ChangeControlRepository {
   async loadRequest(featurePath: string, id: string): Promise<ChangeRequest> {
     const content = await this.storage.read(this.requestPath(featurePath, id));
     if (!content) throw new Error(`Change request not found: ${id}`);
-    return ChangeRequestSchema.parse(JSON.parse(content));
+    return ChangeRequestSchema.parse(parseJson(content, `变更请求 ${id}`));
   }
 
   async saveRequest(featurePath: string, request: ChangeRequest): Promise<void> {
@@ -132,7 +138,7 @@ export class ChangeControlRepository {
     const requests: ChangeRequest[] = [];
     for (const file of files.filter((name) => name.endsWith('.json'))) {
       const content = await this.storage.read(`${featurePath}/change-requests/${file}`);
-      if (content) requests.push(ChangeRequestSchema.parse(JSON.parse(content)));
+      if (content) requests.push(ChangeRequestSchema.parse(parseJson(content, `变更请求 ${file}`)));
     }
     return requests.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }

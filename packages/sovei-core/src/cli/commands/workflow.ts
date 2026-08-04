@@ -160,7 +160,14 @@ export function registerWorkflowCommands(program: Command): void {
     .requiredOption('--dimensions <dimensions>', 'Comma-separated material change dimensions')
     .description('Create a draft material-change request and redline review matrix')
     .action(async (feature: string, opts: { target: string; summary: string; reason: string; dimensions: string }) => {
-      const dimensions = opts.dimensions.split(',').map((value) => ChangeDimension.parse(value.trim())) as ChangeDimensionType[];
+      const dimensions: ChangeDimensionType[] = [];
+      for (const value of opts.dimensions.split(',')) {
+        const result = ChangeDimension.safeParse(value.trim());
+        if (!result.success) {
+          throw new Error(`无效的变更维度 '${value.trim()}'，可选值：${ChangeDimension.options.join(' / ')}`);
+        }
+        dimensions.push(result.data);
+      }
       const request = await getEngine().prepareChange(feature, opts.target, opts.summary, opts.reason, dimensions);
       console.log(`\n  Draft change request: ${request.id}`);
       console.log(`  File: specs/${feature}/change-requests/${request.id}.json`);

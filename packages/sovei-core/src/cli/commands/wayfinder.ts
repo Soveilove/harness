@@ -1,4 +1,4 @@
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 import { InteractionMode, DecisionTicketType, WayfinderRepository } from '../../wayfinder/index.js';
 import { getFeaturePath } from '../../config/loader.js';
 import type { SoveiConfig } from '../../config/types.js';
@@ -91,8 +91,8 @@ export function registerWayfinderCommands(program: Command): void {
     .argument('<feature>', 'Feature ID')
     .requiredOption('--title <title>', 'Human-readable ticket name')
     .requiredOption('--question <question>', 'Decision or investigation this ticket resolves')
-    .requiredOption('--type <type>', 'research | prototype | grilling | task')
-    .requiredOption('--interaction <mode>', 'HITL | AFK')
+    .addOption(new Option('--type <type>', 'research | prototype | grilling | task').choices(DecisionTicketType.options).makeOptionMandatory())
+    .addOption(new Option('--interaction <mode>', 'HITL | AFK').choices(InteractionMode.options).makeOptionMandatory())
     .option('--blocked-by <ids>', 'Comma-separated decision ticket IDs')
     .option('--actor <actor>', 'Actor creating the ticket')
     .action(async (feature: string, options: { title: string; question: string; type: string; interaction: string; blockedBy?: string; actor?: string }) => {
@@ -126,8 +126,8 @@ export function registerWayfinderCommands(program: Command): void {
     .argument('<fog-id>', 'Fog ID')
     .requiredOption('--title <title>', 'Human-readable ticket name')
     .requiredOption('--question <question>', 'Now-specifiable decision question')
-    .requiredOption('--type <type>', 'research | prototype | grilling | task')
-    .requiredOption('--interaction <mode>', 'HITL | AFK')
+    .addOption(new Option('--type <type>', 'research | prototype | grilling | task').choices(DecisionTicketType.options).makeOptionMandatory())
+    .addOption(new Option('--interaction <mode>', 'HITL | AFK').choices(InteractionMode.options).makeOptionMandatory())
     .option('--blocked-by <ids>', 'Comma-separated decision ticket IDs')
     .option('--actor <actor>', 'Actor graduating the fog')
     .action(async (feature: string, fogId: string, options: { title: string; question: string; type: string; interaction: string; blockedBy?: string; actor?: string }) => {

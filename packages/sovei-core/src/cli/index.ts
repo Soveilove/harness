@@ -14,8 +14,8 @@ import { registerWayfinderCommands } from './commands/wayfinder.js';
 import { registerRulesCommands } from './commands/rules.js';
 import { bootstrap } from '../providers/bootstrap.js';
 
-const require = createRequire(import.meta.url);
-const packageJson = require('../../package.json') as { version: string };
+const pkgRequire = createRequire(import.meta.url);
+const packageJson = pkgRequire('../../package.json') as { version: string };
 const program = new Command();
 
 program
@@ -38,6 +38,14 @@ registerArchitectureCommands(program);
 registerContextCommands(program);
 registerAgentCommands(program);
 registerRulesCommands(program);
+
+// commander v12 默认静默忽略多余位置参数(例如 `project onboard ./path` 的 path 被丢弃，
+// 命令实际作用于 cwd),这在覆盖式命令上很危险。全局关闭,让多余参数直接报错。
+function denyExcessArguments(cmd: Command): void {
+  cmd.allowExcessArguments(false);
+  for (const child of cmd.commands) denyExcessArguments(child);
+}
+denyExcessArguments(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);

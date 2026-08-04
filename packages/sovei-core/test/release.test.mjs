@@ -19,6 +19,6 @@ test('release CLI is a runnable obfuscated bundle without source maps', async ()
   assert.ok(releaseCode.startsWith('#!/usr/bin/env node\n'));
   assert.doesNotMatch(releaseCode, /sourceMappingURL|class ProjectScanner|class BusinessMapScanner/);
   assert.equal(distFiles.some((file) => file.endsWith('.map')), false);
-  assert.deepEqual(packageJson.files, ['dist/release/sovei.js']);
+  assert.deepEqual(packageJson.files, ['dist/release/sovei.js', 'LICENSE.md']);
   assert.equal(packageJson.bin.sovei, 'dist/release/sovei.js');
 });
