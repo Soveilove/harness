@@ -6,6 +6,7 @@
 import type { SoveiConfig } from './types.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parseProjectJson } from './json.js';
 
 const DEFAULT_STAGE_ORDER = [
   'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
@@ -15,6 +16,7 @@ const DEFAULT_STAGE_ORDER = [
 const DEFAULT_CONFIG: Omit<SoveiConfig, 'rootPath'> = {
   specsDir: 'specs',
   knowledgeDir: 'harness/project/knowledge',
+  rulesDir: 'harness/project/rules',
   harnessDir: 'harness',
   project: {
     name: 'untitled',
@@ -32,7 +34,7 @@ export function loadConfig(rootPath: string): SoveiConfig {
   const configPath = join(rootPath, 'harness', 'project', 'project.config.json');
   let configured: Partial<SoveiConfig> = {};
   try {
-    configured = JSON.parse(readFileSync(configPath, 'utf8')) as Partial<SoveiConfig>;
+    configured = parseProjectJson<Partial<SoveiConfig>>(readFileSync(configPath, 'utf8'), configPath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
       throw new Error(`Invalid project configuration at ${configPath}: ${(error as Error).message}`);

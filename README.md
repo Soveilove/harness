@@ -181,6 +181,49 @@ sovei --root D:/work/app-main workspace promote feature
 Hub 只向卫星分发 stable 知识；卫星只向 Hub 提交 candidate。项目身份、重复 ID、
 重复路径和知识 ID 冲突都会阻止同步。Hub 的业务红线也会作为权威治理数据同步到卫星。
 
+## 项目工程规范（Rules）
+
+项目规范存储在 `harness/project/rules/*.rules.json`。它和另外两类约束严格分开：
+
+| 类型 | 解决的问题 | 生效方式 |
+|---|---|---|
+| Project Rules | 代码风格、架构边界、验证命令、目录和阶段约束 | active 后按 stage + path 注入上下文 |
+| Knowledge rule | 从实践中归纳的实现经验 | candidate 经证据审查后晋级 stable |
+| Governance redline | 认证、计费、数据完整性等不可破坏业务边界 | 显式启用，并参与重大变更门禁 |
+
+新项目和老项目使用不同的信任链：
+
+```bash
+# 新项目：只创建空 Rules 容器，不猜测、不补充默认规范
+sovei project init D:/work/new-app --language typescript
+sovei --root D:/work/new-app rules validate
+
+# 已有项目：仅在发现原有 Agent/IDE Rules 时适配 candidate，绝不自动生效
+sovei --root D:/work/legacy-app project onboard
+sovei --root D:/work/legacy-app rules adapt
+sovei --root D:/work/legacy-app rules list --lifecycle candidate
+sovei --root D:/work/legacy-app rules activate ADAPTED_... \
+  --reviewer tech-lead --reason "已与当前代码和团队约定核对"
+```
+
+适配器只读取有界范围内的显式规则源：Codex 的根目录或分层 `AGENTS.md`、Cursor 的
+`.cursorrules` 和 `.cursor/rules/*`、Claude Code 的根目录或分层 `CLAUDE.md` 和
+`.claude/rules/*`。`package.json` 脚本、`tsconfig` 和技术栈只是项目事实，不会被推断为
+Rules。没有原有规则时不会创建 `adapted.rules.json`；重复适配保持幂等，并保留已人工
+审查的状态和证据。其他 IDE 可沿规则源适配器模式扩展。
+
+规则支持 `required/advisory`、`candidate/active/deprecated`、路径 glob、排除路径、
+工作流阶段和 command/review 验证项。配置非法或 ID 重复时 fail closed；没有传目标路径时，
+解析器保守返回该阶段的全部 active 规则，避免在 scope 尚不明确时漏掉限制。
+
+```bash
+sovei rules resolve --stage implement --paths "packages/core/src/a.ts,packages/ui/src/b.vue"
+sovei context build 001-my-feature --stage implement --paths "packages/core/src/a.ts"
+```
+
+当前 Sovei 仓库已有 `AGENTS.md`，因此通过同一适配链生成待审核 candidate；不会因为
+Sovei 正在开发自己，就绕过生命周期直接生成 active 规范。
+
 ## 极端需求变更与业务红线
 
 功能方向大幅变化时，不要直接修改旧 Spec，也不要只执行普通 `reopen`。先声明项目级
@@ -363,6 +406,31 @@ sovei/
 - **语言**：TypeScript 5.x
 - **依赖**：commander (CLI)、zod (schema 验证)、yaml (配置解析)
 - **无 Python、无 PowerShell 依赖**
+
+## 发布 Sovei CLI
+
+发布脚本位于仓库根目录 `release-sovei.ps1`。它会检查 npm 身份、远端版本、
+Git 工作区、类型检查、完整测试和 tarball 白名单，正式发布前再交互读取 6 位 OTP。
+OTP 不会写入文件。
+
+发布包只包含压缩混淆后的 `dist/release/sovei.js`、包声明和说明文件；不发布
+source map、TypeScript 源码、声明映射或内部模块目录。混淆用于提高逆向成本，
+不等同于密码学加密，密钥和必须保密的业务算法仍不得放入本地 CLI。
+
+```powershell
+# 仅预检，不发布、不需要 OTP
+pnpm run release:sovei:check
+
+# 正式发布 package.json 中的当前版本，默认使用 next 标签
+pnpm run release:sovei
+
+# 可选：明确校验预期版本
+.\release-sovei.ps1 -ExpectedVersion 2.1.0-dev.2
+```
+
+默认禁止从存在未提交变更的工作区发布。紧急情况下可以显式运行
+`.\release-sovei.ps1 -AllowDirty`，但正常流程应先审查并提交本次版本变更。
+发布脚本属于仓库维护工具；已发布的 Sovei CLI 运行时仍不依赖 PowerShell。
 
 ## 许可
 

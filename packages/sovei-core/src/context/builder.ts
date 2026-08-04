@@ -11,6 +11,7 @@ import type { KnowledgeEntry } from '../knowledge/schemas.js';
 import type { Redline } from '../change-control/schemas.js';
 import { searchEntries } from '../knowledge/selectors.js';
 import type { KnowledgeSnapshot } from './snapshot.js';
+import type { LoadedProjectRule } from '../rules/schemas.js';
 
 export interface ContextItem {
   source: string;
@@ -67,6 +68,25 @@ function fromKnowledge(entry: KnowledgeEntry, required: boolean): ContextItem {
   };
 }
 
+function fromProjectRule(rule: LoadedProjectRule): ContextItem {
+  const verification = rule.verification.map((item) => item.type === 'command'
+    ? `- command: ${item.command} (${item.description})`
+    : `- review: ${item.description}`);
+  const content = verification.length
+    ? `${rule.instruction}\n\nVerification:\n${verification.join('\n')}`
+    : rule.instruction;
+  return {
+    source: rule.source,
+    id: rule.id,
+    type: 'project-rule',
+    title: rule.title,
+    content,
+    lifecycle: rule.lifecycle,
+    contentHash: hashContent(rule.id + content),
+    citation: `项目规范 ${rule.id}（${rule.enforcement}，${rule.source}）`,
+  };
+}
+
 function fromArtifact(name: string, content: string): ContextItem {
   return {
     source: `specs/${name}`,
@@ -86,6 +106,7 @@ export interface ContextBuildOptions {
   adapter?: string;
   query?: string;
   redlines: Redline[];
+  projectRules?: LoadedProjectRule[];
   knowledge: KnowledgeEntry[];
   artifacts: Array<{ name: string; content: string }>;
   snapshot: KnowledgeSnapshot | null;
@@ -104,7 +125,13 @@ export function buildContextPack(opts: ContextBuildOptions): ContextPack {
     required.push(fromKnowledge(entry, true));
   }
 
-  // 3. Current Feature contract artifacts are required
+  // 3. Active project rules are deterministic and already scope-resolved.
+  for (const rule of (opts.projectRules ?? []).filter((item) => item.lifecycle === 'active')) {
+    const contextItem = fromProjectRule(rule);
+    if (rule.enforcement === 'required') required.push(contextItem);
+  }
+
+  // 4. Current Feature contract artifacts are required
   for (const artifact of opts.artifacts) {
     required.push(fromArtifact(artifact.name, artifact.content));
   }
@@ -117,6 +144,9 @@ export function buildContextPack(opts: ContextBuildOptions): ContextPack {
     suggested = searchEntries(suggested, opts.query);
   }
   const suggestedItems = suggested.slice(0, 20).map((e) => fromKnowledge(e, false));
+  for (const rule of (opts.projectRules ?? []).filter((item) => item.lifecycle === 'active' && item.enforcement === 'advisory')) {
+    suggestedItems.push(fromProjectRule(rule));
+  }
 
   return {
     schemaVersion: 1,

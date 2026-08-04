@@ -14,6 +14,7 @@ import { ArtifactRepository } from '../../artifacts/repository.js';
 import { getFeaturePath } from '../../config/loader.js';
 import { buildContextPack, renderContextPackMarkdown } from '../../context/builder.js';
 import { buildSnapshot, saveSnapshot, loadSnapshot, isStale, computeSourceHash } from '../../context/snapshot.js';
+import { ProjectRulesRepository, resolveProjectRules } from '../../rules/repository.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -27,8 +28,9 @@ export function registerContextCommands(program: Command): void {
     .requiredOption('--stage <stage>', '当前工作流阶段')
     .option('--adapter <id>', '目标 IDE 适配器 ID')
     .option('--query <text>', '可选检索查询')
+    .option('--paths <paths>', '按逗号分隔的项目相对路径，用于匹配项目规范')
     .option('--json', '输出 JSON 而非 Markdown')
-    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; json?: boolean }) => {
+    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; json?: boolean }) => {
       const storage = getStorage();
       const config = getConfig();
       const featurePath = getFeaturePath(config, feature);
@@ -41,6 +43,14 @@ export function registerContextCommands(program: Command): void {
       // Load active redlines
       const repo = new ChangeControlRepository(storage);
       const redlines = await repo.loadRedlines();
+
+      // Load active project rules. With no target paths, resolution is conservative
+      // and includes every rule matching the current stage.
+      const rulesRepository = new ProjectRulesRepository(storage, config.rulesDir);
+      const projectRules = resolveProjectRules(await rulesRepository.load(), {
+        stage: opts.stage,
+        paths: opts.paths?.split(',').map((path) => path.trim()).filter(Boolean),
+      });
 
       // Load Feature artifacts
       const artifacts = new ArtifactRepository(storage, featurePath);
@@ -66,6 +76,7 @@ export function registerContextCommands(program: Command): void {
         adapter: opts.adapter,
         query: opts.query,
         redlines,
+        projectRules,
         knowledge,
         artifacts: artifactContents,
         snapshot: freshSnapshot,

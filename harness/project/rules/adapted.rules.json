@@ -1,0 +1,485 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "id": "ADAPTED_INSTRUCTION_0E30D11F58",
+      "title": "架构扫描数据位于 `harness/project/architecture/`；自动扫描只能创建候选和快照，不能自动重写业务代码。",
+      "instruction": "架构扫描数据位于 `harness/project/architecture/`；自动扫描只能创建候选和快照，不能自动重写业务代码。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_175C84DFFF",
+      "title": "演进式架构治理通过 `architecture scan/status/inspect/accept/dismiss/check` 完成，...",
+      "instruction": "演进式架构治理通过 `architecture scan/status/inspect/accept/dismiss/check` 完成，不新增工作流阶段。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_1E48D71B83",
+      "title": "高 churn、多职责模块优先使用 `expand-migrate-contract`；高扇入或循环依赖优先使用 `branch-by-a...",
+      "instruction": "高 churn、多职责模块优先使用 `expand-migrate-contract`；高扇入或循环依赖优先使用 `branch-by-abstraction`。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_4E6FFAC43D",
+      "title": "知识管理使用类型化 JSON，存储在 `harness/project/knowledge/`；单次观察只能进入 candidate，不得...",
+      "instruction": "知识管理使用类型化 JSON，存储在 `harness/project/knowledge/`；单次观察只能进入 candidate，不得直接晋级 stable。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_6013315E45",
+      "title": "壳料分离：`harness/project/` 是料（换项目清空），`packages/sovei-core/` 是壳（换项目保留）。",
+      "instruction": "壳料分离：`harness/project/` 是料（换项目清空），`packages/sovei-core/` 是壳（换项目保留）。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_62232D5269",
+      "title": "DI 容器在 `providers/container.ts`，通过 `TOKENS` 注入。",
+      "instruction": "DI 容器在 `providers/container.ts`，通过 `TOKENS` 注入。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_69D0D61931",
+      "title": "使用 `reopen` 返工已完成阶段，它会失效目标及其后继并增加 revision。",
+      "instruction": "使用 `reopen` 返工已完成阶段，它会失效目标及其后继并增加 revision。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_95FA0F30DA",
+      "title": "工作流每次调用只执行一个阶段；12 个阶段：load → grill → wayfind → spec → scope → plan → ...",
+      "instruction": "工作流每次调用只执行一个阶段；12 个阶段：load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_A075666522",
+      "title": "Sovei 2.0 是一个 TypeScript 工作流引擎，位于 `packages/sovei-core/`。",
+      "instruction": "Sovei 2.0 是一个 TypeScript 工作流引擎，位于 `packages/sovei-core/`。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_A86974C29E",
+      "title": "Stage 使用 `defineStage()` 定义，有 preExecute/execute/postExecute/cleanup ...",
+      "instruction": "Stage 使用 `defineStage()` 定义，有 preExecute/execute/postExecute/cleanup 生命周期 hooks。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_C044A670A7",
+      "title": "使用 `pnpm --dir packages/sovei-core run build` 构建，`pnpm --dir packages...",
+      "instruction": "使用 `pnpm --dir packages/sovei-core run build` 构建，`pnpm --dir packages/sovei-core run check` 类型检查。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_C286AB1BB9",
+      "title": "CLI 入口：`node packages/sovei-core/dist/cli/index.js`。",
+      "instruction": "CLI 入口：`node packages/sovei-core/dist/cli/index.js`。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_D84806D43E",
+      "title": "不得仅凭文件行数要求重构；`refactor-required` 至少需要两个压力维度叠加。",
+      "instruction": "不得仅凭文件行数要求重构；`refactor-required` 至少需要两个压力维度叠加。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_DBE2F5D390",
+      "title": "`harness/project/project.config.json` 是项目声明，换项目时第一个修改。",
+      "instruction": "`harness/project/project.config.json` 是项目声明，换项目时第一个修改。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_INSTRUCTION_F2D02563D0",
+      "title": "状态机是纯函数 reducer + 事件溯源；所有状态变更通过 EventStore 追加，通过 replay 派生。",
+      "instruction": "状态机是纯函数 reducer + 事件溯源；所有状态变更通过 EventStore 追加，通过 replay 派生。",
+      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "candidate",
+      "enforcement": "required",
+      "appliesTo": {
+        "paths": [
+          "**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "agent-rule-file"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          "AGENTS.md"
+        ]
+      }
+    }
+  ]
+}

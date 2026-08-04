@@ -4,7 +4,7 @@
     "description": "Portable TypeScript development workflow and knowledge engine",
     "techStack": {
       "framework": "Node.js CLI",
-      "language": "TypeScript",
+      "language": "JavaScript, TypeScript",
       "state": "Event Sourcing + typed JSON",
       "build": "pnpm + tsc"
     },

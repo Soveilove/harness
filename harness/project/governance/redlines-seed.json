@@ -1,1 +1,25 @@
-﻿{"schemaVersion":1,"generatedAt":"2026-08-03T00:00:00.000Z","redlines":[]}
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-03T16:38:58.445Z",
+  "scannerVersion": "2.1.0-dev.2",
+  "redlines": [
+    {
+      "id": "AUTHENTICATION_AUTHENTICATION_SURFACE_DETECTED_IN_CODE_",
+      "title": "Authentication surface detected in code structure",
+      "rule": "All authentication-related routes and middleware must require valid identity",
+      "enforcement": "absolute",
+      "source": "packages/sovei-core/src/providers/tokens.ts",
+      "category": "authentication",
+      "confidence": "medium"
+    },
+    {
+      "id": "DATA_INTEGRITY_DATABASE_SCHEMA_SURFACE_DETECTED_IN_CODE",
+      "title": "Database/schema surface detected in code structure",
+      "rule": "Database schema changes require migration and integrity verification",
+      "enforcement": "absolute",
+      "source": "packages/sovei-core/src/architecture/repository.ts, packages/sovei-core/src/artifacts/repository.ts, packages/sovei-core/src/change-control/repository.ts, packages/sovei-core/src/change-control/schemas.ts, packages/sovei-core/src/knowledge/schemas.ts, packages/sovei-core/src/wayfinder/repository.ts, packages/sovei-core/src/wayfinder/schemas.ts",
+      "category": "data-integrity",
+      "confidence": "medium"
+    }
+  ]
+}

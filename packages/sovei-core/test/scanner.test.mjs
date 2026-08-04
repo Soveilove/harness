@@ -71,3 +71,64 @@ test('scanner ignores malformed package manifests without losing valid packages'
     assert.deepEqual(result.entryPoints, ['packages/valid/index.js']);
   });
 });
+
+test('scanner discovers package manifests written with a UTF-8 BOM', async () => {
+  await fixture(async (root, storage) => {
+    const target = join(root, 'packages', 'windows-app', 'package.json');
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, '\uFEFF' + JSON.stringify({
+      name: 'windows-app',
+      main: 'src/index.ts',
+      homepage: 'https://example.com/windows-app',
+    }).replace(/}$/, ',\n// Windows JSONC comment\n}'), 'utf8');
+
+    const result = await new ProjectScanner(storage).scan(4);
+
+    assert.deepEqual(result.packages.map((pkg) => pkg.name), ['windows-app']);
+    assert.deepEqual(result.entryPoints, ['packages/windows-app/src/index.ts']);
+  });
+});
+
+test('scanner automatically builds a reviewable business map with contracts, dependencies, and redlines', async () => {
+  await fixture(async (root, storage) => {
+    await writeJson(root, 'package.json', { dependencies: { axios: '^1.0.0' } });
+    const files = {
+      'src/pages/checkout/index.ts': "import { charge } from '../../services/payment/service.js'; export const submit = () => charge('/api/orders');",
+      'src/services/payment/service.ts': "import axios from 'axios'; export const charge = (url: string) => axios.post(url);",
+      'src/auth/guard.ts': "export const guard = (session: unknown) => { if (!session) throw new Error('login'); };",
+    };
+    for (const [path, content] of Object.entries(files)) {
+      const target = join(root, path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, content, 'utf8');
+    }
+
+    const result = await new ProjectScanner(storage).scan(5, 100, 100);
+    const billing = result.businessMap.capabilities.find((item) => item.id === 'billing');
+
+    assert.ok(billing);
+    assert.ok(billing.entrySurfaces.includes('src/pages/checkout/index.ts'));
+    assert.ok(billing.contracts.includes('/api/orders'));
+    assert.ok(billing.externalDependencies.includes('axios'));
+    assert.ok(billing.redlineCandidateIds.length > 0);
+    assert.equal(result.businessMap.lifecycle, 'candidate');
+    assert.equal(result.businessMap.generator.mode, 'builtin-static-analysis');
+  });
+});
+
+test('scanner reports partial coverage when the repository entry budget is reached', async () => {
+  await fixture(async (root, storage) => {
+    for (let index = 0; index < 8; index++) {
+      const target = join(root, 'src', 'feature-' + index, 'service.ts');
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, 'export const value = ' + index, 'utf8');
+    }
+
+    const result = await new ProjectScanner(storage).scan(5, 5, 100);
+
+    assert.equal(result.coverage.truncated, true);
+    assert.ok(result.coverage.filesDiscovered + result.coverage.directoriesDiscovered <= 5);
+    assert.match(result.coverage.reasons.join(' '), /条目上限/);
+    assert.equal(result.businessMap.coverage.truncated, true);
+  });
+});

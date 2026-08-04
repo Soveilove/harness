@@ -26,7 +26,7 @@ harness/
 │   │   └── constitution.json
 │   ├── architecture/             # 演进式架构健康、趋势和技术债
 │   ├── codegraph/                # 代码地图
-│   └── rules/                    # 规则库
+│   └── rules/                    # 项目工程规范（*.rules.json）
 └── templates/                    # 壳（文档模板）
 ```
 
@@ -47,6 +47,30 @@ sovei knowledge list
 sovei knowledge promote <id>
 sovei knowledge stats
 ```
+
+## 项目工程规范
+
+`project/rules/*.rules.json` 是项目明确声明的工程约束，不等同于
+`knowledge/rule.json` 的经验知识，也不等同于 `governance/redlines.json` 的业务红线。
+active 规范会按工作流阶段和目标路径进入上下文；required 是必选项，advisory 是建议项。
+
+```bash
+# 严格校验 schema 和跨文件重复 ID
+sovei rules validate
+
+# 查看实现阶段对目标文件生效的规范
+sovei rules resolve --stage implement --paths "packages/sovei-core/src/rules/repository.ts"
+
+# 老项目只生成 candidate；人工确认后才激活并记录审查事件
+sovei rules adapt
+sovei rules list --lifecycle candidate
+sovei rules activate ADAPTED_... --reviewer maintainer --reason "已核对当前约定"
+```
+
+`project init` 无论是否使用 `--blank` 都只创建空 Rules 容器，不猜测默认规范。
+`project onboard` 只从显式存在的 Codex、Cursor、Claude Code 等 Agent/IDE Rules
+提取 candidate，并在重复运行时保留已审查状态。包脚本、TypeScript 配置和技术栈不是
+Rules 来源；没有原有 Rules 时不生成候选文件。自动适配不得直接生成 active 规范。
 
 ## 演进式架构
 

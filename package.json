@@ -1,0 +1,18 @@
+{
+  "name": "sovei-engine-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "sovei": "sovei",
+    "sovei:build": "pnpm --dir packages/sovei-core run build",
+    "sovei:check": "pnpm --dir packages/sovei-core run check",
+    "sovei:test": "pnpm --dir packages/sovei-core test",
+    "sovei:onboard": "pnpm run sovei:build && pnpm exec sovei project onboard",
+    "release:sovei": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release-sovei.ps1",
+    "release:sovei:check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release-sovei.ps1 -ValidateOnly -AllowDirty"
+  },
+  "dependencies": {
+    "@soveilove/sovei": "file:packages/sovei-core"
+  }
+}

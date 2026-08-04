@@ -16,6 +16,8 @@ import { ProjectScanner } from '../../config/scanner.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from '../../config/tech-stack.js';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
+import { emptyRulesDocument, ProjectRulesRepository, DEFAULT_RULES_FILE } from '../../rules/repository.js';
+import { adaptProjectRules } from '../../rules/adaptation.js';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -103,6 +105,11 @@ export function registerProjectCommands(program: Command): void {
         await storage.write('harness/project/governance/redlines.json', '[]');
         console.log('  · 已创建 harness/project/governance/redlines.json');
       }
+      if (!(await storage.exists(DEFAULT_RULES_FILE))) {
+        const rulesRepository = new ProjectRulesRepository(storage);
+        await rulesRepository.writeDocument(DEFAULT_RULES_FILE, emptyRulesDocument());
+        console.log('  · 已创建 ' + DEFAULT_RULES_FILE + '（空 Rules 容器，未生成默认规范）');
+      }
 
       // Seed knowledge based on tech stack (unless --blank)
       if (!opts.blank) {
@@ -127,11 +134,13 @@ export function registerProjectCommands(program: Command): void {
       console.log('  后续步骤：');
       console.log('    1. 编辑 harness/project/project.config.json');
       if (!opts.blank && stack.framework) {
-        console.log('    2. 审查种子知识：sovei knowledge list');
-        console.log('    3. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    2. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
+        console.log('    3. 审查种子知识：sovei knowledge list');
+        console.log('    4. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       } else {
-        console.log('    2. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
-        console.log('    3. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    2. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
+        console.log('    3. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
+        console.log('    4. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       }
       console.log('');
     });
@@ -141,17 +150,21 @@ export function registerProjectCommands(program: Command): void {
     .command('onboard')
     .description('扫描已有项目并初始化知识')
     .option('--depth <n>', '最大扫描深度', '4')
-    .action(async (opts: { depth: string }) => {
+    .option('--max-entries <n>', '目录扫描最大条目数', '20000')
+    .option('--max-business-files <n>', '业务地图最大源码读取数', '500')
+    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string }) => {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
       const maxDepth = parseInt(opts.depth, 10) || 4;
+      const maxEntries = parseInt(opts.maxEntries, 10) || 20_000;
+      const maxBusinessFiles = parseInt(opts.maxBusinessFiles, 10) || 500;
 
       console.log('\n  正在扫描项目以完成初始化……\n');
 
       // Run scanner
       const scanner = new ProjectScanner(storage);
-      const result = await scanner.scan(maxDepth);
+      const result = await scanner.scan(maxDepth, maxEntries, maxBusinessFiles);
 
       // Print detected info
       console.log('  ── 检测到的技术栈 ──');
@@ -203,6 +216,13 @@ export function registerProjectCommands(program: Command): void {
       }
       console.log('');
 
+      console.log('  ── 扫描覆盖 ──');
+      console.log('    文件：' + result.coverage.filesDiscovered);
+      console.log('    目录：' + result.coverage.directoriesDiscovered);
+      console.log('    状态：' + (result.coverage.truncated ? '部分覆盖' : '完整覆盖'));
+      for (const reason of result.coverage.reasons) console.log('    · ' + reason);
+      console.log('');
+
       // Write project.config.json from detected info
       const projectConfig = {
         project: {
@@ -225,6 +245,14 @@ export function registerProjectCommands(program: Command): void {
         console.log('  · 已创建 harness/project/governance/redlines.json');
       }
 
+      // Existing projects are adapted into candidates only. Re-running onboard is
+      // idempotent and preserves rules that have already been reviewed.
+      const rulesRepository = new ProjectRulesRepository(storage, currentConfig.rulesDir);
+      const adaptedRules = await adaptProjectRules(storage, rulesRepository);
+      console.log(adaptedRules.written
+        ? '  · 已适配 ' + adaptedRules.total + ' 条项目规范候选（未自动激活）'
+        : '  · 未发现项目原有 Agent/IDE Rules，未生成规范候选');
+
       // Write generated knowledge entries
       const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
       await knowledgeStore.load();
@@ -246,6 +274,16 @@ export function registerProjectCommands(program: Command): void {
       }
       await knowledgeStore.persist();
       console.log('  · 已新增 ' + added + ' 条，刷新 ' + updated + ' 条，保留 ' + preserved + ' 条已审核知识');
+
+      // Business topology is generated as a typed candidate. Humans review it;
+      // they do not have to reconstruct capabilities and dependencies manually.
+      const businessMapPath = 'harness/project/codegraph/business-map.json';
+      await storage.write(businessMapPath, JSON.stringify(result.businessMap, null, 2));
+      console.log('  · 已写入 ' + businessMapPath + '（' + result.businessMap.capabilities.length + ' 项候选业务能力）');
+      if (result.businessMap.coverage.truncated) {
+        console.log('    业务地图为部分覆盖：' + result.businessMap.coverage.reasons.join('；'));
+      }
+
       // Write candidate redlines to seed file for human review (never auto-activate)
       const seedPath = 'harness/project/governance/redlines-seed.json';
       const seedData = {
@@ -303,6 +341,7 @@ export function registerProjectCommands(program: Command): void {
 
       console.log('\n  ✓ 项目初始化扫描完成。\n');
       console.log('  所有生成知识均为 candidate 生命周期。');
+      console.log('  业务地图和业务红线已自动生成候选；人工仅需审核、接受、驳回或修正。');
       console.log('  审查并在验证模式后晋级：');
       console.log('    sovei knowledge list --lifecycle candidate');
       console.log('    sovei knowledge promote <id> --feature <feature> --description "verified"');
@@ -389,6 +428,9 @@ export function registerProjectCommands(program: Command): void {
         } catch { /* skip */ }
       }
       console.log('  红线：        ' + activeRedlines + ' 条已启用' + (totalRedlines > activeRedlines ? '（' + (totalRedlines - activeRedlines) + ' 条未启用）' : '') + (activeRedlines === 0 ? '；可运行 sovei governance redline add 添加' : ''));
+
+      const projectRules = await new ProjectRulesRepository(storage, config.rulesDir).load();
+      console.log('  项目规范：    ' + projectRules.filter((rule) => rule.lifecycle === 'active').length + ' 条已激活，' + projectRules.filter((rule) => rule.lifecycle === 'candidate').length + ' 条待审');
 
       // Check workspaces
       const wsContent = await storage.read('harness/project/workspaces.json');

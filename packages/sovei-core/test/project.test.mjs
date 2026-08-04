@@ -42,7 +42,20 @@ test('project init writes to its path argument, not the global root', async () =
       JSON.parse(await readFile(join(target, 'harness', 'project', 'governance', 'redlines.json'), 'utf8')),
       [],
     );
+    assert.deepEqual(
+      JSON.parse(await readFile(join(target, 'harness', 'project', 'rules', 'project.rules.json'), 'utf8')),
+      { schemaVersion: 1, rules: [] },
+    );
     await assert.rejects(access(join(commandRoot, 'harness', 'project', 'project.config.json')));
+  });
+});
+
+test('non-blank project init also keeps the Rules container empty', async () => {
+  await fixture(async (root) => {
+    const target = join(root, 'new-project');
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--name', 'new-project']);
+    const document = JSON.parse(await readFile(join(target, 'harness', 'project', 'rules', 'project.rules.json'), 'utf8'));
+    assert.deepEqual(document, { schemaVersion: 1, rules: [] });
   });
 });
 
@@ -121,6 +134,9 @@ test('onboard reports nested packages while preserving root project identity', a
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'onboard']);
 
     assert.match(stdout, /发现的软件包/);
+    assert.match(stdout, /扫描覆盖/);
+    assert.match(stdout, /business-map\.json/);
+    assert.match(stdout, /未发现项目原有 Agent\/IDE Rules，未生成规范候选/);
     assert.match(stdout, /packages\/tool \(@example\/tool\)/);
     assert.match(stdout, /入口：packages\/tool\/dist\/cli\.js/);
     const declaration = JSON.parse(await readFile(join(root, 'harness', 'project', 'project.config.json'), 'utf8'));
@@ -131,5 +147,43 @@ test('onboard reports nested packages while preserving root project identity', a
     assert.equal(codeMap[0].lifecycle, 'candidate');
     assert.match(codeMap[0].content, /packages\/tool \(`@example\/tool`\)/);
     assert.match(codeMap[0].content, /packages\/tool\/dist\/cli\.js/);
+    const businessMap = JSON.parse(await readFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), 'utf8'));
+    assert.equal(businessMap.lifecycle, 'candidate');
+    assert.equal(businessMap.generator.mode, 'builtin-static-analysis');
+    await assert.rejects(access(join(root, 'harness', 'project', 'rules', 'adapted.rules.json')));
+  });
+});
+
+test('rules CLI deprecates a rule with reviewer evidence', async () => {
+  await fixture(async (root) => {
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank']);
+    const rulesDir = join(root, 'harness', 'project', 'rules');
+    await mkdir(rulesDir, { recursive: true });
+    await writeFile(join(rulesDir, 'project.rules.json'), JSON.stringify({
+      schemaVersion: 1,
+      rules: [{
+        id: 'CLI_DEPRECATION_RULE',
+        title: 'CLI deprecation rule',
+        instruction: 'Preserve this rule history.',
+        lifecycle: 'active',
+        enforcement: 'required',
+        appliesTo: { paths: ['**/*'], excludePaths: [], stages: [] },
+        verification: [],
+        tags: [],
+        provenance: { kind: 'declared', sources: ['AGENTS.md'] },
+      }],
+    }), 'utf8');
+
+    const { stdout } = await execFileAsync(process.execPath, [
+      cli, '--root', root, 'rules', 'deprecate', 'CLI_DEPRECATION_RULE',
+      '--reviewer', 'maintainer', '--reason', 'Superseded',
+    ]);
+    const document = JSON.parse(await readFile(join(rulesDir, 'project.rules.json'), 'utf8'));
+    const events = await readFile(join(rulesDir, 'rule-events.jsonl'), 'utf8');
+
+    assert.match(stdout, /已废弃项目规范 CLI_DEPRECATION_RULE/);
+    assert.equal(document.rules[0].lifecycle, 'deprecated');
+    assert.match(events, /PROJECT_RULE_DEPRECATED/);
+    assert.match(events, /maintainer/);
   });
 });

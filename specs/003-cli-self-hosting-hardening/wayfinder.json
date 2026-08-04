@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "003-cli-self-hosting-hardening",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "范围限定为 JSON 解析、Rules 生命周期和发布构建三项确定性修复，可在两轮内完成",
+  "revision": 0,
+  "updatedAt": "2026-08-03T17:36:27.592Z",
+  "ticketIndex": [],
+  "fog": []
+}

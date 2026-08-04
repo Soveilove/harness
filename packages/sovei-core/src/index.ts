@@ -43,7 +43,20 @@ export { ArtifactRepository } from './artifacts/repository.js';
 
 // Config
 export { loadConfig, getFeaturePath } from './config/loader.js';
+export { parseProjectJson } from './config/json.js';
 export type { SoveiConfig, ProjectDeclaration } from './config/types.js';
+export { BusinessMapScanner } from './config/business-map-scanner.js';
+export type {
+  BusinessMap,
+  BusinessCapability,
+  BusinessMapCoverage,
+  BusinessMapConfidence,
+} from './config/business-map-scanner.js';
+export type { ScanCoverage } from './config/scanner.js';
+export { scanProjectRuleCandidates } from './config/project-rule-scanner.js';
+
+// Project engineering rules
+export * from './rules/index.js';
 
 // Evolutionary architecture
 export * from './architecture/index.js';

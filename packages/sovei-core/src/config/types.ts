@@ -10,6 +10,8 @@ export interface SoveiConfig {
   specsDir: string;
   /** Knowledge directory (relative to root) */
   knowledgeDir: string;
+  /** Project engineering rules directory (relative to root) */
+  rulesDir: string;
   /** Harness directory (relative to root) */
   harnessDir: string;
   /** Project declaration */

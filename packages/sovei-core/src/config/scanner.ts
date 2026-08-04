@@ -8,8 +8,21 @@
 import type { StorageBackend } from '../storage/types.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from './tech-stack.js';
 import { RedlineScanner, type CandidateRedline } from './redline-scanner.js';
+import { BusinessMapScanner, type BusinessMap } from './business-map-scanner.js';
+import { parseProjectJson } from './json.js';
 export type { CandidateRedline };
 import type { KnowledgeEntry } from '../knowledge/schemas.js';
+
+export const PROJECT_SCANNER_VERSION = '2.1.0-dev.2';
+
+export interface ScanCoverage {
+  maxDepth: number;
+  maxEntries: number;
+  filesDiscovered: number;
+  directoriesDiscovered: number;
+  truncated: boolean;
+  reasons: string[];
+}
 
 export interface ScanResult {
   techStack: DetectedStack;
@@ -21,6 +34,8 @@ export interface ScanResult {
   detectedPatterns: string[];
   generatedKnowledge: Omit<KnowledgeEntry, 'id'>[];
   candidateRedlines: CandidateRedline[];
+  businessMap: BusinessMap;
+  coverage: ScanCoverage;
 }
 
 export interface DiscoveredPackage {
@@ -62,22 +77,30 @@ const KEY_FILES: Record<string, string> = {
 export class ProjectScanner {
   constructor(private storage: StorageBackend) {}
 
-  async scan(maxDepth = 4): Promise<ScanResult> {
+  async scan(maxDepth = 4, maxEntries = 20_000, maxBusinessFiles = 500): Promise<ScanResult> {
     const pkgContent = await this.storage.read('package.json');
     let packageJson: any = null;
     if (pkgContent) {
-      try { packageJson = JSON.parse(pkgContent); }
-      catch { packageJson = this.looseParse(pkgContent); }
+      try { packageJson = parseProjectJson(pkgContent, 'package.json'); }
+      catch { packageJson = null; }
     }
 
     const tsContent = await this.storage.read('tsconfig.json');
     let tsconfig: any = null;
     if (tsContent) {
-      try { tsconfig = JSON.parse(tsContent); }
-      catch { tsconfig = this.looseParse(tsContent); }
+      try { tsconfig = parseProjectJson(tsContent, 'tsconfig.json'); }
+      catch { tsconfig = null; }
     }
 
-    const directoryMap = await this.scanDirectory('.', 0, maxDepth);
+    const coverage: ScanCoverage = {
+      maxDepth,
+      maxEntries,
+      filesDiscovered: 0,
+      directoriesDiscovered: 0,
+      truncated: false,
+      reasons: [],
+    };
+    const directoryMap = await this.scanDirectory('.', 0, coverage);
     const packages = await this.discoverPackages(directoryMap);
     const techStack = this.mergeTechStacks([
       detectTechStack(packageJson, tsconfig),
@@ -149,39 +172,47 @@ export class ProjectScanner {
     // Multi-source redline scan: governance docs, spec files, code surfaces
     const redlineScanner = new RedlineScanner(this.storage);
     const candidateRedlines = await redlineScanner.scan(directoryMap);
-    return { techStack, projectRoot: '.', packageJson, packages, entryPoints, directoryMap, detectedPatterns, generatedKnowledge, candidateRedlines };
+    const businessMap = await new BusinessMapScanner(this.storage, PROJECT_SCANNER_VERSION)
+      .scan(directoryMap, candidateRedlines, coverage, maxBusinessFiles);
+    return {
+      techStack, projectRoot: '.', packageJson, packages, entryPoints, directoryMap,
+      detectedPatterns, generatedKnowledge, candidateRedlines, businessMap, coverage,
+    };
   }
 
-  private async scanDirectory(dirPath: string, depth: number, maxDepth: number): Promise<DirectoryNode[]> {
-    if (depth >= maxDepth) return [];
+  private async scanDirectory(dirPath: string, depth: number, coverage: ScanCoverage): Promise<DirectoryNode[]> {
+    if (depth >= coverage.maxDepth || this.totalEntries(coverage) >= coverage.maxEntries) return [];
     const nodes: DirectoryNode[] = [];
     let entries;
     try { entries = await this.storage.listEntries(dirPath); } catch { return []; }
 
     for (const entry of entries) {
+      if (this.totalEntries(coverage) >= coverage.maxEntries) {
+        coverage.truncated = true;
+        coverage.reasons.push(`目录扫描达到 ${coverage.maxEntries} 个条目上限`);
+        break;
+      }
       const name = entry.name;
       if (SKIP_DIRS.has(name) || (name.startsWith('.') && name !== '.env' && name !== '.env.example')) continue;
       const fullPath = dirPath === '.' ? name : dirPath + '/' + name;
       const note = KEY_FILES[name];
       nodes.push({ path: fullPath, type: entry.isDirectory ? 'dir' : 'file', depth, note });
-      if (entry.isDirectory && depth < maxDepth - 1) {
-        const children = await this.scanDirectory(fullPath, depth + 1, maxDepth);
+      if (entry.isDirectory) coverage.directoriesDiscovered++;
+      else coverage.filesDiscovered++;
+      if (entry.isDirectory && depth < coverage.maxDepth - 1) {
+        const children = await this.scanDirectory(fullPath, depth + 1, coverage);
         nodes.push(...children);
+      } else if (entry.isDirectory && depth === coverage.maxDepth - 1) {
+        coverage.truncated = true;
+        coverage.reasons.push(`目录扫描达到深度上限 ${coverage.maxDepth}`);
       }
     }
+    coverage.reasons = [...new Set(coverage.reasons)];
     return nodes;
   }
 
-  /** Best-effort JSON parse that strips comments and trailing commas */
-  private looseParse(content: string): any {
-    try {
-      // Strip single-line comments
-      const cleaned = content
-        .replace(/\/\/.*$/gm, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/,\s*([}\]])/g, '$1');
-      return JSON.parse(cleaned);
-    } catch { return null; }
+  private totalEntries(coverage: ScanCoverage): number {
+    return coverage.filesDiscovered + coverage.directoriesDiscovered;
   }
 
   private async isDirectory(p: string): Promise<boolean> {
@@ -199,16 +230,16 @@ export class ProjectScanner {
       const content = await this.storage.read(manifestPath);
       if (!content) continue;
       let manifest: any;
-      try { manifest = JSON.parse(content); }
-      catch { manifest = this.looseParse(content); }
+      try { manifest = parseProjectJson(content, manifestPath); }
+      catch { manifest = null; }
       if (!manifest) continue;
 
       const packagePath = manifestPath.slice(0, -'/package.json'.length);
       const tsconfigContent = await this.storage.read(packagePath + '/tsconfig.json');
       let tsconfig: any = null;
       if (tsconfigContent) {
-        try { tsconfig = JSON.parse(tsconfigContent); }
-        catch { tsconfig = this.looseParse(tsconfigContent); }
+        try { tsconfig = parseProjectJson(tsconfigContent, packagePath + '/tsconfig.json'); }
+        catch { tsconfig = null; }
       }
 
       packages.push({

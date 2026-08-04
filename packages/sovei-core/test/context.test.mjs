@@ -23,11 +23,25 @@ test('context pack puts active redlines in required and candidates in suggested'
 
   const pack = buildContextPack({
     feature: 'test-feature', stage: 'implement', redlines: await repo.loadRedlines(),
+    projectRules: [{
+      id: 'PROJECT_REQUIRED', title: 'Project required', instruction: 'Run project checks',
+      lifecycle: 'active', enforcement: 'required',
+      appliesTo: { paths: ['**/*'], excludePaths: [], stages: ['implement'] },
+      verification: [{ type: 'command', command: 'pnpm test', description: 'Run tests' }],
+      tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'harness/project/rules/project.rules.json',
+    }, {
+      id: 'PROJECT_ADVISORY', title: 'Project advisory', instruction: 'Consider focused tests',
+      lifecycle: 'active', enforcement: 'advisory',
+      appliesTo: { paths: ['**/*'], excludePaths: [], stages: ['implement'] },
+      verification: [], tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'harness/project/rules/project.rules.json',
+    }],
     knowledge: knowledgeStore.selectAll(), artifacts: [], snapshot: null,
   });
 
   assert.ok(pack.required.some((item) => item.id === 'AUTH_REQUIRED'));
   assert.ok(pack.required.some((item) => item.id === 'rule-stable-001'));
+  assert.ok(pack.required.some((item) => item.id === 'PROJECT_REQUIRED'));
+  assert.ok(pack.suggested.some((item) => item.id === 'PROJECT_ADVISORY'));
   assert.ok(!pack.suggested.some((item) => item.id === 'AUTH_REQUIRED'));
   assert.ok(pack.suggested.some((item) => item.id === 'pitfall-c-001'));
   assert.ok(!pack.required.some((item) => item.id === 'pitfall-c-001'));

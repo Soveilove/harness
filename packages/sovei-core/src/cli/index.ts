@@ -11,6 +11,7 @@ import { registerWorkflowCommands } from './commands/workflow.js';
 import { registerWorkspaceCommands } from './commands/workspace.js';
 import { registerGovernanceCommands } from './commands/governance.js';
 import { registerWayfinderCommands } from './commands/wayfinder.js';
+import { registerRulesCommands } from './commands/rules.js';
 import { bootstrap } from '../providers/bootstrap.js';
 
 const require = createRequire(import.meta.url);
@@ -36,6 +37,7 @@ registerWayfinderCommands(program);
 registerArchitectureCommands(program);
 registerContextCommands(program);
 registerAgentCommands(program);
+registerRulesCommands(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
