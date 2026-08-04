@@ -94,11 +94,15 @@ try {
         throw 'OTP 格式无效，必须是 6 位数字。'
     }
 
-    Invoke-Checked 'pnpm' @(
-        '--dir', 'packages/sovei-core',
-        'publish', '--tag', $Tag,
-        '--no-git-checks', '--otp', $otp
-    )
+    # 用 npm publish 而非 pnpm publish:pnpm 10 的 publish 会做 git 检查,且把
+    # --no-git-checks 透传给 npm publish 触发 EUSAGE。npm publish 不检查 git。
+    # --ignore-scripts 跳过 prepack(上面的 3/4/5 已跑 check+test+verify 兜底)。
+    Push-Location $packageDir
+    try {
+        Invoke-Checked 'npm' @('publish', '--tag', $Tag, '--ignore-scripts', '--otp', $otp)
+    } finally {
+        Pop-Location
+    }
 
     $published = (& npm view "$packageName@$version" version).Trim()
     if ($LASTEXITCODE -ne 0 -or $published -ne $version) {
