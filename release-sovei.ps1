@@ -89,17 +89,13 @@ try {
         exit 0
     }
 
-    $otp = Read-Host '请输入 npm Authenticator 当前的 6 位 OTP'
-    if ($otp -notmatch '^\d{6}$') {
-        throw 'OTP 格式无效，必须是 6 位数字。'
-    }
-
     # 用 npm publish 而非 pnpm publish:pnpm 10 的 publish 会做 git 检查,且把
     # --no-git-checks 透传给 npm publish 触发 EUSAGE。npm publish 不检查 git。
     # --ignore-scripts 跳过 prepack(上面的 3/4/5 已跑 check+test+verify 兜底)。
+    # 使用 ~/.npmrc 中的 Automation token,2FA 下免 OTP,无需交互输入。
     Push-Location $packageDir
     try {
-        Invoke-Checked 'npm' @('publish', '--tag', $Tag, '--ignore-scripts', '--otp', $otp)
+        Invoke-Checked 'npm' @('publish', '--tag', $Tag, '--ignore-scripts')
     } finally {
         Pop-Location
     }
