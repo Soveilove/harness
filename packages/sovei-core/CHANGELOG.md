@@ -6,6 +6,8 @@ All notable changes to the Sovei workflow engine are documented in this file.
 
 _No changes yet._
 
+## [2.2.2] - 2026-08-05
+
 ## [2.2.1] - 2026-08-05
 
 ## [2.2.0] - 2026-08-05
