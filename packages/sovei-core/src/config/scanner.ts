@@ -21,6 +21,8 @@ export interface ScanCoverage {
   maxEntries: number;
   filesDiscovered: number;
   directoriesDiscovered: number;
+  /** 因命中过滤规则（构建产物/静态资源/哈希 chunk）被排除、不参与分析的条目数 */
+  filteredDiscovered: number;
   truncated: boolean;
   reasons: string[];
 }
@@ -54,10 +56,34 @@ export interface DirectoryNode {
 }
 
 const SKIP_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', '.next', '.nuxt',
-  '.cache', '.turbo', 'coverage', '.vscode', '.idea',
-  '__pycache__', '.pytest_cache', 'vendor', 'target',
+  // 依赖与构建工具
+  'node_modules', '.git', '.hg', '.svn', '.yarn', '.pnp', '.pnp.js', '.cache', '.turbo', '.pnpm-store',
+  // 构建产物目录
+  'dist', 'build', 'out', 'release', 'coverage', '.next', '.nuxt', '.output', '.svelte-kit',
+  'target', 'vendor', '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache',
+  // IDE / 本地环境
+  '.vscode', '.idea', '.vs', '.DS_Store', '.env.local',
+  // 生成代码目录（自动生成的类型/客户端等，非手写业务源码）
+  'generated', '__generated__', 'gen', 'proto-gen', 'generated-code', 'codegen', 'graphql-generated',
 ]);
+
+/**
+ * 命中即整体跳过该目录及其子树（按路径段判断，避免误伤同名的业务目录）。
+ * 覆盖：
+ *  - 后端框架承载前端构建产物的挂载点：server/views、xxx/views/assets 等
+ *  - 前端静态资源根：public/（Vite 默认）、dist 已在 SKIP_DIRS
+ * 注意：不能排除 src/views（Vue 业务页面目录）等真实业务目录。
+ */
+const SKIP_DIR_PATTERNS: RegExp[] = [
+  /(?:^|\/)server\/views(?:\/|$)/i,     // Koa/Express 渲染的前端产物
+  /(?:^|\/)(?:public|static|assets)\/(?:assets|chunks|images|imgs)(?:\/|$)/i, // 产物资源子目录
+];
+
+/** 哈希命名的构建 chunk / 压缩产物：如 index-C6asO8Wa.js、app-abc123.css、vendor.chunk.js */
+const BUILD_CHUNK_RE = /(?:^|\/)[\w.-]+(?:[-_])[A-Fa-f0-9]{7,}(?:\.[\w-]+)?\.(?:js|mjs|cjs|css|map|png|jpg|jpeg|gif|webp|svg|woff2?)$/;
+
+/** 静态资源 / 配置文件 / 类型声明产物，不参与业务能力与红线候选 */
+const NON_BUSINESS_FILE_RE = /\.(?:map|min\.js|min\.css|css|scss|less|sass|d\.ts|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|otf|pdf|zip|tar|gz|lock|log)$/i;
 
 const KEY_FILES: Record<string, string> = {
   'package.json': 'Node.js package manifest',
@@ -78,7 +104,7 @@ const KEY_FILES: Record<string, string> = {
 export class ProjectScanner {
   constructor(private storage: StorageBackend) {}
 
-  async scan(maxDepth = 4, maxEntries = 20_000, maxBusinessFiles = 500): Promise<ScanResult> {
+  async scan(maxDepth = 10, maxEntries = 50_000, maxBusinessFiles = 3000): Promise<ScanResult> {
     const pkgContent = await this.storage.read('package.json');
     let packageJson: any = null;
     if (pkgContent) {
@@ -98,6 +124,7 @@ export class ProjectScanner {
       maxEntries,
       filesDiscovered: 0,
       directoriesDiscovered: 0,
+      filteredDiscovered: 0,
       truncated: false,
       reasons: [],
     };
@@ -196,6 +223,19 @@ export class ProjectScanner {
       const name = entry.name;
       if (SKIP_DIRS.has(name) || (name.startsWith('.') && name !== '.env' && name !== '.env.example')) continue;
       const fullPath = dirPath === '.' ? name : dirPath + '/' + name;
+
+      // 目录命中产物/生成目录模式 → 整体跳过该子树
+      if (entry.isDirectory && SKIP_DIR_PATTERNS.some((p) => p.test(fullPath))) {
+        coverage.filteredDiscovered++;
+        continue;
+      }
+
+      // 文件命中构建产物 / 哈希 chunk / 静态资源 → 排除出分析范围（code-map / 红线 / 能力图都不再污染）
+      if (!entry.isDirectory && (BUILD_CHUNK_RE.test(fullPath) || NON_BUSINESS_FILE_RE.test(fullPath))) {
+        coverage.filteredDiscovered++;
+        continue;
+      }
+
       const note = KEY_FILES[name];
       nodes.push({ path: fullPath, type: entry.isDirectory ? 'dir' : 'file', depth, note });
       if (entry.isDirectory) coverage.directoriesDiscovered++;
@@ -298,16 +338,24 @@ export class ProjectScanner {
 
   private detectPatterns(dirMap: DirectoryNode[], stack: DetectedStack): string[] {
     const patterns: string[] = [];
-    const has = (s: string) => dirMap.some((n) => n.path.includes(s));
-    if (has('components')) patterns.push('Component-based architecture');
-    if (has('store') || has('stores')) patterns.push('Centralized state management');
-    if (has('api') || has('services')) patterns.push('Dedicated API/service layer');
-    if (has('composables') || has('hooks')) patterns.push('Composables/hooks pattern');
-    if (has('utils') || has('lib')) patterns.push('Utility library');
-    if (has('types') || has('interfaces')) patterns.push('Dedicated type definitions');
-    if (has('test') || has('__tests__') || has('spec')) patterns.push('Test suite present');
-    if (has('views') || has('pages')) patterns.push('View/page-based routing');
-    if (dirMap.some((n) => n.path === 'packages' && n.type === 'dir')) patterns.push('Monorepo structure');
+    // 目录名精确匹配（不命中子串，避免 docs/specs、server/views 等目录误判）
+    const hasDir = (name: string) => dirMap.some((n) => n.type === 'dir' && this.lastSegment(n.path) === name);
+    const hasPath = (s: string) => dirMap.some((n) => n.path.includes(s));
+    if (hasDir('components')) patterns.push('Component-based architecture');
+    if (hasDir('store') || hasDir('stores')) patterns.push('Centralized state management');
+    if (hasDir('api') || hasDir('services')) patterns.push('Dedicated API/service layer');
+    if (hasDir('composables') || hasDir('hooks')) patterns.push('Composables/hooks pattern');
+    if (hasDir('utils') || hasDir('lib')) patterns.push('Utility library');
+    if (hasDir('types') || hasDir('interfaces')) patterns.push('Dedicated type definitions');
+    // 测试套件：仅当存在真实测试目录（含 _test 文件或专测目录）才算，specs/ 文档目录不算
+    const hasTestFiles = dirMap.some((n) => n.type === 'file' && /(?:\.(?:test|spec)\.|\.test-|_test\.)[cm]?[jt]sx?$/i.test(n.path));
+    if (hasTestFiles || hasDir('__tests__') || hasDir('test') || hasDir('tests')) patterns.push('Test suite present');
+    if (hasDir('views') || hasDir('pages')) patterns.push('View/page-based routing');
+    if (dirMap.some((n) => n.type === 'dir' && n.path === 'packages')) patterns.push('Monorepo structure');
     return patterns;
+  }
+
+  private lastSegment(path: string): string {
+    return path.split('/').pop() || path;
   }
 }

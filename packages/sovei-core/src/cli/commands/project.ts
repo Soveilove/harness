@@ -279,9 +279,9 @@ export function registerProjectCommands(program: Command): void {
   project
     .command('onboard')
     .description('扫描已有项目并初始化知识')
-    .option('--depth <n>', '最大扫描深度', '4')
-    .option('--max-entries <n>', '目录扫描最大条目数', '20000')
-    .option('--max-business-files <n>', '业务地图最大源码读取数', '500')
+    .option('--depth <n>', '最大扫描深度', '10')
+    .option('--max-entries <n>', '目录扫描最大条目数', '50000')
+    .option('--max-business-files <n>', '业务地图最大源码读取数', '3000')
     .option('--evidence-only', 'collect evidence without generating candidates')
     .option('--dry-run', '只扫描并打印报告，不写盘')
     .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }) => {
@@ -290,7 +290,7 @@ export function registerProjectCommands(program: Command): void {
       const logger = getLogger();
       const maxDepth = parseInt(opts.depth, 10) || 4;
       const maxEntries = parseInt(opts.maxEntries, 10) || 20_000;
-      const maxBusinessFiles = parseInt(opts.maxBusinessFiles, 10) || 500;
+      const maxBusinessFiles = parseInt(opts.maxBusinessFiles, 10) || 3000;
 
       console.log('\n  正在扫描项目以完成初始化……\n');
 

@@ -6,9 +6,27 @@ All notable changes to the Sovei workflow engine are documented in this file.
 
 _No changes yet._
 
-## [2.2.3] - 2026-08-05
+## [2.3.0] - 2026-08-05
 
 ### Fixed
+
+- **扫描器过滤构建产物 / 静态资源 / 哈希 chunk**：`server/views`、`vendor`、`public/assets`
+  等产物目录整体跳过；哈希命名的构建 chunk（`index-C6asO8Wa.js`）、图片、CSS、`.d.ts`
+  声明不再进入目录地图、业务能力图与红线候选。企业级项目不再被几百个哈希 chunk 污染
+  业务地图（如 Koa 静态托管的 `server/views/assets/*`）。
+- **测试套件误判**：`detectPatterns` 不再用 `path.includes('spec')` 子串匹配，改为
+  精确目录名匹配；`specs/` 文档目录、`server/views` 不再被误判为「Test suite present」。
+  仅当存在真实测试文件（`*.test.*` / `*.spec.*` / `__tests__` 等）时才判定。
+
+### Changed
+
+- **默认扫描深度 4 → 10，条目上限 20000 → 50000**：适配深层嵌套的企业级业务目录
+  （如 `src/views/placement/...` 多层页面），且因构建产物已被过滤，加深不会引入大量噪音。
+- **业务地图最大源码读取数 500 → 3000**：企业级项目源码文件多（实测单项目 500+ 候选源
+  码文件即触顶），3000 可覆盖更复杂的大型仓库，避免业务能力被截断。
+- **`ScanCoverage` 新增 `filteredDiscovered`**：记录被过滤规则排除的条目数，覆盖报告更透明。
+
+### Fixed (from 2.2.3)
 
 - **`sovei project onboard --evidence-only` 真正落盘证据文件**：此前该模式只打印
   AGENT ONBOARDING GUIDE 便返回，从不写入 `business-map.json`、`redlines-seed.json`
