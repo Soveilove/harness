@@ -30,8 +30,9 @@ export function registerContextCommands(program: Command): void {
     .option('--adapter <id>', '目标 IDE 适配器 ID')
     .option('--query <text>', '可选检索查询')
     .option('--paths <paths>', '按逗号分隔的项目相对路径，用于匹配项目规范')
+    .option('--cross-feature', 'load other features decision-log as suggested reference')
     .option('--json', '输出 JSON 而非 Markdown')
-    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; json?: boolean }) => {
+    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; crossFeature?: boolean; json?: boolean }) => {
       const storage = getStorage();
       const config = getConfig();
       const featurePath = getFeaturePath(config, feature);
@@ -64,6 +65,18 @@ export function registerContextCommands(program: Command): void {
         }
       }
 
+      // Load cross-feature decision logs when requested
+      const crossFeatureArtifacts: Array<{ featureId: string; name: string; content: string }> = [];
+      if (opts.crossFeature) {
+        const allSpecs = await storage.list(config.specsDir);
+        for (const specDir of allSpecs.filter((s) => s !== feature && s !== '.gitkeep')) {
+          const dl = await storage.read(`${config.specsDir}/${specDir}/decision-log.md`);
+          if (dl && !dl.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
+            crossFeatureArtifacts.push({ featureId: specDir, name: 'decision-log.md', content: dl });
+          }
+        }
+      }
+
       // Always compute a fresh snapshot for the context pack
       const freshSnapshot = buildSnapshot(knowledge, config.project.name, {
         engineVersion: VERSION,
@@ -79,6 +92,7 @@ export function registerContextCommands(program: Command): void {
         projectRules,
         knowledge,
         artifacts: artifactContents,
+        crossFeatureArtifacts,
         snapshot: freshSnapshot,
       });
 

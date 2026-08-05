@@ -12,7 +12,7 @@ export const Redline = z.object({
   scope: z.string().optional(),
   examples: z.array(z.string()).optional(),
   owner: z.string().optional(),
-  origin: z.enum(['manual', 'scanner-seed']).optional(),
+  origin: z.enum(['manual', 'scanner-seed', 'pm-confirmed', 'agent-generated']).optional(),
   reviewedBy: z.string().optional(),
   reviewedAt: z.string().optional(),
   createdAt: z.string(),

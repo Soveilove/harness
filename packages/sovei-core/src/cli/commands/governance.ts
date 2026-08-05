@@ -4,6 +4,9 @@ import type { RedlinePatch } from '../../change-control/schemas.js';
 import { container, TOKENS } from '../../providers/container.js';
 import type { StorageBackend } from '../../storage/types.js';
 import { resolve } from 'node:path';
+import { getFeaturePath } from '../../config/loader.js';
+import type { SoveiConfig } from '../../config/types.js';
+import { WorkflowEngine } from '../../engine/workflow-engine.js';
 
 function repository(): ChangeControlRepository {
   return new ChangeControlRepository(container.inject<StorageBackend>(TOKENS.Storage));
@@ -172,6 +175,70 @@ export function registerGovernanceCommands(program: Command): void {
       for (const failure of failed) console.error(`  ✗ ${failure}`);
       console.log(`\n  已导入 ${added} 条红线，跳过 ${skipped} 条重复${failed.length ? '，失败 ' + failed.length + ' 条' : ''}。\n`);
       if (failed.length) process.exitCode = 1;
+    });
+
+  const reviewPack = governance.command('review-pack').description('需求对齐与确认包生成与导入');
+
+  reviewPack
+    .command('generate')
+    .argument('<feature>', 'Feature ID')
+    .description('从 reconciliation.md 渲染 tech-review.md 和 product-review.md')
+    .action(async (feature: string) => {
+      const storage = container.inject<StorageBackend>(TOKENS.Storage);
+      const config = container.inject<SoveiConfig>(TOKENS.Config);
+      const featurePath = getFeaturePath(config, feature);
+      const reconContent = await storage.read(featurePath + '/reconciliation.md');
+      if (!reconContent) {
+        throw new Error('reconciliation.md not found. Run spec stage first: sovei workflow spec ' + feature);
+      }
+      const { parseReconciliation, renderTechReview, renderProductReview } = await import('../../review/index.js');
+      const doc = parseReconciliation(reconContent);
+      const techMd = renderTechReview(doc);
+      const productMd = renderProductReview(doc);
+      await storage.write(featurePath + '/tech-review.md', techMd);
+      await storage.write(featurePath + '/product-review.md', productMd);
+      console.log('\n  已生成：');
+      console.log('    ' + featurePath + '/tech-review.md');
+      console.log('    ' + featurePath + '/product-review.md');
+      console.log('\n  交付审阅后，导入确认：');
+      console.log('    sovei governance review-pack import ' + feature + ' --product ' + featurePath + '/product-review.md --by <name> --reference <ref>');
+      console.log('');
+    });
+
+  reviewPack
+    .command('import')
+    .argument('<feature>', 'Feature ID')
+    .requiredOption('--product <file>', '产品签字后的 product-review.md 文件路径')
+    .requiredOption('--by <name>', '签字人姓名')
+    .requiredOption('--reference <ref>', '审批参考（工单、文档等）')
+    .description('导入 PM 签字的产品确认，解除工作流阻塞')
+    .action(async (feature: string, opts: { product: string; by: string; reference: string }) => {
+      const storage = container.inject<StorageBackend>(TOKENS.Storage);
+      const config = container.inject<SoveiConfig>(TOKENS.Config);
+      const { parseReconciliation } = await import('../../review/index.js');
+      const featurePath = getFeaturePath(config, feature);
+      const engine = container.inject<WorkflowEngine>(TOKENS.WorkflowEngine);
+      const state = await engine.getState(feature);
+      const productPending = state.pendingConfirmations.find(
+        (pc: { role: string; confirmedBy: string | null; overridden: boolean }) => pc.role === 'product' && !pc.confirmedBy && !pc.overridden,
+      );
+      if (productPending) {
+        await engine.confirmGate(feature, productPending.stage, 'product', opts.by, opts.reference);
+        console.log('\n  ✅ 产品确认已记录：' + opts.by + ' / ' + opts.reference);
+      } else {
+        console.log('\n  ℹ️ 无待审的产品确认门禁。');
+      }
+      const newState = await engine.getState(feature);
+      const techPending = newState.pendingConfirmations.find(
+        (pc: { role: string; confirmedBy: string | null; overridden: boolean }) => pc.role === 'tech' && !pc.confirmedBy && !pc.overridden,
+      );
+      if (techPending) {
+        console.log('  剩余待审：技术确认');
+        console.log('  sovei workflow confirm ' + feature + ' --stage ' + techPending.stage + ' --role tech --by <name> --reference <ref>');
+      } else {
+        console.log('  所有确认完成，工作流已恢复。');
+      }
+      console.log('');
     });
 ;
 }

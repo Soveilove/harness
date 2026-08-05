@@ -176,22 +176,57 @@ export const specStage = defineStage({
       prompt: `# 阶段：spec
 
 ## 输入
-已接受的决策以及相关的业务、Memory 和基线证据。
+已接受的决策、相关的业务/知识/基线证据，以及跨 Feature 的历史决策日志（通过 sovei context build --stage spec --cross-feature 获取）。
 
 ## 操作
-定义问题、用户可见行为、边界、验收场景和明确排除项。
+1. 需求翻译：将 PM 的原话翻译为技术理解，明确“做什么”和“不做什么”。
+2. 还原现状：读代码 + 跨 Feature 的 decision-log，理解“代码为什么是现在这个样子”。PM 可能不知道上一个需求做了什么附带改动。
+3. 方案与代价：列出可选方案及其代价（影响面、风险、兼容性）。
+4. 疑问提取：区分 [product] 和 [tech] 的疑问，每个附推荐和选项。
+5. 定义验收标准：用户可见行为、边界、排除项。
 
 ## 输出
-spec.md，不写入易变的实现路径。
+spec.md：验收标准，不写入易变的实现路径。
+reconciliation.md：需求对齐文件，结构如下：
+
+# Reconciliation: <feature-id> <title>
+
+## Need Translation
+<PM 原话 → 技术理解>
+
+## Current State
+<代码现状 + 为什么是这样，引用跨 Feature 决策>
+
+## Solutions
+### Solution A: <name>
+- <描述>
+- cost: <代价>
+
+### Solution B: <name>
+- <描述>
+- cost: <代价>
+
+## Questions
+### [product] Q1: <问题>
+- recommendation: <推荐>
+- options: [选项1] [选项2]
+
+### [tech] Q2: <问题>
+- recommendation: <推荐>
+
+## Sign-off
+- [ ] product: by: ____ date: ____ ref: ____
+- [ ] tech: by: ____ date: ____ ref: ____
 
 ## 停止条件
-仍存在会改变用户行为或契约的未决事项。
-`,
+仍存在会改变用户行为或契约的未决事项。`,
     };
   },
   async postExecute(ctx) {
-    const artifact = await ctx.artifacts.read('spec.md');
-    if (!artifact) throw new Error('spec.md not generated');
+    const spec = await ctx.artifacts.read('spec.md');
+    if (!spec) throw new Error('spec.md not generated');
+    const recon = await ctx.artifacts.read('reconciliation.md');
+    if (!recon) throw new Error('reconciliation.md not generated');
   },
 });
 

@@ -200,6 +200,51 @@ export function registerWorkflowCommands(program: Command): void {
       console.log(`\n  Cancelled change '${changeId}'. Ordinary workflow commands are available again.\n`);
     });
 
+  workflow
+    .command('confirm')
+    .argument('<feature>', 'Feature ID')
+    .requiredOption('--stage <stage>', 'Stage that has a pending confirmation gate')
+    .requiredOption('--role <role>', 'Confirmer role: product | tech')
+    .requiredOption('--by <name>', 'Name of the person confirming')
+    .requiredOption('--reference <ref>', 'Approval reference (ticket, doc, etc.)')
+    .description('确认待审门禁，解除工作流阻塞')
+    .action(async (feature: string, opts: { stage: string; role: 'product' | 'tech'; by: string; reference: string }) => {
+      const state = await getEngine().confirmGate(feature, opts.stage, opts.role, opts.by, opts.reference);
+      const remaining = state.pendingConfirmations.filter((pc) => !pc.confirmedBy && !pc.overridden);
+      console.log('\n  ✅ 已记录确认：' + opts.stage + ' / ' + opts.role + ' 由 ' + opts.by + '签字');
+      if (remaining.length) {
+        console.log('  剩余待确认：' + remaining.map((pc) => pc.stage + '/' + pc.role).join(', '));
+        console.log('  工作流仍然阻塞。\n');
+      } else {
+        console.log('  所有确认完成，工作流已恢复。\n');
+      }
+      printState(state);
+      printNextCommand(state, feature);
+    });
+
+  workflow
+    .command('override-confirm')
+    .argument('<feature>', 'Feature ID')
+    .requiredOption('--stage <stage>', 'Stage that has a pending confirmation gate')
+    .requiredOption('--role <role>', 'Confirmer role: product | tech')
+    .requiredOption('--by <name>', 'Name of the person overriding')
+    .requiredOption('--reason <reason>', 'Why this confirmation is being overridden')
+    .description('覆盖待审门禁（审计留痕）')
+    .action(async (feature: string, opts: { stage: string; role: 'product' | 'tech'; by: string; reason: string }) => {
+      const state = await getEngine().overrideConfirmation(feature, opts.stage, opts.role, opts.by, opts.reason);
+      const remaining = state.pendingConfirmations.filter((pc) => !pc.confirmedBy && !pc.overridden);
+      console.log('\n  ⚠️ 已覆盖确认：' + opts.stage + ' / ' + opts.role + ' 由 ' + opts.by + '覆盖');
+      console.log('  理由：' + opts.reason);
+      if (remaining.length) {
+        console.log('  剩余待确认：' + remaining.map((pc) => pc.stage + '/' + pc.role).join(', '));
+        console.log('  工作流仍然阻塞。\n');
+      } else {
+        console.log('  所有确认完成，工作流已恢复。\n');
+      }
+      printState(state);
+      printNextCommand(state, feature);
+    });
+
   // ── list-stages ──
   workflow
     .command('list-stages')

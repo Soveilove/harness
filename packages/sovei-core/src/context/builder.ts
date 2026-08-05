@@ -114,6 +114,7 @@ export interface ContextBuildOptions {
   projectRules?: LoadedProjectRule[];
   knowledge: KnowledgeEntry[];
   artifacts: Array<{ name: string; content: string }>;
+  crossFeatureArtifacts?: Array<{ featureId: string; name: string; content: string }>;
   snapshot: KnowledgeSnapshot | null;
 }
 
@@ -151,6 +152,21 @@ export function buildContextPack(opts: ContextBuildOptions): ContextPack {
   const suggestedItems = suggested.slice(0, 20).map((e) => fromKnowledge(e, false));
   for (const rule of (opts.projectRules ?? []).filter((item) => item.lifecycle === 'active' && item.enforcement === 'advisory')) {
     suggestedItems.push(fromProjectRule(rule));
+  }
+
+  // Cross-feature decision logs help the agent understand prior context.
+  for (const cross of (opts.crossFeatureArtifacts ?? [])) {
+    const truncated = cross.content.slice(0, 4000);
+    suggestedItems.push({
+      source: `specs/${cross.featureId}/${cross.name}`,
+      id: `${cross.featureId}/${cross.name}`,
+      type: 'cross-feature',
+      title: `${cross.featureId} / ${cross.name}`,
+      content: truncated,
+      lifecycle: 'cross-feature',
+      contentHash: hashContent(cross.featureId + cross.name + truncated),
+      citation: `Feature ${cross.featureId} 的 ${cross.name}（历史决策，建议参考）`,
+    });
   }
 
   return {

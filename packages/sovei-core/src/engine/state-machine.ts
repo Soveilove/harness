@@ -9,6 +9,7 @@ import type {
   WorkflowState,
   WorkflowEvent,
   WorkflowDefinition,
+  PendingConfirmation,
 } from './types.js';
 
 /** Create initial state for a new feature */
@@ -25,6 +26,7 @@ export function createInitialState(featureId: string): WorkflowState {
     revision: 0,
     riskLevel: 'S1',
     blockers: [],
+    pendingConfirmations: [],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -60,15 +62,36 @@ export function workflowReducer(
       const next = workflow.stageOrder[currentIndex + 1] ?? null;
       const nextAfter = next ? workflow.stageOrder[workflow.stageOrder.indexOf(next) + 1] ?? null : null;
 
-      return {
+      const baseState: WorkflowState = {
         ...state,
         completedStages: completed,
         currentStage: next,
         nextStage: nextAfter,
         status: next ? 'in_progress' : 'completed',
         blockers: [],
+        pendingConfirmations: [],
         updatedAt: new Date().toISOString(),
       };
+
+      // Confirmation gates: spec (S2/S3 only) and verify (always)
+      const needsSpecGate = event.stage === 'spec' && (state.riskLevel === 'S2' || state.riskLevel === 'S3');
+      const needsVerifyGate = event.stage === 'verify';
+
+      if (needsSpecGate || needsVerifyGate) {
+        const gate = needsSpecGate ? 'spec-confirmation' : 'verify-confirmation';
+        const confirmations: PendingConfirmation[] = [
+          { stage: event.stage, gate, role: 'product', required: true, confirmedBy: null, confirmedAt: null, reference: null, overridden: false, overrideReason: null },
+          { stage: event.stage, gate, role: 'tech', required: true, confirmedBy: null, confirmedAt: null, reference: null, overridden: false, overrideReason: null },
+        ];
+        return {
+          ...baseState,
+          status: 'blocked',
+          blockers: [`${gate}: waiting for product and tech confirmation`],
+          pendingConfirmations: confirmations,
+        };
+      }
+
+      return baseState;
     }
 
     case 'TASK_COMPLETE': {
@@ -158,6 +181,40 @@ export function workflowReducer(
         ...state,
         status: 'in_progress',
         blockers: [],
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'CONFIRM': {
+      const updated = state.pendingConfirmations.map((pc) =>
+        pc.stage === event.stage && pc.role === event.role
+          ? { ...pc, confirmedBy: event.confirmedBy, confirmedAt: new Date().toISOString(), reference: event.reference }
+          : pc
+      );
+      const allDone = updated.filter((pc) => pc.required)
+        .every((pc) => pc.confirmedBy !== null || pc.overridden);
+      return {
+        ...state,
+        pendingConfirmations: allDone ? [] : updated,
+        status: allDone ? ('in_progress' as const) : ('blocked' as const),
+        blockers: allDone ? [] : state.blockers,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'OVERRIDE_CONFIRM': {
+      const updated = state.pendingConfirmations.map((pc) =>
+        pc.stage === event.stage && pc.role === event.role
+          ? { ...pc, overridden: true, overrideReason: event.reason }
+          : pc
+      );
+      const allDone = updated.filter((pc) => pc.required)
+        .every((pc) => pc.confirmedBy !== null || pc.overridden);
+      return {
+        ...state,
+        pendingConfirmations: allDone ? [] : updated,
+        status: allDone ? ('in_progress' as const) : ('blocked' as const),
+        blockers: allDone ? [] : state.blockers,
         updatedAt: new Date().toISOString(),
       };
     }

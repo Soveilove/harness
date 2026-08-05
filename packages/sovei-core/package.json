@@ -1,16 +1,15 @@
 {
   "name": "@soveilove/sovei",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理",
   "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Soveilove/harness.git",
-    "directory": "packages/sovei-core"
+    "url": "git+https://github.com/Soveilove/sovei.git"
   },
-  "homepage": "https://github.com/Soveilove/harness#readme",
+  "homepage": "https://github.com/Soveilove/sovei#readme",
   "bugs": {
-    "url": "https://github.com/Soveilove/harness/issues"
+    "url": "https://github.com/Soveilove/sovei/issues"
   },
   "publishConfig": {
     "access": "public",

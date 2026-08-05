@@ -42,7 +42,7 @@ export const DEFAULT_WORKFLOW: WorkflowDefinition = {
     load:       { name: 'load',       status: 'active', requiredArtifacts: [],                                                    producesArtifacts: [],                     next: ['grill'] },
     grill:      { name: 'grill',      status: 'active', requiredArtifacts: [],                                                    producesArtifacts: ['decision-log.md'],    next: ['wayfind', 'spec'] },
     wayfind:    { name: 'wayfind',    status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['wayfinder.md'],      next: ['spec'] },
-    spec:       { name: 'spec',       status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['spec.md'],           next: ['scope'] },
+    spec:       { name: 'spec',       status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['spec.md', 'reconciliation.md'],           next: ['scope'] },
     scope:      { name: 'scope',      status: 'active', requiredArtifacts: ['spec.md'],                                            producesArtifacts: ['scope.md', 'coverage-matrix.md'], next: ['plan'] },
     plan:       { name: 'plan',       status: 'active', requiredArtifacts: ['spec.md', 'scope.md', 'coverage-matrix.md'],          producesArtifacts: ['plan.md'],           next: ['tasks'] },
     tasks:      { name: 'tasks',      status: 'active', requiredArtifacts: ['plan.md'],                                            producesArtifacts: ['tasks.md'],          next: ['implement'] },
@@ -328,6 +328,60 @@ export class WorkflowEngine {
     return newState;
   }
 
+  /** Confirm a pending confirmation gate. */
+  async confirmGate(
+    featureId: string,
+    stage: string,
+    role: 'product' | 'tech',
+    confirmedBy: string,
+    reference: string,
+  ): Promise<WorkflowState> {
+    const featurePath = getFeaturePath(this.config, featureId);
+    const state = await this.getState(featureId);
+    const pending = state.pendingConfirmations.find(
+      (pc) => pc.stage === stage && pc.role === role,
+    );
+    if (!pending) {
+      throw new Error(`No pending confirmation for stage '${stage}' role '${role}'`);
+    }
+    if (pending.confirmedBy || pending.overridden) {
+      throw new Error(`Confirmation already recorded for stage '${stage}' role '${role}'`);
+    }
+    const event: WorkflowEvent = { type: 'CONFIRM', stage, role, confirmedBy, reference };
+    await this.eventStore.append(featurePath, event, stage);
+    const newState = await this.eventStore.replay(featurePath, this.workflow);
+    await this.eventStore.persistState(featurePath, newState);
+    this.logger.info(`Confirmation recorded: ${stage}/${role} by ${confirmedBy}`);
+    return newState;
+  }
+
+  /** Override a pending confirmation gate with a reason (audit-trail preserved). */
+  async overrideConfirmation(
+    featureId: string,
+    stage: string,
+    role: 'product' | 'tech',
+    overriddenBy: string,
+    reason: string,
+  ): Promise<WorkflowState> {
+    const featurePath = getFeaturePath(this.config, featureId);
+    const state = await this.getState(featureId);
+    const pending = state.pendingConfirmations.find(
+      (pc) => pc.stage === stage && pc.role === role,
+    );
+    if (!pending) {
+      throw new Error(`No pending confirmation for stage '${stage}' role '${role}'`);
+    }
+    if (pending.confirmedBy || pending.overridden) {
+      throw new Error(`Confirmation already recorded for stage '${stage}' role '${role}'`);
+    }
+    const event: WorkflowEvent = { type: 'OVERRIDE_CONFIRM', stage, role, overriddenBy, reason };
+    await this.eventStore.append(featurePath, event, stage);
+    const newState = await this.eventStore.replay(featurePath, this.workflow);
+    await this.eventStore.persistState(featurePath, newState);
+    this.logger.info(`Confirmation overridden: ${stage}/${role} by ${overriddenBy}: ${reason}`);
+    return newState;
+  }
+
   /** Get the workflow definition */
   getWorkflow(): WorkflowDefinition {
     return this.workflow;
@@ -433,6 +487,7 @@ export class WorkflowEngine {
       'decision-log.md': '决策日志',
       'wayfinder.md': '决策地图',
       'spec.md': '功能规格',
+      'reconciliation.md': '需求对齐',
       'scope.md': '影响范围',
       'coverage-matrix.md': '覆盖矩阵',
       'plan.md': '实施计划',

@@ -9,6 +9,19 @@ export type RiskLevel = 'S0' | 'S1' | 'S2' | 'S3';
 /** Workflow status */
 export type WorkflowStatus = 'in_progress' | 'completed' | 'blocked';
 
+/** A pending confirmation gate on a completed stage. */
+export interface PendingConfirmation {
+  stage: string;
+  gate: 'spec-confirmation' | 'verify-confirmation';
+  role: 'product' | 'tech';
+  required: boolean;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  reference: string | null;
+  overridden: boolean;
+  overrideReason: string | null;
+}
+
 /** Immutable workflow state - the single source of truth */
 export interface WorkflowState {
   featureId: string;
@@ -22,6 +35,7 @@ export interface WorkflowState {
   revision: number;
   riskLevel: RiskLevel;
   blockers: string[];
+  pendingConfirmations: PendingConfirmation[];
   updatedAt: string;
 }
 
@@ -33,7 +47,9 @@ export type WorkflowEvent =
   | { type: 'CHANGE_DECLARED'; changeId: string; target: string; summary: string }
   | { type: 'REOPEN'; target: string; reason: string }
   | { type: 'BLOCK'; reason: string }
-  | { type: 'RESUME' };
+  | { type: 'RESUME' }
+  | { type: 'CONFIRM'; stage: string; role: 'product' | 'tech'; confirmedBy: string; reference: string }
+  | { type: 'OVERRIDE_CONFIRM'; stage: string; role: 'product' | 'tech'; overriddenBy: string; reason: string };
 
 /** Event store entry - append-only log */
 export interface WorkflowEventEntry {

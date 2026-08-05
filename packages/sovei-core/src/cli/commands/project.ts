@@ -1,8 +1,9 @@
 /**
- * Project Commands
- * init     - New project: create structure + seed knowledge based on tech stack
- * onboard  - Existing project: scan codebase, detect stack, bootstrap knowledge
- * status   - Show current project status
+* Project Commands
+* init     - New project: create structure + seed knowledge based on tech stack
+* onboard  - Existing project: scan codebase, detect stack, bootstrap knowledge
+* status   - Show current project status
+ * map      - Show business topology (capabilities, dependencies, evidence)
  */
 
 import type { Command } from 'commander';
@@ -95,6 +96,51 @@ export function registerProjectCommands(program: Command): void {
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
       console.log('  · 已创建 harness/project/project.config.json');
 
+      // Write AGENTS.md with Sovei declaration
+      const agentsMd = [
+        '# ' + projectName,
+        '',
+        '## Sovei Workflow',
+        '',
+        'This project uses [Sovei](https://github.com/sovei) for structured development workflows.',
+        '',
+        '### Key Commands',
+        '- `sovei context build --stage <stage> --feature <feature>`: Get stage prompt + context pack',
+        '- `sovei context build --stage spec --feature <feature> --cross-feature`: Include other features decision logs',
+        '- `sovei workflow <stage> <feature>`: Prepare a workflow stage',
+        '- `sovei workflow <stage> <feature> --complete`: Complete a stage and advance',
+        '- `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate',
+        '- `sovei workflow bootstrap <feature>`: Start a new feature',
+        '- `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)',
+        '- `sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md',
+        '- `sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation',
+        '',
+        '### Workflow Stages',
+        '',
+        '```',
+        'load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
+        '```',
+        '',
+        '### Confirmation Gates',
+        '',
+        '- After **spec** (S2/S3 risk): product + tech confirmation required before scope',
+        '- After **verify** (always): product + tech confirmation required before learn',
+        '- Override: `sovei workflow override-confirm <feature> --stage <stage> --role <role> --by <name> --reason <reason>`',
+        '',
+        '### Reconciliation',
+        '',
+        'The spec stage produces `reconciliation.md` — a structured alignment document that:',
+        '1. Translates PM requirements into technical understanding',
+        '2. Restores current state (why code is the way it is, referencing prior feature decisions)',
+        '3. Lists solutions and their costs',
+        '4. Extracts questions for product and tech confirmation',
+        '',
+        'Run `sovei governance review-pack generate <feature>` to render tech-review.md and product-review.md from it.',
+        '',
+      ].join('\n');
+      await storage.write('AGENTS.md', agentsMd);
+      console.log('  · 已创建 AGENTS.md（Sovei 声明）');
+
       // Create knowledge files
       const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
       for (const type of knowledgeTypes) {
@@ -155,8 +201,9 @@ export function registerProjectCommands(program: Command): void {
     .option('--depth <n>', '最大扫描深度', '4')
     .option('--max-entries <n>', '目录扫描最大条目数', '20000')
     .option('--max-business-files <n>', '业务地图最大源码读取数', '500')
+    .option('--evidence-only', 'collect evidence without generating candidates')
     .option('--dry-run', '只扫描并打印报告，不写盘')
-    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean }) => {
+    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }) => {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
@@ -292,6 +339,7 @@ export function registerProjectCommands(program: Command): void {
       if (result.businessMap.coverage.truncated) {
         console.log('    业务地图为部分覆盖：' + result.businessMap.coverage.reasons.join('；'));
       }
+      console.log('  · 查看业务拓扑：sovei project map');
 
       // Write candidate redlines to seed file for human review (never auto-activate)
       const seedPath = 'harness/project/governance/redlines-seed.json';
@@ -460,6 +508,133 @@ export function registerProjectCommands(program: Command): void {
         } catch { /* skip */ }
       }
 
+      console.log('');
+    });
+
+  // ── map (business topology) ──
+  project
+    .command('map')
+    .description('显示项目业务拓扑：能力、依赖与代码证据')
+    .option('--detail <id>', '查看指定能力的详细信息')
+    .action(async (opts: { detail?: string }) => {
+      const storage = getStorage();
+      const content = await storage.read('harness/project/codegraph/business-map.json');
+      if (!content) {
+        throw new Error('业务地图不存在。请先运行 sovei project onboard 生成。');
+      }
+      let map: {
+        generatedAt: string;
+        lifecycle: string;
+        coverage: { truncated: boolean; reasons: string[]; candidateSourceFiles: number; contentFilesScanned: number };
+        capabilities: Array<{
+          id: string; name: string; description: string; confidence: string;
+          entrySurfaces: string[]; contracts: string[];
+          upstreamCapabilities: string[]; downstreamCapabilities: string[];
+          externalDependencies: string[]; redlineCandidateIds: string[];
+          codeEvidence: string[];
+        }>;
+        unmappedEvidence: string[];
+      };
+      try {
+        map = JSON.parse(content);
+      } catch {
+        throw new Error('业务地图文件已损坏，请重新运行 sovei project onboard。');
+      }
+
+      if (opts.detail) {
+        const cap = map.capabilities.find((c) => c.id === opts.detail || c.name === opts.detail);
+        if (!cap) {
+          throw new Error('未找到能力：' + opts.detail + '。可用的能力 ID：' + map.capabilities.map((c) => c.id).join(', '));
+        }
+        console.log('\n  ' + cap.name + ' (' + cap.id + ')');
+        console.log('  ' + cap.description);
+        console.log('  置信度：      ' + cap.confidence);
+        console.log('');
+        if (cap.entrySurfaces.length) {
+          console.log('  入口：');
+          cap.entrySurfaces.forEach((e) => console.log('    · ' + e));
+        }
+        if (cap.contracts.length) {
+          console.log('  契约：');
+          cap.contracts.forEach((c) => console.log('    · ' + c));
+        }
+        if (cap.upstreamCapabilities.length) {
+          console.log('  上游依赖：    ' + cap.upstreamCapabilities.join(', '));
+        }
+        if (cap.downstreamCapabilities.length) {
+          console.log('  下游依赖：    ' + cap.downstreamCapabilities.join(', '));
+        }
+        if (cap.externalDependencies.length) {
+          console.log('  外部依赖：    ' + cap.externalDependencies.join(', '));
+        }
+        if (cap.redlineCandidateIds.length) {
+          console.log('  关联红线：    ' + cap.redlineCandidateIds.join(', '));
+        }
+        if (cap.codeEvidence.length) {
+          console.log('  代码证据：');
+          cap.codeEvidence.slice(0, 20).forEach((e) => console.log('    · ' + e));
+          if (cap.codeEvidence.length > 20) {
+            console.log('    ……另有 ' + (cap.codeEvidence.length - 20) + ' 项');
+          }
+        }
+        console.log('');
+        return;
+      }
+
+      console.log('\n  项目业务拓扑');
+      console.log('  ────────────────────────────────────────');
+      console.log('  生命周期：    ' + map.lifecycle + '（候选，待人工审查）');
+      console.log('  生成时间：    ' + map.generatedAt);
+      console.log('  能力数量：    ' + map.capabilities.length);
+      console.log('  扫描范围：    ' + map.coverage.candidateSourceFiles + ' 个源文件，读取 ' + map.coverage.contentFilesScanned + ' 个');
+      if (map.coverage.truncated) {
+        console.log('  覆盖状态：    部分覆盖（' + map.coverage.reasons.join('；') + '）');
+      } else {
+        console.log('  覆盖状态：    完整覆盖');
+      }
+      console.log('');
+
+      if (map.capabilities.length === 0) {
+        console.log('  未检测到业务能力。');
+        console.log('  可能原因：项目结构不符合常规模式，或扫描深度不足。');
+        console.log('  可尝试 sovei project onboard --depth 6 重新扫描。\n');
+        return;
+      }
+
+      console.log('  业务能力');
+      console.log('  ────────────────────────────────────────');
+      for (const cap of map.capabilities) {
+        const icon = cap.confidence === 'high' ? '◆' : cap.confidence === 'medium' ? '◇' : '○';
+        const deps = [];
+        if (cap.upstreamCapabilities.length) deps.push('↑' + cap.upstreamCapabilities.length);
+        if (cap.downstreamCapabilities.length) deps.push('↓' + cap.downstreamCapabilities.length);
+        if (cap.externalDependencies.length) deps.push('ext:' + cap.externalDependencies.length);
+        const depStr = deps.length ? '  [' + deps.join(' ') + ']' : '';
+        console.log('  ' + icon + ' ' + cap.name + depStr);
+        console.log('    ' + cap.description);
+        if (cap.entrySurfaces.length) {
+          console.log('    入口：' + cap.entrySurfaces.slice(0, 3).join(', ') + (cap.entrySurfaces.length > 3 ? ' …' : ''));
+        }
+        if (cap.contracts.length) {
+          console.log('    契约：' + cap.contracts.slice(0, 3).join(', ') + (cap.contracts.length > 3 ? ' …' : ''));
+        }
+        console.log('');
+      }
+
+      if (map.unmappedEvidence.length > 0) {
+        console.log('  未归类证据（' + map.unmappedEvidence.length + ' 项）');
+        console.log('  ────────────────────────────────────────');
+        for (const e of map.unmappedEvidence.slice(0, 10)) {
+          console.log('    · ' + e);
+        }
+        if (map.unmappedEvidence.length > 10) {
+          console.log('    ……另有 ' + (map.unmappedEvidence.length - 10) + ' 项');
+        }
+        console.log('');
+      }
+
+      console.log('  查看能力详情：sovei project map --detail <id>');
+      console.log('  能力 ID：' + map.capabilities.map((c) => c.id).join(', '));
       console.log('');
     });
 }
