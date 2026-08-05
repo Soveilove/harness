@@ -236,7 +236,7 @@ test('scanner defaults reach deep enough for enterprise-style nested business tr
       await writeFile(target, content, 'utf8');
     }
 
-    // 默认深度 10 应能覆盖 8 层嵌套
+    // 默认深度 20 应能覆盖 8 层嵌套
     const result = await new ProjectScanner(storage).scan();
 
     const codeMap = result.generatedKnowledge.find((entry) => entry.type === 'code-map');

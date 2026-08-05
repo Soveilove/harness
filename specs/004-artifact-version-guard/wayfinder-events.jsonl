@@ -1,0 +1,1 @@
+{"timestamp":"2026-08-05T15:43:56.227Z","revision":0,"actor":"codebuddy","event":{"type":"MAP_SKIPPED","featureId":"004-artifact-version-guard","reason":"守卫力度与命令形态两个范围性决策已在 grill 阶段确认；本 Feature 为版本感知+提示+重扫入口的确定性小型改动，无需决策地图"}}

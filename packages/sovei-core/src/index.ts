@@ -54,6 +54,13 @@ export type {
 } from './config/business-map-scanner.js';
 export type { ScanCoverage } from './config/scanner.js';
 export { scanProjectRuleCandidates } from './config/project-rule-scanner.js';
+export {
+  ARTIFACT_FILES,
+  readScannerVersion,
+  findStaleArtifacts,
+  assertArtifactsCurrent,
+  getStaleArtifactVersion,
+} from './config/artifact-version-guard.js';
 
 // Project engineering rules
 export * from './rules/index.js';

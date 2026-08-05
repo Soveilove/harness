@@ -7,9 +7,14 @@ import { resolve } from 'node:path';
 import { getFeaturePath } from '../../config/loader.js';
 import type { SoveiConfig } from '../../config/types.js';
 import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { ARTIFACT_FILES, assertArtifactsCurrent } from '../../config/artifact-version-guard.js';
 
 function repository(): ChangeControlRepository {
   return new ChangeControlRepository(container.inject<StorageBackend>(TOKENS.Storage));
+}
+
+function storage(): StorageBackend {
+  return container.inject<StorageBackend>(TOKENS.Storage);
 }
 
 function collectExample(value: string, previous: string[]): string[] {
@@ -55,7 +60,13 @@ export function registerGovernanceCommands(program: Command): void {
    .command('list')
    .description('列出业务红线')
    .option('--all', 'Include inactive redlines')
-    .action(async (options: { all?: boolean }) => {
+    .option('--force', '放行读取旧版生成的 onboarding 产物')
+    .option('--refresh', '放行读取旧版生成的 onboarding 产物（同 --force）')
+    .action(async (options: { all?: boolean; force?: boolean; refresh?: boolean }) => {
+      await assertArtifactsCurrent(storage(), [ARTIFACT_FILES.redlineSeed], {
+        force: options.force ?? false,
+        refresh: options.refresh ?? false,
+      });
       const entries = await repository().loadRedlines();
       const visible = options.all ? entries : entries.filter((entry) => entry.active);
       if (!visible.length) {
@@ -118,7 +129,13 @@ export function registerGovernanceCommands(program: Command): void {
   redline
     .command('render')
     .description('重新生成人工审查视图 harness/project/governance/redlines.md')
-    .action(async () => {
+    .option('--force', '放行读取旧版生成的 onboarding 产物')
+    .option('--refresh', '放行读取旧版生成的 onboarding 产物（同 --force）')
+    .action(async (opts: { force?: boolean; refresh?: boolean }) => {
+      await assertArtifactsCurrent(storage(), [ARTIFACT_FILES.redlineSeed], {
+        force: opts.force ?? false,
+        refresh: opts.refresh ?? false,
+      });
       const viewPath = await repository().refreshRedlinesView();
       console.log(`\n  已生成人工审查视图：${viewPath}\n`);
     });

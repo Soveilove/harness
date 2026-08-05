@@ -104,7 +104,7 @@ const KEY_FILES: Record<string, string> = {
 export class ProjectScanner {
   constructor(private storage: StorageBackend) {}
 
-  async scan(maxDepth = 10, maxEntries = 50_000, maxBusinessFiles = 3000): Promise<ScanResult> {
+  async scan(maxDepth = 20, maxEntries = 50_000, maxBusinessFiles = 3000): Promise<ScanResult> {
     const pkgContent = await this.storage.read('package.json');
     let packageJson: any = null;
     if (pkgContent) {

@@ -16,6 +16,7 @@ import { KnowledgeStore } from '../../knowledge/store.js';
 import { FilesystemStorage } from '../../storage/filesystem.js';
 import { ProjectScanner } from '../../config/scanner.js';
 import { VERSION } from '../../config/version.js';
+import { ARTIFACT_FILES, assertArtifactsCurrent, getStaleArtifactVersion } from '../../config/artifact-version-guard.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from '../../config/tech-stack.js';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -279,18 +280,49 @@ export function registerProjectCommands(program: Command): void {
   project
     .command('onboard')
     .description('扫描已有项目并初始化知识')
-    .option('--depth <n>', '最大扫描深度', '10')
+    .option('--depth <n>', '最大扫描深度', '20')
     .option('--max-entries <n>', '目录扫描最大条目数', '50000')
     .option('--max-business-files <n>', '业务地图最大源码读取数', '3000')
     .option('--evidence-only', 'collect evidence without generating candidates')
     .option('--dry-run', '只扫描并打印报告，不写盘')
     .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }) => {
+      await runOnboardScan(opts);
+    });
+
+  // ── rescan (refresh stale onboarding artifacts) ──
+  project
+    .command('rescan')
+    .description('刷新旧版 onboarding 产物并重新扫描（等价于 onboard）')
+    .option('--depth <n>', '最大扫描深度', '20')
+    .option('--max-entries <n>', '目录扫描最大条目数', '50000')
+    .option('--max-business-files <n>', '业务地图最大源码读取数', '3000')
+    .option('--evidence-only', 'collect evidence without generating candidates')
+    .option('--dry-run', '只扫描并打印报告，不写盘')
+    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }) => {
+      await runOnboardScan(opts);
+    });
+
+// Shared onboard/rescan handler.
+async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }): Promise<void> {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
-      const maxDepth = parseInt(opts.depth, 10) || 4;
-      const maxEntries = parseInt(opts.maxEntries, 10) || 20_000;
-      const maxBusinessFiles = parseInt(opts.maxBusinessFiles, 10) || 3000;
+      // 写侧守卫：若存在旧版业务地图，明确告知本次将整体刷新为当前版本。
+      const staleVersion = await getStaleArtifactVersion(storage, ARTIFACT_FILES.businessMap);
+      if (staleVersion !== null) {
+        console.log('\n  ⚠️  检测到旧版 onboarding 产物（business-map.json 由 v' + staleVersion + ' 生成，当前为 v' + VERSION + '）。');
+        console.log('     本次将整体刷新为 v' + VERSION + '。\n');
+      }
+      // 注意：Commander 会为缺省 option 注入声明时的默认值（'20'/'50000'/'3000'），
+      // 但 parseInt 失败时为 NaN，不能再叠加 || 兜底（NaN || X 会落到 X），
+      // 否则会静默覆盖声明的默认值。这里仅做合法化校验，非法值回落为声明默认值。
+      const parsePositiveInt = (value: string, fallback: number): number => {
+        const n = parseInt(value, 10);
+        return Number.isInteger(n) && n > 0 ? n : fallback;
+      };
+      const maxDepth = parsePositiveInt(opts.depth, 20);
+      const maxEntries = parsePositiveInt(opts.maxEntries, 50_000);
+      const maxBusinessFiles = parsePositiveInt(opts.maxBusinessFiles, 3000);
 
       console.log('\n  正在扫描项目以完成初始化……\n');
 
@@ -516,7 +548,7 @@ export function registerProjectCommands(program: Command): void {
       console.log('  开始跟踪工作：');
       console.log('    sovei workflow bootstrap 001-first-feature');
       console.log('');
-    });
+}
 
   // ── status ──
   project
@@ -623,8 +655,14 @@ export function registerProjectCommands(program: Command): void {
     .command('map')
     .description('显示项目业务拓扑：能力、依赖与代码证据')
     .option('--detail <id>', '查看指定能力的详细信息')
-    .action(async (opts: { detail?: string }) => {
+    .option('--force', '放行读取旧版生成的业务地图')
+    .option('--refresh', '放行读取旧版生成的业务地图（同 --force）')
+    .action(async (opts: { detail?: string; force?: boolean; refresh?: boolean }) => {
       const storage = getStorage();
+      await assertArtifactsCurrent(storage, [ARTIFACT_FILES.businessMap], {
+        force: opts.force ?? false,
+        refresh: opts.refresh ?? false,
+      });
       const content = await storage.read('harness/project/codegraph/business-map.json');
       if (!content) {
         throw new Error('业务地图不存在。请先运行 sovei project onboard 生成。');

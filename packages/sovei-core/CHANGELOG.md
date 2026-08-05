@@ -2,9 +2,24 @@
 
 All notable changes to the Sovei workflow engine are documented in this file.
 
-## [Unreleased]
+## [2.3.1] - 2026-08-06
 
-_No changes yet._
+### Added
+
+- **产物版本一致性守卫**：`business-map.json` / `redlines-seed.json` 内嵌的 `scannerVersion`
+  此前「只写不读」，升级后旧产物是否过时完全靠人工记忆。现新增：
+  - `sovei project rescan`：一等公民的重扫入口，明确「刷新旧产物」，等价于 onboard。
+  - 读侧守卫：`project map`、`governance redline list/render` 在旧产物下打印醒目警告并阻断，
+    传入 `--force` / `--refresh` 可显式放行读取旧产物。
+  - 写侧守卫：`project onboard` / `rescan` 检测到旧产物时明确打印「本次将整体刷新为 vX」。
+- **守卫加固**：`project status`、`knowledge list` 为健康检查/只读查询，不消费 onboarding 产物，
+  不再被旧产物版本阻断（移除过度守卫）。
+
+### Changed
+
+- **默认扫描深度 10 → 20**：上一版在 2.3.0 把默认深度提到 10，但企业级项目
+  （如 `src/views/placement/...` 多层页面嵌套）目录最深可达 11+ 层，深度 10 仍会触发
+  「部分覆盖」。提升到 20 后默认即可完整覆盖绝大多数仓库，无需每次手传 `--depth`。
 
 ## [2.3.0] - 2026-08-05
 
