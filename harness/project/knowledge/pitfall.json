@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "id": "pitfall-type-vs-interface-for-shared-contracts-97c37fb2",
+    "type": "pitfall",
+    "title": "Type vs Interface for shared contracts",
+    "content": "Use interface for extensible object shapes (declaration merging). Use type for unions, intersections, and utility types.",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "project-init",
+        "date": "2026-08-05T14:18:33.973Z",
+        "description": "Auto-generated seed based on tech stack detection",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "typescript",
+      "types",
+      "naming"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:18:33.973Z",
+    "updatedAt": "2026-08-05T14:18:33.973Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  }
+]

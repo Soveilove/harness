@@ -1,0 +1,16 @@
+featureId: "002-onboard-prompt"
+status: in_progress
+currentStage: "grill"
+nextStage: "wayfind"
+completedStages:
+  - "load"
+reopenedStages:
+  []
+completedTaskIds:
+  []
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-05T14:18:59.598Z"

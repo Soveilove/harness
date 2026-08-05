@@ -4,10 +4,10 @@
 > 事实源是 `redlines.json`（当前状态）与 `redline-events.jsonl`（审计事件），AI 上下文从事实源读取。
 > 请勿手改本文件；修改红线请使用 `sovei governance redline add/update/deactivate`，操作后会自动重新生成。
 
-- 生成时间：2026-08-05T03:00:25.973Z
+- 生成时间：2026-08-05T14:28:30.832Z
 - 生效红线：3 条（绝对 2 / 审批 1）
 - 已停用：1 条
-- 待审候选：2 条（扫描器生成，未激活）
+- 待审候选：0 条
 
 ## 级别说明
 
@@ -57,17 +57,6 @@
 ## 已停用红线
 
 - **API_RATE_LIMIT** — API rate limits cannot be weakened（2026-08-05 停用：演示数据，已验证完毕，移除）
-
-## 待审候选（扫描器生成，未激活）
-
-> 候选来自 `redlines-seed.json`，不会自动生效。人工确认后逐条激活：
-> `sovei governance redline add <ID> --title "..." --rule "..." --enforcement absolute --rationale "..."`
-> 已确认不需要的候选可忽略；重复运行扫描会覆盖 seed 文件，但不会影响已激活红线。
-
-| ID | 置信度 | 类别 | 标题 | 规则 | 来源 | 状态 |
-|---|---|---|---|---|---|---|
-| AUTHENTICATION_AUTHENTICATION_SURFACE_DETECTED_IN_CODE_ | medium | authentication | Authentication surface detected in code structure | All authentication-related routes and middleware must require valid identity | packages/sovei-core/src/providers/tokens.ts | 待审 |
-| DATA_INTEGRITY_DATABASE_SCHEMA_SURFACE_DETECTED_IN_CODE | medium | data-integrity | Database/schema surface detected in code structure | Database schema changes require migration and integrity verification | packages/sovei-core/src/architecture/repository.ts, packages/sovei-core/src/artifacts/repository.ts, packages/sovei-core/src/change-control/repository.ts, packages/sovei-core/src/change-control/schemas.ts, packages/sovei-core/src/knowledge/schemas.ts, packages/sovei-core/src/wayfinder/repository.ts, packages/sovei-core/src/wayfinder/schemas.ts | 待审 |
 
 ## 变更历史（最近 20 条）
 

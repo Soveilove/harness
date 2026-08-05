@@ -8,7 +8,7 @@
     "evidence": [
       {
         "feature": "project-init",
-        "date": "2026-08-03T16:38:58.344Z",
+        "date": "2026-08-05T14:28:30.758Z",
         "description": "Auto-generated seed based on tech stack detection",
         "verified": false
       }
@@ -18,8 +18,8 @@
       "general"
     ],
     "scope": "project",
-    "createdAt": "2026-08-03T16:38:58.344Z",
-    "updatedAt": "2026-08-03T16:38:58.435Z",
+    "createdAt": "2026-08-05T14:28:30.758Z",
+    "updatedAt": "2026-08-05T14:28:30.821Z",
     "promotedAt": null,
     "deprecatedReason": null
   },
@@ -32,7 +32,7 @@
     "evidence": [
       {
         "feature": "project-init",
-        "date": "2026-08-03T16:38:58.344Z",
+        "date": "2026-08-05T14:28:30.758Z",
         "description": "Auto-generated seed based on tech stack detection",
         "verified": false
       }
@@ -42,8 +42,8 @@
       "general"
     ],
     "scope": "project",
-    "createdAt": "2026-08-03T16:38:58.344Z",
-    "updatedAt": "2026-08-03T16:38:58.435Z",
+    "createdAt": "2026-08-05T14:28:30.758Z",
+    "updatedAt": "2026-08-05T14:28:30.822Z",
     "promotedAt": null,
     "deprecatedReason": null
   }

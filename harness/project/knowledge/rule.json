@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "id": "rule-avoid-any-use-unknown-ea0b5798",
+    "type": "rule",
+    "title": "Avoid any, use unknown",
+    "content": "Use unknown instead of any for untyped external data. Force narrowing through type guards instead of silencing the compiler.",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "project-init",
+        "date": "2026-08-05T14:18:33.973Z",
+        "description": "Auto-generated seed based on tech stack detection",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "typescript",
+      "types",
+      "safety"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:18:33.973Z",
+    "updatedAt": "2026-08-05T14:18:33.973Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  }
+]
