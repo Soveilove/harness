@@ -31,9 +31,10 @@ export function registerGovernanceCommands(program: Command): void {
     .option('--scope <text>', 'Where this redline applies')
     .option('--example <text>', 'Typical violation example (repeatable)', collectExample, [] as string[])
     .option('--owner <name>', 'Person accountable for this redline')
+    .option('--origin <origin>', 'Origin of this redline: manual | scanner-seed | pm-confirmed | agent-generated (default: manual)', 'manual')
     .action(async (id: string, options: {
       title: string; rule: string; enforcement: 'absolute' | 'approval-required';
-      rationale?: string; scope?: string; example: string[]; owner?: string;
+      rationale?: string; scope?: string; example: string[]; owner?: string; origin?: string;
     }) => {
       const entry = await repository().addRedline({
         id: id.toUpperCase(),
@@ -44,7 +45,7 @@ export function registerGovernanceCommands(program: Command): void {
         scope: options.scope,
         examples: options.example.length ? options.example : undefined,
         owner: options.owner,
-        origin: 'manual',
+        origin: (options.origin as 'manual' | 'scanner-seed' | 'pm-confirmed' | 'agent-generated') || 'manual',
       });
       console.log(`\n  Added redline ${entry.id} [${entry.enforcement}]`);
       console.log('  人工审查视图已刷新：harness/project/governance/redlines.md\n');
@@ -63,7 +64,8 @@ export function registerGovernanceCommands(program: Command): void {
       }
       console.log('\n  Business Redlines\n');
       for (const entry of visible) {
-        console.log(`  ${entry.id} [${entry.enforcement}] ${entry.title}`);
+        const statusTag = entry.active ? '' : ' [INACTIVE]';
+        console.log(`  ${entry.id} [${entry.enforcement}] ${entry.title}${statusTag}`);
         console.log(`    ${entry.rule}`);
       }
       console.log('\n  人工审查视图：harness/project/governance/redlines.md（sovei governance redline render 重新生成）\n');

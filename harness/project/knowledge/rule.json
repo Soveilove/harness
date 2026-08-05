@@ -23,5 +23,87 @@
     "updatedAt": "2026-08-05T14:18:33.973Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-workflow-engine-acecf4c6",
+    "type": "rule",
+    "title": "阶段推进前置校验集中在 workflow-engine，不要绕开",
+    "content": "executeStage/completeStage 的守卫顺序固定：assertNoPendingChanges → canExecuteStage → preExecute → checkRequired(必需产物) → 模板占位符 SOVEI_TEMPLATE_PLACEHOLDER 检查 → 阶段特有校验（implement 校验 tasks.md 全部完成且 change-manifest.md 引用 taskId；wayfind 校验 decisionMap）。新增阶段应把校验挂在这条链上（stageDef.contract / preExecute），不要在 CLI 层各自实现，否则校验会被其他入口绕过。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:35.539Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "workflow",
+      "validation",
+      "rule"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:35.539Z",
+    "updatedAt": "2026-08-05T14:47:35.539Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-storage-write-withlock-fs-06f02384",
+    "type": "rule",
+    "title": "写 harness/project 或 specs 下文件一律走 storage，不要直接 node:fs",
+    "content": "FilesystemStorage.write 采用临时文件 + rename 的原子写，避免崩溃产生半截文件（storage/filesystem.ts:26-39）。withLock(key) 仅用于读-改-写并发场景（如红线 CRUD、知识条目 CRUD），普通覆盖写不需要；事件日志明确用 append。直接调用 node:fs 写 harness/project 或 specs 会绕过原子写与锁两个保护。注意 resolve() 目前只做 join 不做路径包含校验，任何经存储层写入的路径都应在源头校验。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:36.394Z",
+        "description": "Initial observation",
+        "verified": false
+      },
+      {
+        "feature": "onboard-self-review",
+        "date": "2026-08-05T15:10:00.000Z",
+        "description": "自我迭代：修正原表述将 withLock 泛化为所有写场景的误导，锁仅用于读-改-写并发",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "storage",
+      "concurrency",
+      "rule"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:36.394Z",
+    "updatedAt": "2026-08-05T15:10:00.000Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-fail-fast-517eafb9",
+    "type": "rule",
+    "title": "状态文件损坏应 fail-fast，事件日志损坏应容错跳过",
+    "content": "storage/json.ts:12-17 的 parseJson 对 redlines/change requests/knowledge 等状态文件损坏直接抛错（fail-fast，指明文件路径便于用户修复）；而 engine/event-store.ts:50-56 对 workflow-events.jsonl 损坏行仅告警跳过。两者的合理性在于：状态文件是权威、可修复的对象，抛错止损；事件日志的损坏行多为崩溃的半截尾行，跳过可重建状态缓存。但中间行损坏被静默跳过会导致状态错误推导——遇到时须人工检查日志完整性与 workflow-state.yaml 一致性。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard-self-review",
+        "date": "2026-08-05T14:52:29.177Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "storage",
+      "resilience",
+      "event-sourcing",
+      "rule"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:52:29.177Z",
+    "updatedAt": "2026-08-05T14:52:29.177Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

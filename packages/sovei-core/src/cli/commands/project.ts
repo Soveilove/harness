@@ -45,6 +45,87 @@ function printStack(stack: DetectedStack): void {
   }
 }
 
+/**
+ * 写入 onboard 扫描产出的三类证据文件（业务地图 / 红线候选 / 知识条目），
+ * 并确保 governance 基础设施存在。
+ *
+ * 无论 `--evidence-only` 还是完整 onboard 都会调用本函数，保证 Agent 拿到的是
+ * 真实落盘的证据，而不是只能靠读源码硬推。
+ *
+ * 返回写入的业务地图路径与候选红线数量，供调用方打印。
+ */
+async function writeEvidenceFiles(
+  storage: StorageBackend,
+  currentConfig: SoveiConfig,
+  result: Awaited<ReturnType<ProjectScanner['scan']>>,
+): Promise<{ businessMapPath: string; seedPath: string; candidateRedlines: number }> {
+  // Ensure governance infrastructure exists (same as project init)
+  if (!(await storage.exists('harness/project/governance/redlines.json'))) {
+    await storage.write('harness/project/governance/redlines.json', '[]');
+    console.log('  · 已创建 harness/project/governance/redlines.json');
+  }
+
+  // Write generated knowledge entries
+  const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+  await knowledgeStore.load();
+  let added = 0;
+  let updated = 0;
+  let preserved = 0;
+  for (const entry of result.generatedKnowledge) {
+    const fullEntry = { ...entry, id: generateId(entry.type, entry.title) };
+    const existing = knowledgeStore.selectById(fullEntry.id);
+    if (existing?.lifecycle === 'candidate') {
+      knowledgeStore.dispatch({ type: 'UPDATE', id: fullEntry.id, patch: fullEntry as any });
+      updated++;
+    } else if (existing) {
+      preserved++;
+    } else {
+      knowledgeStore.dispatch({ type: 'ADD', entry: fullEntry as any });
+      added++;
+    }
+  }
+  await knowledgeStore.persist();
+  console.log('  · 已新增 ' + added + ' 条，刷新 ' + updated + ' 条，保留 ' + preserved + ' 条已审核知识');
+
+  // Business topology is generated as a typed candidate. Humans review it;
+  // they do not have to reconstruct capabilities and dependencies manually.
+  const businessMapPath = 'harness/project/codegraph/business-map.json';
+  await storage.write(businessMapPath, JSON.stringify(result.businessMap, null, 2));
+  console.log('  · 已写入 ' + businessMapPath + '（' + result.businessMap.capabilities.length + ' 项候选业务能力）');
+  if (result.businessMap.coverage.truncated) {
+    console.log('    业务地图为部分覆盖：' + result.businessMap.coverage.reasons.join('；'));
+  }
+  console.log('  · 查看业务拓扑：sovei project map');
+
+  // Write candidate redlines to seed file for human review (never auto-activate)
+  const seedPath = 'harness/project/governance/redlines-seed.json';
+  const seedData = {
+    schemaVersion: 1 as const,
+    generatedAt: new Date().toISOString(),
+    scannerVersion: VERSION,
+    redlines: (result.candidateRedlines ?? []).map((rl) => ({
+      id: rl.id,
+      title: rl.title,
+      rule: rl.rule,
+      enforcement: rl.enforcement,
+      source: rl.source,
+      category: rl.category,
+      confidence: rl.confidence,
+    })),
+  };
+  await storage.write(seedPath, JSON.stringify(seedData, null, 2));
+  console.log('  · 已写入 ' + seedPath + '（' + seedData.redlines.length + ' 条候选，未激活）');
+  // Refresh the human-review view so candidates are readable in redlines.md
+  const viewPath = await new ChangeControlRepository(storage).refreshRedlinesView();
+  console.log('  · 已刷新人工审查视图 ' + viewPath);
+
+  return {
+    businessMapPath,
+    seedPath,
+    candidateRedlines: seedData.redlines.length,
+  };
+}
+
 export function registerProjectCommands(program: Command): void {
   const project = program.command('project').description('项目管理命令');
 
@@ -280,6 +361,8 @@ export function registerProjectCommands(program: Command): void {
       }
 
       if (opts.evidenceOnly) {
+        // Evidence-only 模式也会真正落盘三类证据文件，Agent 拿到的是可读的真实证据。
+        const evidence = await writeEvidenceFiles(storage, currentConfig, result);
         console.log('');
         console.log('  ================================================================');
         console.log('  AGENT ONBOARDING GUIDE');
@@ -289,14 +372,14 @@ export function registerProjectCommands(program: Command): void {
         console.log('  Sovei has collected evidence but CANNOT understand business semantics.');
         console.log('  YOUR JOB: read the evidence, read the code, and write back findings.');
         console.log('');
-        console.log('  ## Evidence Files (already generated)');
+        console.log('  ## Evidence Files (generated above)');
         console.log('');
-        console.log('  1. harness/project/codegraph/business-map.json');
+        console.log('  1. ' + evidence.businessMapPath);
         console.log('     - Auto-detected capabilities from directory structure + imports');
         console.log('     - WARNING: contains noise (test files as capabilities, etc.)');
         console.log('     - Read it, then verify each capability against actual code');
         console.log('');
-        console.log('  2. harness/project/governance/redlines-seed.json');
+        console.log('  2. ' + evidence.seedPath);
         console.log('     - Regex-detected redline candidates (may be empty or noisy)');
         console.log('');
         console.log('  3. harness/project/knowledge/*.json');
@@ -375,11 +458,6 @@ export function registerProjectCommands(program: Command): void {
       };
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
       console.log('  · 已更新 harness/project/project.config.json');
-      // Ensure governance infrastructure exists (same as project init)
-      if (!(await storage.exists('harness/project/governance/redlines.json'))) {
-        await storage.write('harness/project/governance/redlines.json', '[]');
-        console.log('  · 已创建 harness/project/governance/redlines.json');
-      }
 
       // Existing projects are adapted into candidates only. Re-running onboard is
       // idempotent and preserves rules that have already been reviewed.
@@ -389,59 +467,8 @@ export function registerProjectCommands(program: Command): void {
         ? '  · 已适配 ' + adaptedRules.total + ' 条项目规范候选（未自动激活）'
         : '  · 未发现项目原有 Agent/IDE Rules，未生成规范候选');
 
-      // Write generated knowledge entries
-      const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
-      await knowledgeStore.load();
-      let added = 0;
-      let updated = 0;
-      let preserved = 0;
-      for (const entry of result.generatedKnowledge) {
-        const fullEntry = { ...entry, id: generateId(entry.type, entry.title) };
-        const existing = knowledgeStore.selectById(fullEntry.id);
-        if (existing?.lifecycle === 'candidate') {
-          knowledgeStore.dispatch({ type: 'UPDATE', id: fullEntry.id, patch: fullEntry as any });
-          updated++;
-        } else if (existing) {
-          preserved++;
-        } else {
-          knowledgeStore.dispatch({ type: 'ADD', entry: fullEntry as any });
-          added++;
-        }
-      }
-      await knowledgeStore.persist();
-      console.log('  · 已新增 ' + added + ' 条，刷新 ' + updated + ' 条，保留 ' + preserved + ' 条已审核知识');
-
-      // Business topology is generated as a typed candidate. Humans review it;
-      // they do not have to reconstruct capabilities and dependencies manually.
-      const businessMapPath = 'harness/project/codegraph/business-map.json';
-      await storage.write(businessMapPath, JSON.stringify(result.businessMap, null, 2));
-      console.log('  · 已写入 ' + businessMapPath + '（' + result.businessMap.capabilities.length + ' 项候选业务能力）');
-      if (result.businessMap.coverage.truncated) {
-        console.log('    业务地图为部分覆盖：' + result.businessMap.coverage.reasons.join('；'));
-      }
-      console.log('  · 查看业务拓扑：sovei project map');
-
-      // Write candidate redlines to seed file for human review (never auto-activate)
-      const seedPath = 'harness/project/governance/redlines-seed.json';
-      const seedData = {
-        schemaVersion: 1 as const,
-        generatedAt: new Date().toISOString(),
-        scannerVersion: VERSION,
-        redlines: (result.candidateRedlines ?? []).map((rl) => ({
-          id: rl.id,
-          title: rl.title,
-          rule: rl.rule,
-          enforcement: rl.enforcement,
-          source: rl.source,
-          category: rl.category,
-          confidence: rl.confidence,
-        })),
-      };
-      await storage.write(seedPath, JSON.stringify(seedData, null, 2));
-      console.log('  · 已写入 ' + seedPath + '（' + seedData.redlines.length + ' 条候选，未激活）');
-      // Refresh the human-review view so candidates are readable in redlines.md
-      const viewPath = await new ChangeControlRepository(storage).refreshRedlinesView();
-      console.log('  · 已刷新人工审查视图 ' + viewPath);
+      // 三类证据文件（业务地图 / 红线候选 / 知识条目）统一落盘
+      await writeEvidenceFiles(storage, currentConfig, result);
 
       // Display candidate redlines grouped by category and confidence
       if (result.candidateRedlines && result.candidateRedlines.length > 0) {

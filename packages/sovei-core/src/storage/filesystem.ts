@@ -5,14 +5,36 @@
 
 import { readFile, writeFile, appendFile, mkdir, unlink, readdir, stat, access, open, rename } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve as pathResolve, sep } from 'node:path';
 import type { StorageBackend } from './types.js';
 
 export class FilesystemStorage implements StorageBackend {
   constructor(private rootPath: string) {}
 
+  /**
+   * Resolve a project-relative path against the storage root.
+   *
+   * Enforces path containment: every path passed to read/write/append/delete
+   * must resolve strictly inside rootPath. `join` alone does not stop `..`
+   * traversal, so we normalize with `path.resolve` and verify the result is
+   * still under the root. This is the single choke point that closes the
+   * directory-traversal surface for the whole engine (see redline
+   * PATH_TRAVERSAL_CONTAINMENT).
+   */
   private resolve(p: string): string {
-    return join(this.rootPath, p);
+    const root = pathResolve(this.rootPath);
+    const full = pathResolve(root, p);
+    // Containment: `full` must be strictly inside `root`. Prefix comparison
+    // (rather than `relative`) is robust across Windows drive letters, where
+    // an absolute path on another drive makes `relative` return an unrelated
+    // absolute path that a `..`-prefix check would miss.
+    const contained =
+      full === root ||
+      full.startsWith(root.endsWith(sep) ? root : root + sep);
+    if (!contained) {
+      throw new Error(`路径越界: "${p}" 解析后超出项目根目录 "${root}"`);
+    }
+    return full;
   }
 
   async read(filePath: string): Promise<string | null> {

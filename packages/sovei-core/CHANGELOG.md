@@ -6,6 +6,24 @@ All notable changes to the Sovei workflow engine are documented in this file.
 
 _No changes yet._
 
+## [2.2.3] - 2026-08-05
+
+### Fixed
+
+- **`sovei project onboard --evidence-only` 真正落盘证据文件**：此前该模式只打印
+  AGENT ONBOARDING GUIDE 便返回，从不写入 `business-map.json`、`redlines-seed.json`
+  与 `knowledge/*.json`，而指引却宣称这些文件「已生成」，导致 Agent 只能靠读源码硬推。
+  现在 evidence-only 与完整 onboard 统一经由 `writeEvidenceFiles()` 写盘三类证据，
+  指引中的文件路径为真实存在的落盘产物。
+
+### Changed
+
+- **`sovei governance redline add` 新增 `--origin` 参数**：可标注红线来源
+  （`manual` / `scanner-seed` / `pm-confirmed` / `agent-generated`），默认 `manual`。
+- **`sovei governance redline list` 显示停用红线**：非激活红线追加 `[INACTIVE]` 标记。
+- **`FilesystemStorage` 路径越界防护**：所有读写路径经 `path.resolve` 校验必须落在
+  项目根目录内，闭合目录穿越攻击面（`PATH_TRAVERSAL_CONTAINMENT`）。
+
 ## [2.2.2] - 2026-08-05
 
 ## [2.2.1] - 2026-08-05

@@ -22,5 +22,29 @@
     "updatedAt": "2026-08-05T14:28:30.822Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "code-map-sovei-core-79da577c",
+    "type": "code-map",
+    "title": "sovei-core 领域模块地图",
+    "content": "packages/sovei-core/src 下 13 个模块：cli/（commander 入口 + commands/ 各领域子命令）、engine/（workflow-engine 编排、state-machine 纯 reducer、event-store 事件日志、types）、change-control/（红线仓储 redlines.json、变更请求 CHG-*、redline-view 渲染 markdown）、knowledge/（schemas 7 种类型 + 4 态 lifecycle、lifecycle 晋级）、context/（builder 组装阶段上下文包、snapshot）、wayfinder/（决策图 + 文件锁）、rules/（规则文档与 adaptation）、architecture/（analyzer + policy 重构策略）、config/（business-map-scanner、redline-scanner、项目配置）、stages/（各阶段定义与契约）、storage/（FilesystemStorage 原子写 + withLock）、providers/（DI container + TOKENS + bootstrap）、templates/。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:48.598Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "code-map",
+      "architecture"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:48.598Z",
+    "updatedAt": "2026-08-05T14:47:48.598Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

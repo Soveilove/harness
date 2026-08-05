@@ -22,5 +22,30 @@
     "updatedAt": "2026-08-05T14:28:30.822Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-yaml-9233ecb5",
+    "type": "architecture",
+    "title": "工作流状态采用事件溯源，YAML 仅为缓存",
+    "content": "状态唯一真相来源是 specs/<feature>/workflow-events.jsonl。EventStore.replay 用 workflowReducer 从 BOOTSTRAP 事件起 fold 出当前状态；workflow-state.yaml 只是可重建缓存，损坏时返回 null 并重放重建（event-store.ts:94-105）。推论：修状态 bug 要改 reducer 而非改 YAML；新增状态字段必须同时更新 stateToYaml 与 parseStateYaml，否则缓存往返会丢字段。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:06.417Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "architecture",
+      "event-sourcing",
+      "workflow"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:06.417Z",
+    "updatedAt": "2026-08-05T14:47:06.417Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

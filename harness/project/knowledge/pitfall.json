@@ -23,5 +23,107 @@
     "updatedAt": "2026-08-05T14:18:33.973Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "pitfall--50d86944",
+    "type": "pitfall",
+    "title": "扫描器会把自己的关键词字典当成业务证据",
+    "content": "business-map-scanner.ts:78-79 与 redline-scanner.ts:37-40 内含 auth/billing/payment 关键词表。对本仓库自扫描时，这些字典行本身被匹配，生成了 AUTH_REQUIRED 与 BILLING_CONTRACT 两条不存在的红线。规避：验证扫描结果时必须打开 codeEvidence 指向的文件确认是真实业务逻辑，而不是关键词表、DI TOKENS 或注释。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:21.232Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "scanner",
+      "false-positive",
+      "onboard"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:21.232Z",
+    "updatedAt": "2026-08-05T14:47:21.232Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-business-map-4-monorepo-724de14e",
+    "type": "pitfall",
+    "title": "business-map 扫描深度 4 层，monorepo 下扫不到真实源码",
+    "content": "默认扫描深度导致 packages/sovei-core/src/** 未被覆盖，22 个候选能力里 15 个是 test 文件、3 个空目录，无一命中真实领域模块。在 monorepo（packages/<pkg>/src/<domain>/）中路径深度普遍超过 4。规避：onboard 后先人工核对 coverage 与 capabilities 数量是否与实际模块数匹配，明显偏离说明扫描根路径或深度配置需调整。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:47:22.031Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "scanner",
+      "monorepo",
+      "onboard"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:47:22.031Z",
+    "updatedAt": "2026-08-05T14:47:22.031Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-redline-list-all-ec103733",
+    "type": "pitfall",
+    "title": "redline list --all 不标注停用状态，审查时会误读",
+    "content": "cli/commands/governance.ts:65-68 的渲染循环只输出 id/enforcement/title/rule，从不读取 entry.active。加上 --all 后，已停用红线与生效红线在输出中完全无法区分，人工审查极易把误报当成正在执行的约束。规避：判断生效状态以 harness/project/governance/redlines.json 的 active 字段为准，不要只看 CLI 输出。修复方向：在 --all 模式下为 active===false 的条目加 [INACTIVE] 前缀并输出 deactivationReason。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-05T14:49:21.975Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "cli",
+      "ux",
+      "bug",
+      "governance"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:49:21.975Z",
+    "updatedAt": "2026-08-05T14:49:21.975Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-governance-redline-add-origin-manual-99f85ba7",
+    "type": "pitfall",
+    "title": "governance redline add 硬编码 origin=manual，破坏来源可追溯性",
+    "content": "cli/commands/governance.ts:47 写死 origin:'manual'，而 schema（change-control/schemas.ts:15）定义了 manual/scanner-seed/pm-confirmed/agent-generated 四种来源。后果：任何通过 CLI 添加的红线（包括 AI 生成的候选）都被标记为 manual，无法区分'人类定的红线'与'AI/扫描器生成的候选'，这正是 onboard 候选治理靠 origin+lifecycle 区分的核心。CLI 未暴露 --origin 选项。修复方向：为 add 增加 --origin 选项或根据调用方自动填充 agent-generated。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard-self-review",
+        "date": "2026-08-05T14:52:34.804Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "cli",
+      "governance",
+      "audit",
+      "origin"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-05T14:52:34.804Z",
+    "updatedAt": "2026-08-05T14:52:34.804Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]
