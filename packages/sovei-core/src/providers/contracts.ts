@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Optional Provider Contracts
  *
  * These interfaces allow external embedding and LLM providers to be injected

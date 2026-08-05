@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Agent Commands
  * sovei agent list
  * sovei agent show <id>

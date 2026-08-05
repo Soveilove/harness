@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Knowledge Snapshot & Version Tracking
  *
  * Records the generation chain that produced the current knowledge index,

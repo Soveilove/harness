@@ -23,12 +23,13 @@ function generateId(type: string, title: string): string {
 }
 
 export function registerKnowledgeCommands(program: Command): void {
-  const knowledge = program.command('knowledge').description('Knowledge management commands');
+  const knowledge = program.command('knowledge').description('知识管理命令');
 
   // ── list ──
   knowledge
-    .command('list')
-    .option('--type <type>', 'Filter by knowledge type')
+   .command('list')
+   .description('列出知识条目')
+   .option('--type <type>', 'Filter by knowledge type')
     .option('--lifecycle <lifecycle>', 'Filter by lifecycle status')
     .option('--tags <tags>', 'Filter by tags (comma-separated)')
     .action(async (opts: { type?: string; lifecycle?: string; tags?: string }) => {
@@ -68,8 +69,9 @@ export function registerKnowledgeCommands(program: Command): void {
 
   // ── add ──
   knowledge
-    .command('add')
-    .addOption(new Option('--type <type>', 'Knowledge type').choices(KnowledgeType.options).makeOptionMandatory())
+   .command('add')
+   .description('添加知识条目（单次观察只能进入 candidate）')
+   .addOption(new Option('--type <type>', 'Knowledge type').choices(KnowledgeType.options).makeOptionMandatory())
     .requiredOption('--title <title>', 'Entry title')
     .requiredOption('--content <content>', 'Entry content (markdown)')
     .option('--tags <tags>', 'Tags (comma-separated)')
@@ -106,8 +108,9 @@ export function registerKnowledgeCommands(program: Command): void {
 
   // ── promote ──
   knowledge
-    .command('promote')
-    .argument('<id>', 'Entry ID')
+   .command('promote')
+   .description('晋级知识条目生命周期')
+   .argument('<id>', 'Entry ID')
     .addOption(new Option('--to <lifecycle>', 'Target lifecycle (pending/stable)').choices(Lifecycle.options))
     .option('--feature <feature>', 'Evidence source feature')
     .option('--description <description>', 'Evidence description')
@@ -157,9 +160,10 @@ export function registerKnowledgeCommands(program: Command): void {
 
   // ── deprecate ──
   knowledge
-    .command('deprecate')
-    .argument('<id>', 'Entry ID')
-    .requiredOption('--reason <reason>', 'Deprecation reason')
+   .command('deprecate')
+   .description('废弃知识条目')
+   .argument('<id>', 'Entry ID')
+   .requiredOption('--reason <reason>', 'Deprecation reason')
     .action(async (id: string, opts: { reason: string }) => {
       const store = getStore();
       const storage = container.inject<StorageBackend>(TOKENS.Storage);
@@ -173,8 +177,9 @@ export function registerKnowledgeCommands(program: Command): void {
 
   // ── query ──
   knowledge
-    .command('query')
-    .argument('<query>', 'Search query')
+   .command('query')
+   .description('搜索知识条目')
+   .argument('<query>', 'Search query')
     .action(async (query: string) => {
       const store = getStore();
       await store.load();
@@ -193,8 +198,9 @@ export function registerKnowledgeCommands(program: Command): void {
 
   // ── stats ──
   knowledge
-    .command('stats')
-    .action(async () => {
+   .command('stats')
+   .description('知识统计')
+   .action(async () => {
       const store = getStore();
       await store.load();
       const stats = getStats(store.selectAll());

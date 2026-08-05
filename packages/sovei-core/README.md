@@ -1,13 +1,13 @@
-﻿# Sovei
+# Sovei
 
 Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、决策地图、重大变更控制和演进式架构治理。
 
-当前通过 npm `next` 通道发布 Sovei 2.1 开发版，用于实地试用，尚未进入稳定发行。
+当前通过 npm `latest` 通道发布 Sovei 2.1 稳定版。
 
 ## 安装
 
 ```bash
-pnpm add --global @soveilove/sovei@next
+pnpm add --global @soveilove/sovei
 sovei --version
 sovei --help
 ```

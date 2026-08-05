@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Context Builder
  *
  * Assembles a versioned context pack for a host agent.
@@ -41,14 +41,19 @@ function hashContent(text: string): string {
 }
 
 function fromRedline(rl: Redline): ContextItem {
+  const sections = [rl.rule];
+  if (rl.rationale) sections.push(`为什么：${rl.rationale}`);
+  if (rl.scope) sections.push(`适用范围：${rl.scope}`);
+  if (rl.examples?.length) sections.push(`典型违规示例：${rl.examples.join('；')}`);
+  const content = sections.join('\n');
   return {
     source: 'governance/redlines.json',
     id: rl.id,
     type: 'redline',
     title: rl.title,
-    content: rl.rule,
+    content,
     lifecycle: rl.active ? 'active' : 'inactive',
-    contentHash: hashContent(rl.id + rl.rule),
+    contentHash: hashContent(rl.id + content),
     citation: `红线 ${rl.id}（${rl.enforcement}）`,
   };
 }

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Context Commands
  * sovei context build <feature> --stage <stage> [--adapter <id>] [--query <text>]
  * sovei context status
@@ -64,8 +64,7 @@ export function registerContextCommands(program: Command): void {
         }
       }
 
-      // Load or build snapshot
-      const snapshot = await loadSnapshot(storage);
+      // Always compute a fresh snapshot for the context pack
       const freshSnapshot = buildSnapshot(knowledge, config.project.name, {
         engineVersion: VERSION,
         scannerVersion: VERSION,

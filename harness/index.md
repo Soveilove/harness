@@ -87,13 +87,18 @@ sovei architecture check --fail-on required
 
 ## 重大需求变更
 
-业务红线存储在 `project/governance/redlines.json`，变更审计追加到
-`project/governance/redline-events.jsonl`。重大需求变化使用 Change Request，不能让 AI
-直接沿用或覆盖旧 Spec：
+业务红线采用双轨存储：事实源是机器可读的 `project/governance/redlines.json`（当前状态）
+和 `redline-events.jsonl`（审计事件），AI 上下文从这里读取；人工审查视图是自动派生的
+`project/governance/redlines.md`（只读，不要手改）。每次 add/update/deactivate/import 后
+视图自动重新生成，也可手动 `sovei governance redline render`。重大需求变化使用 Change
+Request，不能让 AI 直接沿用或覆盖旧 Spec：
 
 ```bash
 sovei governance redline add AUTH_REQUIRED --title "Authentication" \
-  --rule "Protected actions require authentication" --enforcement absolute
+  --rule "Protected actions require authentication" --enforcement absolute \
+  --rationale "未认证调用会造成越权操作" --scope "所有写操作接口" --owner "backend-team"
+sovei governance redline update AUTH_REQUIRED --reviewer "maintainer" --rationale "..."
+sovei governance redline render   # 重新生成人工审查视图 redlines.md
 sovei workflow change 001-my-feature --target grill \
   --summary "New business direction" --reason "Approved product pivot" \
   --dimensions "business-direction,business-redline"

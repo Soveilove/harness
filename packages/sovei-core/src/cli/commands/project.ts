@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project Commands
  * init     - New project: create structure + seed knowledge based on tech stack
  * onboard  - Existing project: scan codebase, detect stack, bootstrap knowledge
@@ -6,6 +6,7 @@
  */
 
 import type { Command } from 'commander';
+import { ChangeControlRepository } from '../../change-control/repository.js';
 import { container, TOKENS } from '../../providers/container.js';
 import type { StorageBackend } from '../../storage/types.js';
 import type { SoveiConfig } from '../../config/types.js';
@@ -48,8 +49,9 @@ export function registerProjectCommands(program: Command): void {
 
   // ── init (new project) ──
   project
-    .command('init')
-    .argument('<path>', '项目路径')
+   .command('init')
+   .description('初始化新项目：创建目录结构并按技术栈写入种子知识')
+   .argument('<path>', '项目路径')
     .option('--blank', '空白初始化（不写入种子知识）')
     .option('--name <name>', '项目名称')
     .option('--framework <framework>', '技术栈框架（vue/react/svelte/express）')
@@ -309,6 +311,9 @@ export function registerProjectCommands(program: Command): void {
       };
       await storage.write(seedPath, JSON.stringify(seedData, null, 2));
       console.log('  · 已写入 ' + seedPath + '（' + seedData.redlines.length + ' 条候选，未激活）');
+      // Refresh the human-review view so candidates are readable in redlines.md
+      const viewPath = await new ChangeControlRepository(storage).refreshRedlinesView();
+      console.log('  · 已刷新人工审查视图 ' + viewPath);
 
       // Display candidate redlines grouped by category and confidence
       if (result.candidateRedlines && result.candidateRedlines.length > 0) {

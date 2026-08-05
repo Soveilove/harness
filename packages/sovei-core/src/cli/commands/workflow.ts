@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Workflow Commands
  * 12 stage commands + bootstrap + reopen + status + list-stages
  * Each stage executes exactly one step and reports the next command.
@@ -76,8 +76,9 @@ export function registerWorkflowCommands(program: Command): void {
 
   // ── status ──
   workflow
-    .command('status')
-    .argument('<feature>', 'Feature ID（例如 001-my-feature）')
+   .command('status')
+   .description('查看 Feature 工作流状态')
+   .argument('<feature>', 'Feature ID（例如 001-my-feature）')
     .action(async (feature: string) => {
       const engine = getEngine();
       const state = await engine.getState(feature);
@@ -139,9 +140,10 @@ export function registerWorkflowCommands(program: Command): void {
 
   // ── reopen ──
   workflow
-    .command('reopen')
-    .argument('<feature>', 'Feature ID')
-    .requiredOption('--target <stage>', 'Stage to reopen')
+   .command('reopen')
+   .description('返工已完成阶段，失效目标及其后继并增加 revision')
+   .argument('<feature>', 'Feature ID')
+   .requiredOption('--target <stage>', 'Stage to reopen')
     .requiredOption('--reason <reason>', 'Reason for reopening')
     .action(async (feature: string, opts: { target: string; reason: string }) => {
       const engine = getEngine();
@@ -158,7 +160,7 @@ export function registerWorkflowCommands(program: Command): void {
     .requiredOption('--summary <summary>', 'Concise description of the new direction')
     .requiredOption('--reason <reason>', 'Why the previous requirements are no longer valid')
     .requiredOption('--dimensions <dimensions>', 'Comma-separated material change dimensions')
-    .description('Create a draft material-change request and redline review matrix')
+    .description('创建重大变更草稿与红线审查矩阵')
     .action(async (feature: string, opts: { target: string; summary: string; reason: string; dimensions: string }) => {
       const dimensions: ChangeDimensionType[] = [];
       for (const value of opts.dimensions.split(',')) {
@@ -179,7 +181,7 @@ export function registerWorkflowCommands(program: Command): void {
     .command('apply-change')
     .argument('<feature>', 'Feature ID')
     .argument('<change-id>', 'Reviewed Change Request ID')
-    .description('Apply a reviewed change, archive stale artifacts, and reopen its target stage')
+    .description('应用已审查的变更，归档过期产物并重开目标阶段')
     .action(async (feature: string, changeId: string) => {
       const state = await getEngine().applyChange(feature, changeId);
       console.log(`\n  Applied change '${changeId}'. Superseded artifacts were archived.\n`);
@@ -192,7 +194,7 @@ export function registerWorkflowCommands(program: Command): void {
     .argument('<feature>', 'Feature ID')
     .argument('<change-id>', 'Draft Change Request ID')
     .requiredOption('--reason <reason>', 'Why this material change is no longer being pursued')
-    .description('Cancel a draft material change and unfreeze the ordinary workflow')
+    .description('取消重大变更草稿并解冻普通工作流')
     .action(async (feature: string, changeId: string, options: { reason: string }) => {
       await getEngine().cancelChange(feature, changeId, options.reason);
       console.log(`\n  Cancelled change '${changeId}'. Ordinary workflow commands are available again.\n`);

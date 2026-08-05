@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @sovei/core - Sovei Workflow Engine
  * Portable development SOP with typed knowledge management.
  *

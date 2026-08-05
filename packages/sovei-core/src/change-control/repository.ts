@@ -8,11 +8,20 @@ import {
   type ChangeDimension,
   type ChangeValidation,
   type Redline,
+  type RedlineInput,
+  type RedlinePatch,
 } from './schemas.js';
+import {
+  REDLINES_VIEW_FILE,
+  renderRedlinesMarkdown,
+  type RedlineEvent,
+  type RedlineSeed,
+} from './redline-view.js';
 
 const REDLINES_FILE = 'harness/project/governance/redlines.json';
 const REDLINES_LOCK = 'harness/project/governance/redlines';
 const REDLINE_EVENTS_FILE = 'harness/project/governance/redline-events.jsonl';
+const REDLINE_SEED_FILE = 'harness/project/governance/redlines-seed.json';
 
 const DIMENSION_MINIMUM_STAGE: Record<ChangeDimension, string> = {
   'business-direction': 'grill',
@@ -41,7 +50,7 @@ export class ChangeControlRepository {
     await this.storage.write(REDLINES_FILE, JSON.stringify(RedlineSchema.array().parse(redlines), null, 2));
   }
 
-  async addRedline(input: Pick<Redline, 'id' | 'title' | 'rule' | 'enforcement'>): Promise<Redline> {
+  async addRedline(input: RedlineInput, options: { refreshView?: boolean } = {}): Promise<Redline> {
     return this.storage.withLock(REDLINES_LOCK, async () => {
       const redlines = await this.loadRedlines();
       if (redlines.some((redline) => redline.id === input.id)) {
@@ -55,7 +64,35 @@ export class ChangeControlRepository {
         timestamp: now,
         redline,
       }) + '\n');
+      if (options.refreshView !== false) await this.refreshRedlinesView();
       return redline;
+    });
+  }
+
+  async updateRedline(id: string, patch: RedlinePatch, options: { refreshView?: boolean } = {}): Promise<Redline> {
+    return this.storage.withLock(REDLINES_LOCK, async () => {
+      const redlines = await this.loadRedlines();
+      const existing = redlines.find((redline) => redline.id === id);
+      if (!existing) throw new Error(`Redline not found: ${id}`);
+      const fields = Object.entries(patch).filter(([key, value]) =>
+        value !== undefined && (existing as Record<string, unknown>)[key] !== value);
+      if (!fields.length) throw new Error(`Redline ${id} has no fields to update`);
+      const now = new Date().toISOString();
+      const updated = RedlineSchema.parse({
+        ...existing,
+        ...Object.fromEntries(fields),
+        updatedAt: now,
+      });
+      await this.saveRedlines(redlines.map((redline) => redline.id === id ? updated : redline));
+      await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
+        type: 'REDLINE_UPDATED',
+        timestamp: now,
+        redlineId: id,
+        patch: Object.fromEntries(fields),
+        redline: updated,
+      }) + '\n');
+      if (options.refreshView !== false) await this.refreshRedlinesView();
+      return updated;
     });
   }
 
@@ -72,8 +109,52 @@ export class ChangeControlRepository {
         redlineId: id,
         reason,
       }) + '\n');
+      await this.refreshRedlinesView();
       return updated;
     });
+  }
+
+  async loadRedlineEvents(): Promise<RedlineEvent[]> {
+    const content = await this.storage.read(REDLINE_EVENTS_FILE);
+    if (!content) return [];
+    const events: RedlineEvent[] = [];
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        events.push(JSON.parse(trimmed) as RedlineEvent);
+      } catch {
+        continue;
+      }
+    }
+    return events;
+  }
+
+  async loadRedlineSeed(): Promise<RedlineSeed | null> {
+    const content = await this.storage.read(REDLINE_SEED_FILE);
+    if (!content) return null;
+    try {
+      const parsed = JSON.parse(content) as RedlineSeed;
+      return Array.isArray(parsed.redlines) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async refreshRedlinesView(): Promise<string> {
+    const [redlines, events, seed] = await Promise.all([
+      this.loadRedlines(),
+      this.loadRedlineEvents(),
+      this.loadRedlineSeed(),
+    ]);
+    const markdown = renderRedlinesMarkdown({
+      redlines,
+      events,
+      seed,
+      generatedAt: new Date().toISOString(),
+    });
+    await this.storage.write(REDLINES_VIEW_FILE, markdown);
+    return REDLINES_VIEW_FILE;
   }
 
   async createRequest(

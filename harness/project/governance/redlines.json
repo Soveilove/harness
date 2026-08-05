@@ -5,8 +5,13 @@
     "rule": "All purchase and account mutations require authenticated identity",
     "enforcement": "absolute",
     "active": true,
+    "rationale": "购买和账户变更涉及真实金钱和隐私，未认证调用会造成越权操作和资金风险",
+    "scope": "所有 purchase/account 写操作接口",
+    "owner": "backend-team",
+    "reviewedBy": "maintainer",
+    "reviewedAt": "2026-08-05T02:55:41.160Z",
     "createdAt": "2026-08-03T08:18:52.584Z",
-    "updatedAt": "2026-08-03T08:18:52.584Z"
+    "updatedAt": "2026-08-05T02:55:41.163Z"
   },
   {
     "id": "BILLING_CONTRACT",
@@ -14,8 +19,13 @@
     "rule": "Price, renewal, refund, and entitlement semantics require business approval",
     "enforcement": "approval-required",
     "active": true,
+    "rationale": "价格、续费、退款和权益语义直接关系收入，AI 不能自行判断业务取舍，需人工确认",
+    "scope": "billing 模块的价格/续费/退款/权益字段",
+    "owner": "business-owner",
+    "reviewedBy": "maintainer",
+    "reviewedAt": "2026-08-05T02:55:41.314Z",
     "createdAt": "2026-08-03T08:18:52.589Z",
-    "updatedAt": "2026-08-03T08:18:52.589Z"
+    "updatedAt": "2026-08-05T02:55:41.317Z"
   },
   {
     "id": "NO_SILENT_DATA_LOSS",
@@ -23,7 +33,31 @@
     "rule": "CLI upgrades must not silently rewrite project data in harness/project/ or specs/",
     "enforcement": "absolute",
     "active": true,
+    "rationale": "CLI 升级时静默重写项目数据会丢失人工积累的踩坑和决策记录，破坏信任",
+    "scope": "harness/project/ 和 specs/ 下的所有文件",
+    "owner": "platform-team",
+    "reviewedBy": "maintainer",
+    "reviewedAt": "2026-08-05T02:55:41.495Z",
     "createdAt": "2026-08-03T08:18:52.591Z",
-    "updatedAt": "2026-08-03T08:18:52.591Z"
+    "updatedAt": "2026-08-05T02:55:41.498Z"
+  },
+  {
+    "id": "API_RATE_LIMIT",
+    "title": "API rate limits cannot be weakened",
+    "rule": "API rate limits must not be removed or weakened without load testing",
+    "enforcement": "approval-required",
+    "active": false,
+    "rationale": "限流是稳定性最后防线，AI 无权判断是否可放宽，必须人工压测后确认",
+    "scope": "所有对外 HTTP 端点的限流配置",
+    "examples": [
+      "把 rateLimit 从 100/min 改成 0",
+      "删除 @Throttle 注解"
+    ],
+    "owner": "platform-team",
+    "origin": "manual",
+    "reviewedBy": "alice",
+    "reviewedAt": "2026-08-05T02:59:44.572Z",
+    "createdAt": "2026-08-05T02:59:34.498Z",
+    "updatedAt": "2026-08-05T03:00:25.966Z"
   }
 ]

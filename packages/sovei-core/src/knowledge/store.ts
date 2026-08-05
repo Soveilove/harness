@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Knowledge Store
  * Inspired by Redux: pure reducer + dispatch + selectors + subscriptions.
  *

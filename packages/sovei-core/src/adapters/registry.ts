@@ -1,4 +1,4 @@
-﻿/**
+/**
  * IDE Adapter Registry
  * Maps IDE-specific invocation formats to Sovei CLI commands.
  * Each adapter declares its host agent capabilities so Sovei can

@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
@@ -30,6 +31,20 @@ if (paths.some((path) => /\.(?:map|ts|tsx)$/.test(path))) {
 }
 if (unexpected.length > 0) {
   throw new Error('发布包包含未授权文件：' + unexpected.join(', '));
+}
+
+// ── 编码检查：所有发布文件必须是 UTF-8 无 BOM ──
+for (const filePath of report.files) {
+  const absPath = resolve(packageRoot, filePath.path);
+  const buf = readFileSync(absPath);
+  if (buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+    throw new Error(`发布文件 ${filePath.path} 含有 UTF-8 BOM，必须使用无 BOM 的 UTF-8 编码`);
+  }
+  // 校验是否为合法 UTF-8（readFile with 'utf8' 不会抛错但会用替换字符）
+  const decoded = buf.toString('utf8');
+  if (decoded.includes('\uFFFD')) {
+    throw new Error(`发布文件 ${filePath.path} 包含非法 UTF-8 字节序列`);
+  }
 }
 
 // ── 产物完整性检查 ──

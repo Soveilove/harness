@@ -1,6 +1,6 @@
 {
   "name": "@soveilove/sovei",
-  "version": "2.1.0-dev.3",
+  "version": "2.1.0",
   "description": "Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理",
   "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
@@ -14,7 +14,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "next"
+    "tag": "latest"
   },
   "type": "module",
   "engines": {
@@ -48,10 +48,5 @@
     "typescript": "^7.0.2",
     "yaml": "^2.8.1",
     "zod": "^3.23.8"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }

@@ -24,12 +24,13 @@ function getWorkspaceManager(): WorkspaceManager {
 }
 
 export function registerWorkspaceCommands(program: Command): void {
-  const ws = program.command('workspace').description('Multi-workspace management');
+  const ws = program.command('workspace').description('多工作区管理');
 
   // ── register ──
   ws
-    .command('register')
-    .argument('<path>', 'Workspace filesystem path')
+   .command('register')
+   .description('注册工作区')
+   .argument('<path>', 'Workspace filesystem path')
     .option('--id <id>', 'Short identifier (e.g. main, exp, ci)')
     .option('--name <name>', 'Human-readable name')
     .option('--branch <branch>', 'Git branch')
@@ -70,7 +71,7 @@ export function registerWorkspaceCommands(program: Command): void {
   // ── list ──
   ws
     .command('list')
-    .description('List all registered workspaces')
+    .description('列出所有已注册工作区')
     .action(async () => {
       const mgr = getWorkspaceManager();
       const workspaces = await mgr.list();
@@ -93,7 +94,7 @@ export function registerWorkspaceCommands(program: Command): void {
   ws
     .command('sync')
     .argument('<id>', 'Satellite workspace ID')
-    .description('Sync stable knowledge from hub to satellite')
+    .description('从 Hub 同步稳定知识到 Satellite')
     .action(async (id: string) => {
       const mgr = getWorkspaceManager();
       const workspaces = await mgr.list();
@@ -119,7 +120,7 @@ export function registerWorkspaceCommands(program: Command): void {
   ws
     .command('promote')
     .argument('<id>', 'Satellite workspace ID')
-    .description('Push candidate knowledge from satellite to hub for review')
+    .description('将候选知识从 Satellite 推送到 Hub 审查')
     .action(async (id: string) => {
       const mgr = getWorkspaceManager();
       const workspaces = await mgr.list();
@@ -144,7 +145,7 @@ export function registerWorkspaceCommands(program: Command): void {
   ws
     .command('unregister')
     .argument('<id>', 'Workspace ID')
-    .description('Unregister a satellite workspace')
+    .description('注销 Satellite 工作区')
     .action(async (id: string) => {
       const mgr = getWorkspaceManager();
       await mgr.unregister(id);

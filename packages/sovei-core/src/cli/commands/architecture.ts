@@ -61,11 +61,11 @@ function findMetric(
 export function registerArchitectureCommands(program: Command): void {
   const architecture = program
     .command('architecture')
-    .description('Evolutionary architecture health and debt management');
+    .description('演进式架构健康与债务管理');
 
   architecture
     .command('scan')
-    .description('Analyze code health and persist an architecture snapshot')
+    .description('分析代码健康度并持久化架构快照')
     .option('--paths <paths>', 'Comma-separated paths to scan', 'src')
     .option('--top <count>', 'Number of hotspots to print', '20')
     .option('--json', 'Print the full snapshot as JSON')
@@ -103,7 +103,7 @@ export function registerArchitectureCommands(program: Command): void {
 
   architecture
     .command('status')
-    .description('Show the latest architecture snapshot and debt register')
+    .description('显示最新架构快照与债务登记')
     .option('--top <count>', 'Number of hotspots to print', '20')
     .action(async (options: { top: string }) => {
       const { repository } = dependencies();
@@ -128,7 +128,7 @@ export function registerArchitectureCommands(program: Command): void {
   architecture
     .command('inspect')
     .argument('<target>', 'Module path or ARC id')
-    .description('Inspect one module and its architecture signals')
+    .description('检视单个模块及其架构信号')
     .action(async (target: string) => {
       const { repository } = dependencies();
       const snapshot = await repository.loadSnapshot();
@@ -158,7 +158,7 @@ export function registerArchitectureCommands(program: Command): void {
       '--strategy <strategy>',
       'extract-module | branch-by-abstraction | expand-migrate-contract | stabilize-with-tests',
     )
-    .description('Accept a hotspot into the architecture debt register')
+    .description('将热点纳入架构债务登记')
     .action(async (
       target: string,
       options: { reason: string; strategy?: RefactoringStrategy },
@@ -180,7 +180,7 @@ export function registerArchitectureCommands(program: Command): void {
     .command('dismiss')
     .argument('<target>', 'Module path or ARC id')
     .requiredOption('--reason <reason>', 'Why this signal is acceptable or irrelevant')
-    .description('Dismiss a hotspot while preserving the decision')
+    .description('驳回热点并保留决策记录')
     .action(async (target: string, options: { reason: string }) => {
       const { repository } = dependencies();
       const snapshot = await repository.loadSnapshot();
@@ -193,7 +193,7 @@ export function registerArchitectureCommands(program: Command): void {
 
   architecture
     .command('check')
-    .description('CI-friendly architecture fitness check against current source')
+    .description('面向 CI 的架构健康检查')
     .option('--fail-on <level>', 'candidate | required', 'required')
     .option('--paths <paths>', 'Comma-separated paths to scan', 'src')
     .option('--update-snapshot', 'Persist the fresh CI snapshot and history')

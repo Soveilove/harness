@@ -6,10 +6,25 @@ export const Redline = z.object({
   rule: z.string().min(1),
   enforcement: z.enum(['absolute', 'approval-required']),
   active: z.boolean(),
+  // Human-review fields. Optional so existing files keep parsing; they also
+  // enrich the AI context pack (see context/builder.ts fromRedline).
+  rationale: z.string().optional(),
+  scope: z.string().optional(),
+  examples: z.array(z.string()).optional(),
+  owner: z.string().optional(),
+  origin: z.enum(['manual', 'scanner-seed']).optional(),
+  reviewedBy: z.string().optional(),
+  reviewedAt: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type Redline = z.infer<typeof Redline>;
+
+export type RedlineInput = Pick<Redline, 'id' | 'title' | 'rule' | 'enforcement'> &
+  Partial<Pick<Redline, 'rationale' | 'scope' | 'examples' | 'owner' | 'origin'>>;
+
+export type RedlinePatch = Partial<Pick<Redline,
+  'title' | 'rule' | 'enforcement' | 'rationale' | 'scope' | 'examples' | 'owner' | 'reviewedBy' | 'reviewedAt'>>;
 
 export const RedlineAssessment = z.object({
   redlineId: z.string(),

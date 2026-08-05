@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sovei Workflow 2.0 - Stage Definitions
  * All 12 stages with typed contracts and lifecycle hooks.
  * Prompt contracts derived from the original stage-contracts.md.

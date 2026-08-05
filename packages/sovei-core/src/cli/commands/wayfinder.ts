@@ -24,12 +24,13 @@ function actor(options: { actor?: string }): string {
 }
 
 export function registerWayfinderCommands(program: Command): void {
-  const wayfinder = program.command('wayfinder').description('Decision map for work larger than one agent session');
+  const wayfinder = program.command('wayfinder').description('跨会话大型工作的决策地图');
 
   wayfinder
-    .command('chart')
-    .argument('<feature>', 'Feature ID')
-    .requiredOption('--destination <destination>', 'What reaching the end of this map looks like')
+   .command('chart')
+   .description('绘制决策地图')
+   .argument('<feature>', 'Feature ID')
+   .requiredOption('--destination <destination>', 'What reaching the end of this map looks like')
     .option('--notes <notes>', 'Standing domain notes and session guidance', '')
     .option('--actor <actor>', 'Actor creating the map')
     .action(async (feature: string, options: { destination: string; notes: string; actor?: string }) => {
@@ -39,9 +40,10 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('skip')
-    .argument('<feature>', 'Feature ID')
-    .requiredOption('--reason <reason>', 'Why this effort fits in one session without a decision map')
+   .command('skip')
+   .description('小型工作跳过决策地图')
+   .argument('<feature>', 'Feature ID')
+   .requiredOption('--reason <reason>', 'Why this effort fits in one session without a decision map')
     .option('--actor <actor>', 'Actor recording the decision')
     .action(async (feature: string, options: { reason: string; actor?: string }) => {
       const { repository } = dependencies();
@@ -50,9 +52,10 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('status')
-    .argument('<feature>', 'Feature ID')
-    .action(async (feature: string) => {
+   .command('status')
+   .description('显示决策地图状态')
+   .argument('<feature>', 'Feature ID')
+   .action(async (feature: string) => {
       const { repository } = dependencies();
       const state = await repository.getState(featurePath(feature));
       if (!state) throw new Error('Wayfinder map is not initialized');
@@ -68,9 +71,10 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('frontier')
-    .argument('<feature>', 'Feature ID')
-    .action(async (feature: string) => {
+   .command('frontier')
+   .description('显示决策前沿')
+   .argument('<feature>', 'Feature ID')
+   .action(async (feature: string) => {
       const { repository } = dependencies();
       const frontier = await repository.frontier(featurePath(feature));
       if (!frontier.length) {
@@ -85,7 +89,7 @@ export function registerWayfinderCommands(program: Command): void {
       console.log('');
     });
 
-  const ticket = wayfinder.command('ticket').description('Create decision tickets');
+  const ticket = wayfinder.command('ticket').description('创建决策工单');
   ticket
     .command('add')
     .argument('<feature>', 'Feature ID')
@@ -107,7 +111,7 @@ export function registerWayfinderCommands(program: Command): void {
       console.log(`\n  Added decision ticket ${created.title} (${created.id}).\n`);
     });
 
-  const fog = wayfinder.command('fog').description('Manage not-yet-specifiable decision areas');
+  const fog = wayfinder.command('fog').description('管理尚不可明确的决策区域');
   fog
     .command('add')
     .argument('<feature>', 'Feature ID')
@@ -143,10 +147,11 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('claim')
-    .argument('<feature>', 'Feature ID')
-    .argument('<ticket-id>', 'Decision ticket ID')
-    .requiredOption('--actor <actor>', 'Agent or human claiming the ticket')
+   .command('claim')
+   .description('认领决策工单')
+   .argument('<feature>', 'Feature ID')
+   .argument('<ticket-id>', 'Decision ticket ID')
+   .requiredOption('--actor <actor>', 'Agent or human claiming the ticket')
     .option('--lease <minutes>', 'Claim lease in minutes', '240')
     .action(async (feature: string, ticketId: string, options: { actor: string; lease: string }) => {
       const { repository } = dependencies();
@@ -155,10 +160,11 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('release')
-    .argument('<feature>', 'Feature ID')
-    .argument('<ticket-id>', 'Decision ticket ID')
-    .requiredOption('--actor <actor>', 'Current claim owner')
+   .command('release')
+   .description('释放决策工单认领')
+   .argument('<feature>', 'Feature ID')
+   .argument('<ticket-id>', 'Decision ticket ID')
+   .requiredOption('--actor <actor>', 'Current claim owner')
     .requiredOption('--reason <reason>', 'Why the claim is being released')
     .action(async (feature: string, ticketId: string, options: { actor: string; reason: string }) => {
       const { repository } = dependencies();
@@ -167,11 +173,12 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('resolve')
-    .argument('<feature>', 'Feature ID')
-    .argument('<ticket-id>', 'Decision ticket ID')
-    .requiredOption('--actor <actor>', 'Current claim owner')
-    .requiredOption('--resolution <resolution>', 'Decision answer, not implementation output')
+   .command('resolve')
+   .description('解决决策工单')
+   .argument('<feature>', 'Feature ID')
+   .argument('<ticket-id>', 'Decision ticket ID')
+   .requiredOption('--actor <actor>', 'Current claim owner')
+   .requiredOption('--resolution <resolution>', 'Decision answer, not implementation output')
     .option('--evidence <items>', 'Comma-separated evidence references')
     .option('--context <items>', 'Comma-separated context or asset pointers')
     .action(async (feature: string, ticketId: string, options: { actor: string; resolution: string; evidence?: string; context?: string }) => {
@@ -181,10 +188,11 @@ export function registerWayfinderCommands(program: Command): void {
     });
 
   wayfinder
-    .command('exclude')
-    .argument('<feature>', 'Feature ID')
-    .argument('<ticket-id>', 'Decision ticket ID')
-    .requiredOption('--reason <reason>', 'Why this ticket lies beyond the Destination')
+   .command('exclude')
+   .description('将决策工单排除出范围')
+   .argument('<feature>', 'Feature ID')
+   .argument('<ticket-id>', 'Decision ticket ID')
+   .requiredOption('--reason <reason>', 'Why this ticket lies beyond the Destination')
     .option('--actor <actor>', 'Actor ruling the ticket out of scope')
     .action(async (feature: string, ticketId: string, options: { reason: string; actor?: string }) => {
       const { repository } = dependencies();
