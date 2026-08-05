@@ -279,6 +279,86 @@ export function registerProjectCommands(program: Command): void {
         return;
       }
 
+      if (opts.evidenceOnly) {
+        console.log('');
+        console.log('  ================================================================');
+        console.log('  AGENT ONBOARDING GUIDE');
+        console.log('  ================================================================');
+        console.log('');
+        console.log('  You are an AI agent analyzing an existing codebase with Sovei.');
+        console.log('  Sovei has collected evidence but CANNOT understand business semantics.');
+        console.log('  YOUR JOB: read the evidence, read the code, and write back findings.');
+        console.log('');
+        console.log('  ## Evidence Files (already generated)');
+        console.log('');
+        console.log('  1. harness/project/codegraph/business-map.json');
+        console.log('     - Auto-detected capabilities from directory structure + imports');
+        console.log('     - WARNING: contains noise (test files as capabilities, etc.)');
+        console.log('     - Read it, then verify each capability against actual code');
+        console.log('');
+        console.log('  2. harness/project/governance/redlines-seed.json');
+        console.log('     - Regex-detected redline candidates (may be empty or noisy)');
+        console.log('');
+        console.log('  3. harness/project/knowledge/*.json');
+        console.log('     - Auto-generated candidate knowledge entries');
+        console.log('');
+        console.log('  ## Step 1: Read and Clean Business Map');
+        console.log('');
+        console.log('  Read harness/project/codegraph/business-map.json.');
+        console.log('  For each capability:');
+        console.log('    - Read the codeEvidence files to verify it is a real business capability');
+        console.log('    - REJECT if: test files, single-letter names, no real code, test fixtures');
+        console.log('    - CONFIRM if: real business logic exists in the code');
+        console.log('    - MERGE if: two capabilities are actually the same thing');
+        console.log('    - SPLIT if: one capability is doing too many things');
+        console.log('');
+        console.log('  ## Step 2: Identify Business Redlines');
+        console.log('');
+        console.log('  Read the actual source code (not tests). Look for:');
+        console.log('    - Authentication/authorization guards');
+        console.log('    - Billing/payment/transaction logic');
+        console.log('    - Data integrity constraints (migrations, schema, null checks)');
+        console.log('    - API contracts that external systems depend on');
+        console.log('    - Compliance requirements (audit logs, encryption, privacy)');
+        console.log('  For each finding, ask: would breaking this cause real harm?');
+        console.log('  If yes, it is a business redline.');
+        console.log('');
+        console.log('  ## Step 3: Write Findings via CLI');
+        console.log('');
+        console.log('  For each confirmed business redline:');
+        console.log('    sovei governance redline add <ID> --title "..." --rule "..." --enforcement absolute --rationale "..."');
+        console.log('');
+        console.log('  For each confirmed business knowledge (pitfall, rule, architecture):');
+        console.log('    sovei knowledge add --type <type> --title "..." --content "..." --feature onboard');
+        console.log('');
+        console.log('  For each REJECTED capability, note it but do not write anything.');
+        console.log('');
+        console.log('  ## Step 4: Write Summary Report');
+        console.log('');
+        console.log('  Write harness/project/onboard-report.md with:');
+        console.log('    - Confirmed business capabilities (with evidence)');
+        console.log('    - Rejected candidates (with reasons)');
+        console.log('    - Identified redlines (with rationale)');
+        console.log('    - Open questions for human review');
+        console.log('');
+        console.log('  ## Important Rules');
+        console.log('');
+        console.log('  - You are generating CANDIDATES only. Nothing is activated automatically.');
+        console.log('  - Read REAL source code, not test files, to verify capabilities.');
+        console.log('  - Test files (*.test.*, *.spec.*) are NOT business capabilities.');
+        console.log('  - If unsure whether something is a redline, add it with --enforcement approval-required.');
+        console.log('');
+        console.log('  After completing all steps, a human should review:');
+        console.log('    sovei governance redline list');
+        console.log('    sovei knowledge list --lifecycle candidate');
+        console.log('    cat harness/project/onboard-report.md');
+        console.log('');
+        console.log('  Only after human review, start feature development:');
+        console.log('    sovei workflow bootstrap 001-first-feature');
+        console.log('');
+        return;
+      }
+
       // Write project.config.json from detected info
       const projectConfig = {
         project: {
