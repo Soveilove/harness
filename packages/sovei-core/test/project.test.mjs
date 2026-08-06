@@ -72,14 +72,17 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
   });
 });
 
-test('project init does not overwrite an existing AGENTS.md without --force', async () => {
+test('project init preserves an existing project declaration and AGENTS.md without --force', async () => {
   await fixture(async (root) => {
     const target = join(root, 'existing-project');
     await mkdir(join(target, 'harness', 'project'), { recursive: true });
     const customAgents = '# Custom AGENTS\n\nManually maintained guidance.\n';
+    const customConfig = JSON.stringify({ project: { name: 'existing-project' }, workflow: { version: '2.3.2' } }, null, 2);
     await writeFile(join(target, 'AGENTS.md'), customAgents, 'utf8');
+    await writeFile(join(target, 'harness', 'project', 'project.config.json'), customConfig, 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank']);
     assert.equal(await readFile(join(target, 'AGENTS.md'), 'utf8'), customAgents);
+    assert.equal(await readFile(join(target, 'harness', 'project', 'project.config.json'), 'utf8'), customConfig);
   });
 });
 

@@ -162,8 +162,13 @@ export function registerProjectCommands(program: Command): void {
       // Create directory structure
       const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/templates'];
       const storage = new FilesystemStorage(resolvedTarget);
-      if (await storage.exists('harness/project/project.config.json') && !opts.force) {
-        throw new Error('Sovei project already exists at target. Use --force to replace its declaration.');
+      const projectExists = await storage.exists('harness/project/project.config.json');
+      if (projectExists && !opts.force) {
+        console.log('  · Sovei 项目已存在，保留现有声明（未重新初始化）');
+        console.log('    如需与最新 Sovei 工作流声明同步，请复制以下指令给你的 AI 助手，由它审查并决定如何更新：');
+        console.log('    「请审查本项目的 AGENTS.md 与 harness/project/project.config.json，确认其 Sovei Workflow 声明（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation、workflow version）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
+        console.log('    （如需强制重新初始化项目声明：sovei project init <path> --force）');
+        return;
       }
       for (const dir of dirs) {
         await storage.write(dir + '/.gitkeep', '');
