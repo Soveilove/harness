@@ -19,6 +19,8 @@ export const RuleVerificationSchema = z.discriminatedUnion('type', [
   }).strict(),
 ]);
 
+export const RuleConfidenceSchema = z.enum(['high', 'medium', 'low']);
+
 export const ProjectRuleSchema = z.object({
   id: z.string().regex(/^[A-Za-z][A-Za-z0-9._-]{2,127}$/),
   title: z.string().min(1),
@@ -26,6 +28,11 @@ export const ProjectRuleSchema = z.object({
   rationale: z.string().min(1).optional(),
   lifecycle: RuleLifecycleSchema,
   enforcement: RuleEnforcementSchema,
+  /**
+   * 置信度：当规范在项目配置文件中能找到交叉证据（commitlint/prettier/husky 等）
+   * 时标记为 high，否则为 medium（默认）。仅作为人工审查辅助，不影响 enforcement。
+   */
+  confidence: RuleConfidenceSchema.optional(),
   appliesTo: z.object({
     paths: z.array(z.string().min(1)).min(1).default(['**/*']),
     excludePaths: z.array(z.string().min(1)).default([]),
@@ -49,6 +56,7 @@ export const ProjectRulesDocumentSchema = z.object({
 
 export type RuleLifecycle = z.infer<typeof RuleLifecycleSchema>;
 export type RuleEnforcement = z.infer<typeof RuleEnforcementSchema>;
+export type RuleConfidence = z.infer<typeof RuleConfidenceSchema>;
 export type RuleVerification = z.infer<typeof RuleVerificationSchema>;
 export type ProjectStage = z.infer<typeof ProjectStageSchema>;
 export type ProjectRule = z.infer<typeof ProjectRuleSchema>;

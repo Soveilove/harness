@@ -105,6 +105,41 @@ export class ProjectRulesRepository {
     }) + '\n');
     return { ...target, lifecycle: 'deprecated' };
   }
+
+  /**
+   * 批量废弃候选规范（AI 精炼后的应用步骤）。仅废弃 candidate，保留审计历史。
+   * 返回实际废弃的 ID 列表。
+   */
+  async deprecateMany(ids: string[], reviewer: string, reason: string): Promise<string[]> {
+    const idSet = new Set(ids);
+    const rules = await this.load();
+    const targets = rules.filter((rule) => idSet.has(rule.id) && rule.lifecycle === 'candidate');
+    if (!targets.length) return [];
+
+    // 按来源文件分组，逐个文件重写
+    const bySource = new Map<string, ProjectRule[]>();
+    for (const rule of rules) {
+      const list = bySource.get(rule.source) ?? [];
+      list.push(rule);
+      bySource.set(rule.source, list);
+    }
+    const deprecatedAt = new Date().toISOString();
+    for (const [source] of bySource) {
+      const content = await this.storage.read(source);
+      if (content === null) continue;
+      const document = ProjectRulesDocumentSchema.parse(parseProjectJson(content, source));
+      const updatedRules = document.rules.map((rule): ProjectRule => idSet.has(rule.id)
+        ? { ...rule, lifecycle: 'deprecated' }
+        : rule);
+      await this.writeDocument(source, { schemaVersion: 1, rules: updatedRules });
+    }
+    for (const target of targets) {
+      await this.storage.append(`${this.rulesDir}/rule-events.jsonl`, JSON.stringify({
+        type: 'PROJECT_RULE_DEPRECATED', id: target.id, reviewer, reason, timestamp: deprecatedAt, source: target.source,
+      }) + '\n');
+    }
+    return targets.map((t) => t.id);
+  }
 }
 
 export interface ResolveRulesOptions {

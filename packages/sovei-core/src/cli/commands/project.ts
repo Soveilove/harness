@@ -406,6 +406,13 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
 
       if (opts.evidenceOnly) {
         // Evidence-only 模式也会真正落盘三类证据文件，Agent 拿到的是可读的真实证据。
+        // 同时自动提取项目已有规范候选（含 doc/、docs/、CONTRIBUTING.md 等团队文档），
+        // 避免 rules 长期为空却无人察觉。
+        const rulesRepository = new ProjectRulesRepository(storage, currentConfig.rulesDir);
+        const adaptedRules = await adaptProjectRules(storage, rulesRepository);
+        if (adaptedRules.written) {
+          console.log('  · 已自动适配 ' + adaptedRules.total + ' 条项目规范候选（未自动激活，含团队规范文档）');
+        }
         const evidence = await writeEvidenceFiles(storage, currentConfig, result);
         console.log('');
         console.log('  ================================================================');
@@ -428,6 +435,10 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('');
         console.log('  3. harness/project/knowledge/*.json');
         console.log('     - Auto-generated candidate knowledge entries');
+        console.log('');
+        console.log('  4. harness/project/rules/adapted.rules.json');
+        console.log('     - Auto-adapted project rule candidates from AGENTS/Cursor Rules + team docs (doc/docs/CONTRIBUTING)');
+        console.log('     - Includes `sovei` self-sections already excluded; confidence=high when config-backed');
         console.log('');
         console.log('  ## Step 1: Read and Clean Business Map');
         console.log('');
@@ -460,12 +471,24 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('');
         console.log('  For each REJECTED capability, note it but do not write anything.');
         console.log('');
-        console.log('  ## Step 4: Write Summary Report');
+        console.log('  ## Step 4: Refine Project Rule Candidates');
+        console.log('');
+        console.log('  Read harness/project/rules/adapted.rules.json.');
+        console.log('  For each candidate rule, read its provenance.sources file and related real code/config:');
+        console.log('    - STILL VALID → keep it (it will remain candidate for human activation)');
+        console.log('    - STALE/NOISE → note its ID to discard (e.g. outdated convention, self-referential doc)');
+        console.log('    - DUPLICATE → note the surviving ID');
+        console.log('  Then batch-discard noise candidates:');
+        console.log('    sovei rules refine --reviewer <agent> --reason "<your finding>" --discard <ID,comma-separated>');
+        console.log('  Rules are never activated by you; humans activate them: sovei rules activate <id> ...');
+        console.log('');
+        console.log('  ## Step 5: Write Summary Report');
         console.log('');
         console.log('  Write harness/project/onboard-report.md with:');
         console.log('    - Confirmed business capabilities (with evidence)');
         console.log('    - Rejected candidates (with reasons)');
         console.log('    - Identified redlines (with rationale)');
+        console.log('    - Refined project rules (kept vs discarded, with reasons)');
         console.log('    - Open questions for human review');
         console.log('');
         console.log('  ## Important Rules');
@@ -478,6 +501,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('  After completing all steps, a human should review:');
         console.log('    sovei governance redline list');
         console.log('    sovei knowledge list --lifecycle candidate');
+        console.log('    sovei rules list --lifecycle candidate   # activate the kept project rules');
         console.log('    cat harness/project/onboard-report.md');
         console.log('');
         console.log('  Only after human review, start feature development:');

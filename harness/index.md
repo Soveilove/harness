@@ -65,13 +65,24 @@ sovei rules resolve --stage implement --paths "packages/sovei-core/src/rules/rep
 # 老项目只生成 candidate；人工确认后才激活并记录审查事件
 sovei rules adapt
 sovei rules list --lifecycle candidate
+# AI code agent 精炼候选：读候选 + 真实代码判断有效/过时，批量废弃噪声
+sovei rules refine --reviewer <agent> --reason "<结论>" --discard <噪声ID,逗号分隔>
+# 人工确认后激活并记录审查事件
 sovei rules activate ADAPTED_... --reviewer maintainer --reason "已核对当前约定"
 ```
 
 `project init` 无论是否使用 `--blank` 都只创建空 Rules 容器，不猜测默认规范。
-`project onboard` 只从显式存在的 Codex、Cursor、Claude Code 等 Agent/IDE Rules
-提取 candidate，并在重复运行时保留已审查状态。包脚本、TypeScript 配置和技术栈不是
-Rules 来源；没有原有 Rules 时不生成候选文件。自动适配不得直接生成 active 规范。
+`project onboard`（含 `--evidence-only`）会自动从以下来源提取 candidate 规范，
+并在重复运行时保留已审查状态：
+- Agent/IDE Rules：`AGENTS.md`、`CLAUDE.md`、`.cursorrules`、`.claude/rules/`、`.cursor/rules/`
+- 团队规范文档：`doc/`、`docs/`、`CONTRIBUTING.md`、`STYLEGUIDE.md`（含中文文件名/正文）
+- 以 markdown 章节为单位提取，自动跳过 Sovei 自身工作流声明与非规范章节
+  （目录、快速开始、更新日志、命令示例等）。
+- 若文档规范能在 `commitlint.config.*`、`.prettierrc*`、`eslint.config.*`、`package.json`
+  等配置文件中找到对应证据，标记 `confidence: high`。
+
+包脚本、TypeScript 配置和技术栈本身不是 Rules 来源；没有原有 Rules 时不生成候选文件。
+自动适配不得直接生成 active 规范。
 
 ## 演进式架构
 

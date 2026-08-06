@@ -96,6 +96,87 @@ test('Agent and IDE Rules are adapted as scoped candidates and can be reviewed',
   assert.equal((await repository.load()).find((item) => item.id === target.id).lifecycle, 'active');
 });
 
+test('team rule docs (doc/, docs/, CONTRIBUTING) are adapted, excluding Sovei self-sections', async () => {
+  const storage = new MemoryStorage();
+  // 中文文件名 + 中文正文的团队规范文档
+  await storage.write('doc/前端规范.md', [
+    '# 前端规范',
+    '',
+    '## Git 提交规范',
+    '- 遵循约定式提交，type 限定枚举',
+    '- commit header 最大长度 50',
+    '',
+    '## 样式规范',
+    '- CSS 使用 ::v-deep 穿透',
+    '',
+    '## 目录',
+    '- 第一章：概述',
+    '- 第二章：规范',
+    '',
+    '## 快速开始',
+    '- 运行 pnpm dev',
+    '',
+    '## 更新日志',
+    '- v1.0.0 发布',
+    '',
+  ].join('\n'));
+  // CONTRIBUTING.md 里的 HTTP 统一封装规范
+  await storage.write('CONTRIBUTING.md', '# Contributing\n\n- HTTP 统一走封装的 request 方法\n');
+  // AGENTS.md 含 Sovei 自身工作流声明（应被排除）
+  await storage.write('AGENTS.md', [
+    '# Guidance',
+    '',
+    '## Sovei Workflow',
+    '- `sovei workflow bootstrap <feature>`: Start a new feature',
+    '- `sovei context build --stage spec --feature <feature>`: Get stage prompt',
+    '',
+    '## Key Commands',
+    '- Lists solutions and their costs',
+    '',
+    '## Code Style',
+    '- 使用 2 空格缩进',
+    '',
+  ].join('\n'));
+
+  const candidates = await scanProjectRuleCandidates(storage);
+  const instructions = candidates.map((c) => c.instruction);
+
+  // 团队规范文档被正确提取
+  assert.ok(instructions.some((i) => i.includes('约定式提交')), '应提取中文提交规范');
+  assert.ok(instructions.some((i) => i.includes('::v-deep')), '应提取样式规范');
+  assert.ok(instructions.some((i) => i.includes('request 方法')), '应提取 CONTRIBUTING 规范');
+
+  // Sovei 自身工作流说明被排除
+  assert.ok(!instructions.some((i) => i.includes('workflow bootstrap')), '应排除 Sovei 自身命令');
+  assert.ok(!instructions.some((i) => i.includes('context build')), '应排除 Sovei 自身命令');
+  assert.ok(!instructions.some((i) => i.includes('Lists solutions')), '应排除非规范目录/说明');
+  assert.ok(!instructions.some((i) => i.includes('pnpm dev')), '应排除快速开始章节');
+  assert.ok(!instructions.some((i) => i.includes('v1.0.0')), '应排除更新日志章节');
+
+  // 来自 doc/ 的 candidate 应标记来源与 kind
+  const docRule = candidates.find((c) => c.provenance.sources.includes('doc/前端规范.md'));
+  assert.ok(docRule, 'doc/前端规范.md 应产生候选');
+  assert.ok(docRule.tags.includes('doc'), '应标记 doc 来源');
+
+  // AGENTS.md 的 Code Style 章节（非 Sovei 声明）应被保留
+  assert.ok(instructions.some((i) => i.includes('2 空格缩进')), 'AGENTS.md 中真正的编码规范应保留');
+});
+
+test('cross-validation marks config-backed rules as high confidence', async () => {
+  const storage = new MemoryStorage();
+  // 文档规范与 commitlint/prettier 配置交叉验证
+  await storage.write('doc/提交规范.md', '# 提交规范\n\n- Commit 遵循约定式提交，type 限定枚举\n- header 最大长度 50\n');
+  await storage.write('commitlint.config.js', 'module.exports = { rules: { "type-enum": [2, "always", ["feat","fix"]], "header-max-length": [2, "always", 50] } };');
+  await storage.write('.prettierrc.json', JSON.stringify({ singleQuote: true, printWidth: 80, semi: true }));
+
+  const candidates = await scanProjectRuleCandidates(storage);
+  // commitlint 和 prettier 都在文档里出现（约定式提交/header 长度 + 无 prettier 词），
+  // 但只要命中任一配置证据即 high
+  const highConfidence = candidates.filter((c) => c.confidence === 'high');
+  assert.ok(highConfidence.length > 0, '交叉验证命中的规范应标记 high');
+  assert.ok(candidates.every((c) => c.confidence === 'high' || c.confidence === 'medium'));
+});
+
 test('technical configuration is not inferred as Rules and no adapted file is created', async () => {
   const storage = new MemoryStorage();
   await storage.write('package.json', JSON.stringify({ scripts: { check: 'tsc --noEmit', test: 'node --test' } }));
@@ -105,6 +186,29 @@ test('technical configuration is not inferred as Rules and no adapted file is cr
   const result = await adaptProjectRules(storage, new ProjectRulesRepository(storage));
   assert.deepEqual(result, { total: 0, preserved: 0, written: false });
   assert.equal(await storage.exists(ADAPTED_RULES_FILE), false);
+});
+
+test('deprecateMany batch-discards candidates across files and preserves active rules', async () => {
+  const storage = new MemoryStorage();
+  const repository = new ProjectRulesRepository(storage);
+  // writeDocument 期望不含 source 字段（source 由加载后附加）
+  await repository.writeDocument('harness/project/rules/a.rules.json', {
+    schemaVersion: 1,
+    rules: [rule('CAND_A', { lifecycle: 'candidate' }), rule('ACTIVE_KEEP', { lifecycle: 'active' })],
+  });
+  await repository.writeDocument('harness/project/rules/b.rules.json', {
+    schemaVersion: 1,
+    rules: [rule('CAND_B', { lifecycle: 'candidate' })],
+  });
+
+  const deprecated = await repository.deprecateMany(['CAND_A', 'CAND_B', 'MISSING'], 'ai-agent', 'AI refine: noise');
+  assert.deepEqual(deprecated, ['CAND_A', 'CAND_B']);
+
+  const loaded = await repository.load();
+  assert.equal(loaded.find((r) => r.id === 'CAND_A').lifecycle, 'deprecated');
+  assert.equal(loaded.find((r) => r.id === 'CAND_B').lifecycle, 'deprecated');
+  assert.equal(loaded.find((r) => r.id === 'ACTIVE_KEEP').lifecycle, 'active', 'active rule must be preserved');
+  assert.match(await storage.read('harness/project/rules/rule-events.jsonl'), /PROJECT_RULE_DEPRECATED/);
 });
 
 test('project rules deprecation preserves provenance and appends audit evidence', async () => {

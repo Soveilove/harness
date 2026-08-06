@@ -25,7 +25,7 @@ export function registerRulesCommands(program: Command): void {
     console.log(`\n  ✓ 项目规范有效：${loaded.length} 条（active=${loaded.filter((r) => r.lifecycle === 'active').length}，candidate=${loaded.filter((r) => r.lifecycle === 'candidate').length}）\n`);
   });
 
-  rules.command('adapt').description('从老项目现有约定提取候选规范（永不自动激活）').action(async () => {
+  rules.command('adapt').description('从项目已有约定（Agent Rules + 团队规范文档 doc/docs/CONTRIBUTING）提取候选规范（永不自动激活）').action(async () => {
     const storage = getStorage();
     const repository = new ProjectRulesRepository(storage, getConfig().rulesDir);
     const result = await adaptProjectRules(storage, repository);
@@ -47,6 +47,53 @@ export function registerRulesCommands(program: Command): void {
       const repository = new ProjectRulesRepository(getStorage(), getConfig().rulesDir);
       const activated = await repository.activate(id, opts.reviewer, opts.reason);
       console.log(`\n  ✓ 已激活项目规范 ${activated.id}：${activated.title}\n`);
+    });
+
+  rules.command('refine')
+    .requiredOption('--reviewer <name>', '审查人或责任角色（通常为运行本命令的 AI agent 身份）')
+    .requiredOption('--reason <reason>', '批量精炼依据（AI 判断理由）')
+    .option('--discard <ids>', '逗号分隔的候选 ID，AI 判断为噪声/过时需废弃')
+    .description('AI code agent 精炼候选规范：读取候选清单 + 真实代码，判断有效/过时/合并，批量废弃噪声候选')
+    .action(async (opts: { reviewer: string; reason: string; discard?: string }) => {
+      const repository = new ProjectRulesRepository(getStorage(), getConfig().rulesDir);
+      const candidates = (await repository.load()).filter((rule) => rule.lifecycle === 'candidate');
+      if (!candidates.length) {
+        console.log('\n  没有候选规范需要精炼。先运行 sovei rules adapt 提取候选。\n');
+        return;
+      }
+
+      if (!opts.discard) {
+        // 无 --discard：进入"精炼引导模式"，输出候选清单供 AI code agent 读真实代码判断
+        console.log('\n  AI RULE REFINE GUIDE');
+        console.log('  ================================================================');
+        console.log('  你是 AI code agent。以下候选规范由 sovei rules adapt 从项目现有约定忠实提取，');
+        console.log('  尚未激活。请读取真实代码和配置文件，判断每条候选是否仍代表当前有效规范。');
+        console.log('');
+        console.log('  ## 候选清单（' + candidates.length + ' 条，lifecycle=candidate）');
+        for (const rule of candidates) {
+          console.log('  - ' + rule.id + '  [' + (rule.confidence ?? 'medium') + ']');
+          console.log('      规范：' + rule.instruction);
+          console.log('      来源：' + rule.provenance.sources.join(', '));
+        }
+        console.log('');
+        console.log('  ## 你的任务');
+        console.log('  1. 对每条候选，读其 provenance.sources 提到的文件 + 相关真实代码/配置。');
+        console.log('  2. 判断：仍有效 → 保留待人工激活；过时/噪声 → 记下 ID；重复 → 记下合并目标。');
+        console.log('  3. 应用结论：');
+        console.log('     sovei rules refine --reviewer <agent> --reason "<结论>" --discard <噪声ID,用逗号分隔>');
+        console.log('  4. 保留的有效候选由人工激活：sovei rules activate <id> --reviewer maintainer --reason "..."');
+        console.log('');
+        return;
+      }
+
+      const discardIds = opts.discard.split(',').map((id) => id.trim()).filter(Boolean);
+      const deprecated = await repository.deprecateMany(discardIds, opts.reviewer, opts.reason);
+      const remaining = (await repository.load()).filter((rule) => rule.lifecycle === 'candidate');
+      console.log('\n  ✓ AI 精炼完成：废弃 ' + deprecated.length + ' 条候选，剩余 ' + remaining.length + ' 条待人工激活');
+      if (deprecated.length) {
+        console.log('  已废弃：' + deprecated.join(', '));
+      }
+      console.log('  下一步：人工审查剩余候选并激活：sovei rules list --lifecycle candidate\n');
     });
 
   rules.command('deprecate')
