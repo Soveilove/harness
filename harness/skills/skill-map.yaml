@@ -1,14 +1,34 @@
 schemaVersion: 1
 bindings:
   - stage: grill
-    skillId: sovei/native/grill
-    status: enabled
-    fallback: native
-  - stage: spec
-    skillId: sovei/native/spec
+    skillId: mattpocock/grilling
     status: enabled
     fallback: native
   - stage: wayfind
     skillId: sovei/native/wayfind
+    status: enabled
+    fallback: native
+  - stage: spec
+    skillId: mattpocock/domain-modeling
+    status: enabled
+    fallback: native
+  - stage: tasks
+    skillId: mattpocock/to-tickets
+    status: enabled
+    fallback: native
+  - stage: implement
+    skillId: mattpocock/implement
+    status: enabled
+    fallback: native
+  - stage: converge
+    skillId: mattpocock/code-review
+    status: enabled
+    fallback: native
+  - stage: verify
+    skillId: mattpocock/code-review
+    status: enabled
+    fallback: native
+  - stage: learn
+    skillId: mattpocock/handoff
     status: enabled
     fallback: native

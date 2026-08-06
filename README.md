@@ -2,9 +2,11 @@
 
 Sovei 是一个本地知识管理工作流引擎。它定义"怎么沉淀知识"（工作流 + 知识生命周期），不定义"知识是什么"（那是项目专属内容）。
 
+> **当前状态**：项目处于高速完善阶段，工作流能力和外部 Skills 集成正在快速迭代，版本更新频率较高。建议关注 [CHANGELOG](specs/) 或 `npm view @soveilove/sovei version` 跟踪最新版本。
+
 ## 设计思想
 
-Sovei 2.1 借鉴五个主流框架的核心思想，并增加演进式架构治理：
+Sovei 2.5+ 借鉴五个主流框架的核心思想，并增加演进式架构治理和外部 Skills 运行时集成：
 
 | 借鉴来源 | 核心思想 | 应用层 |
 |---|---|---|
@@ -57,36 +59,17 @@ node packages/sovei-core/dist/cli/index.js workflow status 001-my-feature
 node packages/sovei-core/dist/cli/index.js workflow reopen 001-my-feature --target scope --reason "发现遗漏"
 ```
 
-## 安装 2.1 开发发行版
-
-2.1 阶段通过 npm 的 `next` 通道安装真实 CLI，用于持续试用和发现升级问题。
-开发版本使用 `2.1.0-dev.N`，稳定前不占用正式 `2.1.0`。打包时会自动执行类型检查、
-构建和全量测试，安装包只包含 `dist`、包级 README 与 npm 必需元数据。
+## 安装
 
 ```bash
-pnpm add --global @soveilove/sovei@next
+# 全局安装（latest tag）
+pnpm add --global @soveilove/sovei
 sovei --version
 sovei --help
+
+# 或使用 npx 临时运行
+npx @soveilove/sovei --help
 ```
-
-开发过程中修复问题后发布下一个 `2.1.0-dev.N`，再执行同一条全局安装命令即可升级。
-正式发行前再冻结 `2.1.0`、补齐数据迁移并按 SemVer 切换到 `latest` 标签。
-安装或升级 CLI 只替换工具壳，不得静默修改 `harness/project/`、`specs/` 或其他项目数据。
-
-```bash
-# 开发版递增：2.1.0-dev.1 -> 2.1.0-dev.2
-npm --prefix packages/sovei-core version prerelease --preid=dev --no-git-tag-version
-npm --prefix packages/sovei-core publish --access public --tag next
-
-# 候选版与正式版必须显式指定版本和标签
-npm --prefix packages/sovei-core version 2.1.0-rc.1 --no-git-tag-version
-npm --prefix packages/sovei-core publish --access public --tag next
-npm --prefix packages/sovei-core version 2.1.0 --no-git-tag-version
-npm --prefix packages/sovei-core publish --access public --tag latest
-```
-
-npm 版本不可覆盖。每次发布前必须提交对应的 `package.json` 版本和验证结果；发布后使用
-`npm view @soveilove/sovei version dist-tags` 核对 registry，再从目标 tag 安装做仓库外烟雾测试。
 
 ## 工作流阶段
 
@@ -161,6 +144,68 @@ sovei workflow implement 001-my-feature --complete
 ```
 
 重复执行 `bootstrap` 是幂等的，不会重置已有 Feature 状态。返工仍使用 `reopen`。
+
+## 外部 Skills 运行时
+
+Sovei 支持将第三方 Skills（如 [Matt Pocock skills](https://github.com/mattpocock/skills)）绑定到工作流阶段，
+在执行阶段时自动将 Skill 内容注入到 AI 代理的 prompt 中。这意味着每个阶段不仅使用 Sovei 原生的
+阶段契约，还能获得外部专业方法论的指导。
+
+### Skill 映射
+
+| Sovei 阶段 | 外部 Skill | 作用 |
+|---|---|---|
+| grill | `mattpocock/grilling` | 设计树 + frontier 轮次提问纪律 |
+| spec | `mattpocock/domain-modeling` | 术语表维护 + ADR 判定 |
+| tasks | `mattpocock/to-tickets` | tracer-bullet 纵向切片 |
+| implement | `mattpocock/implement` | TDD 优先 + code-review 收尾 |
+| converge | `mattpocock/code-review` | 双轴审查（Standards + Spec） |
+| verify | `mattpocock/code-review` | 同上（复用） |
+| learn | `mattpocock/handoff` | 对话压缩为交接文档 |
+
+### Prompt 注入结构
+
+```
+## 权威规则          ← Sovei 原生（revision + 产物权威性）
+## 外部 Skill 指令    ← 第三方 SKILL.md body
+# 阶段：xxx          ← Sovei 原生（输入/操作/输出/停止条件）
+```
+
+外部 Skill 加载失败时自动回退到原生 prompt，不阻断工作流。CLI 输出会显示实际使用的
+Skill 来源：`使用 Skill：mattpocock/grilling v1.0.0` 或 `使用 Skill：native`。
+
+### Skills 治理命令
+
+```bash
+# 查看当前 skill 配置状态
+sovei skills status
+
+# 从 git 仓库安装 skill
+sovei skills install --git https://github.com/mattpocock/skills.git --ref main \
+  --paths skills/productivity/grilling --ids mattpocock/grilling
+
+# 从本地目录安装
+sovei skills install --path ./my-skill --id myorg/my-skill
+
+# 检查上游更新
+sovei skills upgrade mattpocock/grilling
+
+# 查看与上游的差异
+sovei skills diff mattpocock/grilling
+
+# 绑定 skill 到阶段
+sovei skills bind --stage grill --skill mattpocock/grilling --enable
+
+# 同步到 IDE 上下文文件
+sovei skills sync
+
+# 从 IDE 上下文文件移除
+sovei skills clean
+```
+
+Skill 配置存储在 `harness/skills/skill-map.yaml`（绑定）和 `harness/skills/skill-lock.yaml`
+（版本锁定 + checksum）。Vendor 文件位于 `harness/vendor/`。升级必须人工审查 diff 后确认，
+不自动跟随上游 latest。
 
 ## 项目场景
 
@@ -391,6 +436,8 @@ sovei/
 │   │   ├── architecture/         # 健康策略、快照、历史、债务
 │   │   ├── codegraph/            # 代码地图
 │   │   └── rules/                # 规则库
+│   ├── skills/                   # Skill 配置（map + lock）
+│   ├── vendor/                   # 第三方 Skill 源文件
 │   └── templates/                # 壳（文档模板）
 ├── specs/                        # Feature 实例
 └── design-docs/                  # 架构设计文档
@@ -403,9 +450,9 @@ sovei/
 ## 技术栈
 
 - **运行时**：Node.js >= 20
-- **语言**：TypeScript 5.x
+- **语言**：TypeScript 7.x
 - **依赖**：commander (CLI)、zod (schema 验证)、yaml (配置解析)
-- **无 Python、无 PowerShell 依赖**
+- **无 Python、无 PowerShell 依赖**（发版脚本除外）
 
 ## 发布 Sovei CLI
 

@@ -78,7 +78,9 @@ try {
     # 版本递增策略：默认只允许 patch bump，minor/major 需显式 -MajorBump
     # 预发布版本（含 '-'）跳过此检查，走 next tag 的独立逻辑。
     if ($version -notmatch '-') {
-        $stableRemote = @($remoteVersions | Where-Object { $_ -notmatch '-' } |
+        # Flatten in case ConvertFrom-Json returns nested arrays
+        $flatVersions = @($remoteVersions | ForEach-Object { $_ })
+        $stableRemote = @($flatVersions | Where-Object { $_ -is [string] -and $_ -notmatch '-' } |
             Sort-Object { [version]$_ })
         if ($stableRemote.Count -gt 0) {
             $latestRemote = [string]$stableRemote[-1]

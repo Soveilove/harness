@@ -117,6 +117,16 @@ export function registerWorkflowCommands(program: Command): void {
         }
         const result = await engine.prepareStage(feature, stageName);
         console.log('\n  已准备阶段 \'' + stageName + '\'；工作流状态未推进。\n');
+        if (result.skillExecutionReport) {
+          const sr = result.skillExecutionReport;
+          if (sr.mode === 'third-party') {
+            console.log('  使用 Skill：' + sr.skillId + ' v' + sr.version);
+          } else if (sr.mode === 'fallback') {
+            console.log('  使用 Skill：native (fallback: ' + sr.fallbackReason + ')');
+          } else {
+            console.log('  使用 Skill：native');
+          }
+        }
         if (opts.task) console.log('  已选择任务：' + opts.task + '\n');
         if (stageName === 'grill') {
           console.log('  grill 已触发：CLI 负责生成决策提示契约；AI/IDE 应区分事实核实、可推断决策与范围性决策，将结果记录到 decision-log.md，再运行 --complete。范围性决策逐个提问并附推荐答案。\n');

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "014-skills-runtime-completion",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "All decisions resolved in grill: 5 facts verified, 8 inferable decisions recorded, 1 scope decision confirmed by user. No unknown regions requiring decision tickets.",
+  "revision": 0,
+  "updatedAt": "2026-08-06T14:59:17.316Z",
+  "ticketIndex": [],
+  "fog": []
+}

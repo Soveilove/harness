@@ -1,0 +1,1 @@
+{"timestamp":"2026-08-06T14:59:17.316Z","revision":0,"actor":"agent","event":{"type":"MAP_SKIPPED","featureId":"014-skills-runtime-completion","reason":"All decisions resolved in grill: 5 facts verified, 8 inferable decisions recorded, 1 scope decision confirmed by user. No unknown regions requiring decision tickets."}}

@@ -13,6 +13,7 @@ import type { WorkflowState } from '../engine/types.js';
 import type { KnowledgeStore } from '../knowledge/store.js';
 import type { ArtifactRepository } from '../artifacts/repository.js';
 import type { Logger } from '../providers/tokens.js';
+import type { SkillExecutionReport } from '../skills/types.js';
 
 /** Context passed to every stage hook */
 export interface StageContext {
@@ -40,6 +41,7 @@ export interface StageResult {
   blockers: string[];
   knowledgeSourcesUsed: string[];
   prompt?: string; // AI agent prompt contract
+  skillExecutionReport?: SkillExecutionReport; // actual skill source used
 }
 
 /** A pre-execute hook can block execution */

@@ -28,6 +28,9 @@ import { ChangeControlRepository } from '../change-control/repository.js';
 import type { ChangeRequest } from '../change-control/schemas.js';
 import type { ChangeDimension } from '../change-control/schemas.js';
 import { WayfinderRepository } from '../wayfinder/repository.js';
+import type { SkillResolver, SkillExecutionReport } from '../skills/types.js';
+import { MarkdownSkillAdapter } from '../skills/adapter.js';
+import { randomUUID } from 'node:crypto';
 
 /** Default workflow definition for Sovei 2.0 */
 export const DEFAULT_WORKFLOW: WorkflowDefinition = {
@@ -65,6 +68,7 @@ export class WorkflowEngine {
     private knowledgeStore: KnowledgeStore,
     private logger: Logger,
     private config: SoveiConfig,
+    private skillResolver?: SkillResolver,
   ) {
     this.eventStore = new EventStore(storage);
     this.changeControl = new ChangeControlRepository(storage);
@@ -147,7 +151,109 @@ export class WorkflowEngine {
         + '仅当前顶层 Feature 产物具有权威性；history/ 下的文件是已失效证据，只能用于明确的差异比较。\n\n'
       : `## 权威规则\n\n当前 revision：${state.revision}。仅当前顶层 Feature 产物具有权威性；`
         + 'history/ 下的文件是已失效证据，不得视为当前需求。\n\n';
-    result.prompt = authorityNotice + (result.prompt ?? '');
+
+    // ── Skill injection: prepend external skill body to the native prompt ──
+    const nativePrompt = result.prompt ?? '';
+    let skillSection = '';
+    const skillStartTime = Date.now();
+    let skillReport: SkillExecutionReport;
+
+    if (this.skillResolver) {
+      try {
+        const binding = this.skillResolver.resolve(stageName);
+        if (binding) {
+          const adapter = this.skillResolver.getAdapter(binding.skillId);
+          if (adapter) {
+            let skillBody = '';
+            if (adapter instanceof MarkdownSkillAdapter) {
+              skillBody = adapter.getSkillBody();
+            } else {
+              const skillResult = await adapter.execute({
+                requestId: randomUUID(),
+                manifest: adapter.manifest,
+                binding,
+                context: {
+                  featureId,
+                  stage: stageName,
+                  revision: state.revision,
+                  artifacts: {},
+                  knowledgeSources: result.knowledgeSourcesUsed,
+                  allowedPaths: [featurePath],
+                  readOnly: true,
+                },
+                requestedAt: new Date().toISOString(),
+              });
+              skillBody = skillResult.proposals.find((p) => p.name === 'prompt-injection')?.content ?? '';
+            }
+            if (skillBody) {
+              skillSection = `## 外部 Skill 指令\n\n${skillBody}\n来源：${adapter.manifest.id} v${adapter.manifest.version}\n\n`;
+            }
+            skillReport = {
+              requestId: randomUUID(),
+              stage: stageName,
+              mode: 'third-party',
+              skillId: adapter.manifest.id,
+              version: adapter.manifest.version,
+              durationMs: Date.now() - skillStartTime,
+              fallbackReason: null,
+              artifactNames: result.artifactsWritten,
+              validated: true,
+            };
+          } else {
+            skillReport = {
+              requestId: randomUUID(),
+              stage: stageName,
+              mode: 'fallback',
+              skillId: binding.skillId,
+              version: null,
+              durationMs: Date.now() - skillStartTime,
+              fallbackReason: `Adapter not registered for skill '${binding.skillId}'`,
+              artifactNames: result.artifactsWritten,
+              validated: false,
+            };
+          }
+        } else {
+          skillReport = {
+            requestId: randomUUID(),
+            stage: stageName,
+            mode: 'native',
+            skillId: null,
+            version: null,
+            durationMs: Date.now() - skillStartTime,
+            fallbackReason: null,
+            artifactNames: result.artifactsWritten,
+            validated: true,
+          };
+        }
+      } catch (err) {
+        skillReport = {
+          requestId: randomUUID(),
+          stage: stageName,
+          mode: 'fallback',
+          skillId: null,
+          version: null,
+          durationMs: Date.now() - skillStartTime,
+          fallbackReason: (err as Error).message,
+          artifactNames: result.artifactsWritten,
+          validated: false,
+        };
+      }
+    } else {
+      skillReport = {
+        requestId: randomUUID(),
+        stage: stageName,
+        mode: 'native',
+        skillId: null,
+        version: null,
+        durationMs: 0,
+        fallbackReason: null,
+        artifactNames: result.artifactsWritten,
+        validated: true,
+      };
+    }
+
+    result.prompt = authorityNotice + skillSection + nativePrompt;
+    result.skillExecutionReport = skillReport;
 
     // Templates are preparation aids and never count as completed artifacts.
     for (const artifactName of stageDef.contract.producesArtifacts) {
