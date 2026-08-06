@@ -2,6 +2,21 @@
 
 All notable changes to the Sovei workflow engine are documented in this file.
 
+## [2.3.2] - 2026-08-06
+
+### Fixed
+
+- **工作流拓扑断链修复**：`spec` 阶段的 `requiredArtifacts` 此前漏了 `wayfinder.md`，导致 wayfind 的决策消歧产物未被 spec 消费。现补齐依赖（`decision-log.md` + `wayfinder.md`），并统一 `index.ts` 与 `workflow-engine.ts` 的 contract 声明：
+  - `grill.nextStage` 对齐为 `wayfind`（与 `stageOrder` 一致）。
+  - `spec.producesArtifacts` 补上 `reconciliation.md`（此前声明与 `postExecute` 强制校验不一致）。
+- **死模板清理**：删除 `harness/templates/sovei/` 下 14 个从未被引擎消费的模板文件（引擎产物模板由 `getArtifactTemplate` 内嵌生成）。同步更新 `harness/index.md` 目录说明。
+- **`project init` 覆盖保护**：`project init` 检测到 `AGENTS.md` 已存在且非空时不再无条件覆盖，改为输出提示指令交由用户/AI 决定是否同步最新 Sovei 声明；`--force` 仍强制覆盖。
+- **测试回归修复**：删除 `project.test.mjs` 中引用已移除模板文件的失效测试，新增 AGENTS.md 存在性保护断言。
+
+### Changed
+
+- **文档澄清**：`AGENTS.md` 明确确认门禁的依据是阶段产物（`reconciliation.md` / `evidence.md`）而非 review 文件；`review-pack` 是可选的深入对齐工具，`workflow confirm` 与 `review-pack import` 等价。
+
 ## [2.3.1] - 2026-08-06
 
 ### Added
