@@ -4,7 +4,8 @@ param(
     [ValidateSet('next', 'latest')]
     [string]$Tag = 'next',
     [switch]$AllowDirty,
-    [switch]$ValidateOnly
+    [switch]$ValidateOnly,
+    [switch]$MajorBump
 )
 
 $ErrorActionPreference = 'Stop'
@@ -61,10 +62,10 @@ try {
         Write-Host '警告：正在从脏工作区发布。' -ForegroundColor Yellow
     }
 
-    Write-Host '1/5 检查 npm 登录身份'
+    Write-Host '1/6 检查 npm 登录身份'
     Invoke-Checked 'npm' @('whoami')
 
-    Write-Host '2/5 检查远端版本是否已存在'
+    Write-Host '2/6 检查远端版本是否已存在'
     $remoteVersionsJson = (& npm view $packageName versions '--json') -join "`n"
     if ($LASTEXITCODE -ne 0) {
         throw "无法查询 $packageName 的远端版本。"
@@ -74,13 +75,54 @@ try {
         throw "远端已存在 $packageName@$version，npm 版本不可覆盖。"
     }
 
-    Write-Host '3/5 运行类型检查'
+    # 版本递增策略：默认只允许 patch bump，minor/major 需显式 -MajorBump
+    # 预发布版本（含 '-'）跳过此检查，走 next tag 的独立逻辑。
+    if ($version -notmatch '-') {
+        $stableRemote = @($remoteVersions | Where-Object { $_ -notmatch '-' } |
+            Sort-Object { [version]$_ })
+        if ($stableRemote.Count -gt 0) {
+            $latestRemote = [string]$stableRemote[-1]
+            try {
+                $remoteParts = [version]$latestRemote
+                $localParts  = [version]$version
+            } catch {
+                # 版本号非标准三段格式时跳过检查，避免误报
+                $remoteParts = $null
+            }
+            if ($remoteParts) {
+                $isMinorBump = $localParts.Minor -gt $remoteParts.Minor -and $localParts.Major -eq $remoteParts.Major
+                $isMajorBump = $localParts.Major -gt $remoteParts.Major
+                if (($isMinorBump -or $isMajorBump) -and -not $MajorBump) {
+                    $bumpType = if ($isMajorBump) { 'major' } else { 'minor' }
+                    throw "版本递增策略阻止发布：$latestRemote → $version 是 $bumpType bump。默认只允许 patch 递增。如需发布 $bumpType 版本，请显式使用 -MajorBump 参数。"
+                }
+                if ($MajorBump -and -not ($isMinorBump -or $isMajorBump)) {
+                    Write-Host "提示：已指定 -MajorBump，但 $latestRemote → $version 实际为 patch bump，参数无需使用。" -ForegroundColor DarkGray
+                }
+            }
+        }
+    }
+
+    Write-Host '3/6 检查版本递增策略'
+    if ($version -match '-') {
+        Write-Host "  预发布版本，跳过递增策略检查"
+    } elseif ($stableRemote.Count -gt 0 -and $remoteParts) {
+        Write-Host "  远端最新稳定版：$latestRemote → 待发布：$version"
+        if ($MajorBump -and ($isMinorBump -or $isMajorBump)) {
+            $bumpType = if ($isMajorBump) { 'major' } else { 'minor' }
+            Write-Host "  已授权 $bumpType bump（-MajorBump）" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  无法比较版本（远端无稳定版或版本格式非标准），跳过检查"
+    }
+
+    Write-Host '4/6 运行类型检查'
     Invoke-Checked 'pnpm' @('--dir', 'packages/sovei-core', 'run', 'check')
 
-    Write-Host '4/5 运行完整测试'
+    Write-Host '5/6 运行完整测试'
     Invoke-Checked 'pnpm' @('--dir', 'packages/sovei-core', 'test')
 
-    Write-Host '5/5 检查发布包白名单'
+    Write-Host '6/6 检查发布包白名单'
     Invoke-Checked 'pnpm' @('--dir', 'packages/sovei-core', 'run', 'verify:package')
 
     if ($ValidateOnly) {
@@ -91,7 +133,7 @@ try {
 
     # 用 npm publish 而非 pnpm publish:pnpm 10 的 publish 会做 git 检查,且把
     # --no-git-checks 透传给 npm publish 触发 EUSAGE。npm publish 不检查 git。
-    # --ignore-scripts 跳过 prepack(上面的 3/4/5 已跑 check+test+verify 兜底)。
+    # --ignore-scripts 跳过 prepack(上面的 4/5/6 已跑 check+test+verify 兜底)。
     # 使用 ~/.npmrc 中的 Automation token,2FA 下免 OTP,无需交互输入。
     Push-Location $packageDir
     try {

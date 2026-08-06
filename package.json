@@ -10,6 +10,7 @@
     "sovei:test": "pnpm --dir packages/sovei-core test",
     "sovei:onboard": "pnpm run sovei:build && pnpm exec sovei project onboard",
     "release:sovei": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release-sovei.ps1",
+    "release:sovei:major": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release-sovei.ps1 -MajorBump",
     "release:sovei:check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release-sovei.ps1 -ValidateOnly -AllowDirty"
   },
   "dependencies": {
