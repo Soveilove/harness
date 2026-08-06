@@ -33,8 +33,9 @@ const SkillLockSchema = z.object({
   skills: z.record(z.string(), z.object({
     source: z.string().min(1),
     version: z.string().min(1),
-    ref: z.string().min(1),
-    commit: z.string().min(1),
+    // ref/commit may be empty for path-based (local directory) skills.
+    ref: z.string(),
+    commit: z.string(),
     checksum: z.string().regex(/^sha256:[a-f0-9]{64}$/),
     license: z.string().min(1),
     status: z.enum(['candidate', 'enabled', 'disabled', 'incompatible']),

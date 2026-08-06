@@ -43,6 +43,20 @@
 - recommendation: 先验证 `grill-me` / `grilling` 和 `domain-modeling` / `to-spec`；`wayfind` 保持 Sovei 原生。
 - decision: 已确认。
 
+## Agent 接入机制（参考 OpenSpec / SpecKit 调研）
+
+已接入的 skills 最终要让开发 Agent（Codex、Cursor、Claude Code 等）在运行时实际使用。调研 OpenSpec 与 SpecKit 后归纳共性：
+
+- **OpenSpec**：单源规则模块（`.openspec/modules/`）→ `sync` 编译出 `CLAUDE.md`、`.cursorrules`、`GEMINI.md`、`AGENTS.md` 等 7+ 种上下文文件。Agent 读取对应文件即获得能力与调用方式；`npx openspec analyze && sync` 一行接入。
+- **SpecKit**：初始化骨架后模板注入 `/speckit.*` 斜杠命令（constitution → specify → plan → tasks → implement），Claude Code 等通过斜杠命令驱动流程；也可通过 subagent 自动按序执行。
+
+**本项目决策**（与 Sovei 现有 `AGENTS.md 声明 + CLI 命令` 模型一致）：
+
+1. 复用现有 `adapters/registry.ts` 的 IDE 适配器模型，为每个适配器声明其上下文文件（`AGENTS.md` / `CLAUDE.md` / `.cursorrules`）。
+2. `sovei skills sync` 把 skill-map 的绑定渲染进这些文件，用 sentinel 段落 upsert，不覆盖用户已有内容（等价于 OpenSpec 的 sync）。
+3. 复用 `sovei workflow <stage> <feature>` 作为 Agent 调用的统一入口：Agent 读到"该阶段绑定哪个 skill"后，仍通过 Sovei CLI 执行，skills 保持只读、产候选、由 Sovei 校验。
+4. 不做 SpecKit 式斜杠命令注入：Sovei 已有完整的阶段命令与门禁，斜杠命令会绕过 Sovei 的完成判定，违背"外部 Skill 不拥有工作流状态"的边界。
+
 ## Sign-off
 
 - [x] product: 用户已确认按 Sovei 流程推进，并采用显式安装策略。

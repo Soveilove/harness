@@ -22,6 +22,7 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { emptyRulesDocument, ProjectRulesRepository, DEFAULT_RULES_FILE } from '../../rules/repository.js';
 import { adaptProjectRules } from '../../rules/adaptation.js';
+import { SkillManager } from '../../skills/manager.js';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -160,7 +161,7 @@ export function registerProjectCommands(program: Command): void {
       console.log('\n  正在初始化 Sovei 项目：' + resolvedTarget + '\n');
 
       // Create directory structure
-      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance'];
+      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/skills'];
       const storage = new FilesystemStorage(resolvedTarget);
       const projectExists = await storage.exists('harness/project/project.config.json');
       if (projectExists && !opts.force) {
@@ -174,6 +175,10 @@ export function registerProjectCommands(program: Command): void {
         await storage.write(dir + '/.gitkeep', '');
         console.log('  · 已创建 ' + dir + '/');
       }
+
+      // Initialize external skills skeleton (skill-map + skill-lock)
+      await new SkillManager(storage).ensureSkeleton();
+      console.log('  · 已创建 harness/skills/（skill-map.yaml + skill-lock.yaml，仅 native 绑定）');
 
       // Create project.config.json
       const projectConfig = {
@@ -201,6 +206,11 @@ export function registerProjectCommands(program: Command): void {
         '- `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)',
         '- `sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md',
         '- `sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation',
+        '- `sovei skills status`: Show connected external skills (local + global)',
+        '- `sovei skills use --global <dir>`: Connect a global skill into the local lock',
+        '- `sovei skills bind --stage <stage> --skill <id> --enable`: Bind a skill to a stage',
+        '- `sovei skills sync`: Render connected skills into agent context files (AGENTS.md/CLAUDE.md/.cursorrules/GEMINI.md/.aiderrules/.windsurfrules)',
+        '- `sovei skills clean`: Remove the sovei skills section from agent context files',
         '',
         '### Workflow Stages',
         '',
@@ -276,14 +286,17 @@ export function registerProjectCommands(program: Command): void {
       console.log('\n  ✓ 项目已初始化。\n');
       console.log('  后续步骤：');
       console.log('    1. 编辑 harness/project/project.config.json');
+      console.log('    2. 查看 skills 接入状态：sovei skills status');
+      console.log('    3. 接入外部 skill：sovei skills use --global <dir> → sovei skills bind --stage <stage> --skill <id>');
+      console.log('    4. 交付给 Agent：sovei skills sync（渲染进 AGENTS.md/CLAUDE.md/.cursorrules 等）');
       if (!opts.blank && stack.framework) {
-        console.log('    2. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
-        console.log('    3. 审查种子知识：sovei knowledge list');
-        console.log('    4. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    4. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
+        console.log('    5. 审查种子知识：sovei knowledge list');
+        console.log('    6. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       } else {
-        console.log('    2. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
-        console.log('    3. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
-        console.log('    4. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    4. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
+        console.log('    5. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
+        console.log('    6. 开始 Feature：sovei workflow bootstrap 001-my-feature');
       }
       console.log('');
     });

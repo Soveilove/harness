@@ -1,0 +1,24 @@
+{
+  "id": "D-001",
+  "title": "Agent 接入深度：上下文文件为主 + 预留 MCP 协议",
+  "question": "Skills 接入开发 Agent 应该达到哪种深度？",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "采用上下文文件为主+预留MCP协议。skills 渲染进各 Agent 上下文文件（AGENTS.md/CLAUDE.md/.cursorrules 并扩展 GEMINI.md/.aiderrules/.windsurfrules），Agent 通过 sovei workflow 调用；本次不实现 MCP server，但定义 MCP 扩展边界",
+  "evidence": [
+    "spec.md",
+    "scope.md",
+    "plan.md"
+  ],
+  "contextPointers": [
+    "packages/sovei-core/src/adapters/registry.ts",
+    "packages/sovei-core/src/skills/sync.ts"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-06T10:26:44.540Z",
+  "updatedAt": "2026-08-06T10:27:16.077Z",
+  "resolvedAt": "2026-08-06T10:27:16.077Z"
+}

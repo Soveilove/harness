@@ -11,6 +11,8 @@ export const TOKENS = {
   WorkflowEngine: Symbol('WorkflowEngine'),
   Logger: Symbol('Logger'),
   Config: Symbol('Config'),
+  SkillRegistry: Symbol('SkillRegistry'),
+  SkillManager: Symbol('SkillManager'),
 } as const;
 
 export type Token = (typeof TOKENS)[keyof typeof TOKENS];
