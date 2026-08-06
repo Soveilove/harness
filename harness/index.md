@@ -27,7 +27,7 @@ harness/
 │   ├── architecture/             # 演进式架构健康、趋势和技术债
 │   ├── codegraph/                # 代码地图
 │   └── rules/                    # 项目工程规范（*.rules.json）
-└── templates/                    # 壳（文档模板）
+└── templates/                    # 壳（占位目录；产物模板由引擎内嵌生成，不在此存放）
 ```
 
 ## 知识管理
