@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "scannerVersion": "2.2.0",
-  "generatedAt": "2026-08-05T14:28:30.774Z",
+  "scannerVersion": "2.3.3",
+  "generatedAt": "2026-08-06T03:14:45.148Z",
   "lifecycle": "candidate",
   "generator": {
     "mode": "builtin-static-analysis",
@@ -9,22 +9,19 @@
   },
   "coverage": {
     "repository": {
-      "maxDepth": 4,
-      "maxEntries": 20000,
-      "filesDiscovered": 121,
-      "directoriesDiscovered": 39,
-      "truncated": true,
-      "reasons": [
-        "目录扫描达到深度上限 4"
-      ]
+      "maxDepth": 20,
+      "maxEntries": 50000,
+      "filesDiscovered": 303,
+      "directoriesDiscovered": 48,
+      "filteredDiscovered": 0,
+      "truncated": false,
+      "reasons": []
     },
-    "candidateSourceFiles": 19,
-    "contentFilesScanned": 19,
-    "maxContentFiles": 500,
-    "truncated": true,
-    "reasons": [
-      "目录扫描达到深度上限 4"
-    ]
+    "candidateSourceFiles": 90,
+    "contentFilesScanned": 90,
+    "maxContentFiles": 3000,
+    "truncated": false,
+    "reasons": []
   },
   "capabilities": [
     {
@@ -40,6 +37,24 @@
       "externalDependencies": [],
       "redlineCandidateIds": [],
       "codeEvidence": [],
+      "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "adapters",
+      "name": "adapters",
+      "description": "从代码目录自动识别的 adapters 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli"
+      ],
+      "downstreamCapabilities": [],
+      "externalDependencies": [],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/adapters/registry.ts"
+      ],
       "confidence": "low",
       "reviewStatus": "candidate"
     },
@@ -60,6 +75,36 @@
         "packages/sovei-core/test/agent.test.mjs"
       ],
       "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "architecture",
+      "name": "architecture",
+      "description": "从代码目录自动识别的 architecture 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli"
+      ],
+      "downstreamCapabilities": [
+        "asset"
+      ],
+      "externalDependencies": [
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:path",
+        "node:util"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/architecture/analyzer.ts",
+        "packages/sovei-core/src/architecture/index.ts",
+        "packages/sovei-core/src/architecture/policy.ts",
+        "packages/sovei-core/src/architecture/repository.ts",
+        "packages/sovei-core/src/architecture/types.ts"
+      ],
+      "confidence": "medium",
       "reviewStatus": "candidate"
     },
     {
@@ -93,6 +138,135 @@
       "reviewStatus": "candidate"
     },
     {
+      "id": "artifact-guard-cli-test",
+      "name": "artifact-guard-cli-test",
+      "description": "从代码目录自动识别的 artifact-guard-cli-test 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [],
+      "downstreamCapabilities": [],
+      "externalDependencies": [
+        "node:assert",
+        "node:child_process",
+        "node:fs",
+        "node:os",
+        "node:path",
+        "node:test",
+        "node:util"
+      ],
+      "redlineCandidateIds": [
+        "BILLING_BILLING_SURFACE_DETECTED_ARTIFACT_GUARD_"
+      ],
+      "codeEvidence": [
+        "packages/sovei-core/test/artifact-guard-cli.test.mjs"
+      ],
+      "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "artifact-version-guard-test",
+      "name": "artifact-version-guard-test",
+      "description": "从代码目录自动识别的 artifact-version-guard-test 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [],
+      "downstreamCapabilities": [],
+      "externalDependencies": [
+        "node:assert",
+        "node:fs",
+        "node:path",
+        "node:test",
+        "node:url"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/test/artifact-version-guard.test.mjs"
+      ],
+      "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "artifacts",
+      "name": "artifacts",
+      "description": "从代码目录自动识别的 artifacts 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "engine",
+        "stages"
+      ],
+      "downstreamCapabilities": [
+        "asset"
+      ],
+      "externalDependencies": [],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/artifacts/repository.ts"
+      ],
+      "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "asset",
+      "name": "资产与媒体",
+      "description": "文件、媒体、上传下载与存储",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "architecture",
+        "artifacts",
+        "change-control",
+        "cli",
+        "config",
+        "context",
+        "engine",
+        "knowledge",
+        "providers",
+        "rules",
+        "wayfinder"
+      ],
+      "downstreamCapabilities": [],
+      "externalDependencies": [
+        "node:fs",
+        "node:path"
+      ],
+      "redlineCandidateIds": [
+        "DATA_INTEGRITY_DATABASE_SCHEMA_SURFACE_DETECTED_IN_CODE"
+      ],
+      "codeEvidence": [
+        "packages/sovei-core/src/storage/filesystem.ts",
+        "packages/sovei-core/src/storage/json.ts",
+        "packages/sovei-core/src/storage/memory.ts",
+        "packages/sovei-core/src/storage/types.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "authentication",
+      "name": "身份认证",
+      "description": "登录、会话、令牌与身份校验",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "engine",
+        "providers",
+        "stages"
+      ],
+      "downstreamCapabilities": [],
+      "externalDependencies": [],
+      "redlineCandidateIds": [
+        "AUTHENTICATION_AUTHENTICATION_SURFACE_DETECTED_IN_CODE_"
+      ],
+      "codeEvidence": [
+        "packages/sovei-core/src/providers/tokens.ts"
+      ],
+      "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
       "id": "b",
       "name": "b",
       "description": "从代码目录自动识别的 b 业务能力",
@@ -119,9 +293,41 @@
       ],
       "downstreamCapabilities": [],
       "externalDependencies": [],
-      "redlineCandidateIds": [],
+      "redlineCandidateIds": [
+        "BILLING_BILLING_SURFACE_DETECTED_ARTIFACT_GUARD_",
+        "DATA_INTEGRITY_DATABASE_SCHEMA_SURFACE_DETECTED_IN_CODE"
+      ],
       "codeEvidence": [],
       "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "change-control",
+      "name": "change-control",
+      "description": "从代码目录自动识别的 change-control 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "config",
+        "context",
+        "engine"
+      ],
+      "downstreamCapabilities": [
+        "asset"
+      ],
+      "externalDependencies": [
+        "node:crypto",
+        "zod"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/change-control/index.ts",
+        "packages/sovei-core/src/change-control/redline-view.ts",
+        "packages/sovei-core/src/change-control/repository.ts",
+        "packages/sovei-core/src/change-control/schemas.ts"
+      ],
+      "confidence": "medium",
       "reviewStatus": "candidate"
     },
     {
@@ -187,6 +393,136 @@
       "reviewStatus": "candidate"
     },
     {
+      "id": "cli",
+      "name": "cli",
+      "description": "从代码目录自动识别的 cli 业务能力",
+      "entrySurfaces": [
+        "packages/sovei-core/src/cli/commands/agent.ts",
+        "packages/sovei-core/src/cli/commands/architecture.ts",
+        "packages/sovei-core/src/cli/commands/context.ts",
+        "packages/sovei-core/src/cli/commands/governance.ts",
+        "packages/sovei-core/src/cli/commands/knowledge.ts",
+        "packages/sovei-core/src/cli/commands/project.ts",
+        "packages/sovei-core/src/cli/commands/rules.ts",
+        "packages/sovei-core/src/cli/commands/wayfinder.ts",
+        "packages/sovei-core/src/cli/commands/workflow.ts",
+        "packages/sovei-core/src/cli/commands/workspace.ts",
+        "packages/sovei-core/src/cli/index.ts"
+      ],
+      "contracts": [],
+      "upstreamCapabilities": [],
+      "downstreamCapabilities": [
+        "adapters",
+        "architecture",
+        "artifacts",
+        "asset",
+        "authentication",
+        "change-control",
+        "config",
+        "context",
+        "engine",
+        "knowledge",
+        "providers",
+        "review",
+        "rules",
+        "stages",
+        "wayfinder"
+      ],
+      "externalDependencies": [
+        " + feature + ",
+        "commander",
+        "node:crypto",
+        "node:fs",
+        "node:module",
+        "node:path"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/cli/commands/agent.ts",
+        "packages/sovei-core/src/cli/commands/architecture.ts",
+        "packages/sovei-core/src/cli/commands/context.ts",
+        "packages/sovei-core/src/cli/commands/governance.ts",
+        "packages/sovei-core/src/cli/commands/knowledge.ts",
+        "packages/sovei-core/src/cli/commands/project.ts",
+        "packages/sovei-core/src/cli/commands/rules.ts",
+        "packages/sovei-core/src/cli/commands/wayfinder.ts",
+        "packages/sovei-core/src/cli/commands/workflow.ts",
+        "packages/sovei-core/src/cli/commands/workspace.ts",
+        "packages/sovei-core/src/cli/index.ts"
+      ],
+      "confidence": "high",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "config",
+      "name": "config",
+      "description": "从代码目录自动识别的 config 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "engine",
+        "providers",
+        "rules"
+      ],
+      "downstreamCapabilities": [
+        "asset",
+        "change-control",
+        "knowledge",
+        "rules"
+      ],
+      "externalDependencies": [
+        "jsonc-parser",
+        "node:crypto",
+        "node:fs",
+        "node:module",
+        "node:path",
+        "yaml"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/config/artifact-version-guard.ts",
+        "packages/sovei-core/src/config/business-map-scanner.ts",
+        "packages/sovei-core/src/config/json.ts",
+        "packages/sovei-core/src/config/loader.ts",
+        "packages/sovei-core/src/config/project-rule-scanner.ts",
+        "packages/sovei-core/src/config/redline-scanner.ts",
+        "packages/sovei-core/src/config/scanner.ts",
+        "packages/sovei-core/src/config/tech-stack.ts",
+        "packages/sovei-core/src/config/types.ts",
+        "packages/sovei-core/src/config/version.ts",
+        "packages/sovei-core/src/config/workspace.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "context",
+      "name": "context",
+      "description": "从代码目录自动识别的 context 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli"
+      ],
+      "downstreamCapabilities": [
+        "asset",
+        "change-control",
+        "knowledge",
+        "rules"
+      ],
+      "externalDependencies": [
+        "node:crypto"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/context/builder.ts",
+        "packages/sovei-core/src/context/snapshot.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
       "id": "context-test",
       "name": "context-test",
       "description": "从代码目录自动识别的 context-test 业务能力",
@@ -206,6 +542,70 @@
         "packages/sovei-core/test/context.test.mjs"
       ],
       "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "engine",
+      "name": "engine",
+      "description": "从代码目录自动识别的 engine 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "providers",
+        "stages"
+      ],
+      "downstreamCapabilities": [
+        "artifacts",
+        "asset",
+        "authentication",
+        "change-control",
+        "config",
+        "knowledge",
+        "stages",
+        "wayfinder"
+      ],
+      "externalDependencies": [],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/engine/event-store.ts",
+        "packages/sovei-core/src/engine/index.ts",
+        "packages/sovei-core/src/engine/state-machine.ts",
+        "packages/sovei-core/src/engine/types.ts",
+        "packages/sovei-core/src/engine/workflow-engine.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "knowledge",
+      "name": "knowledge",
+      "description": "从代码目录自动识别的 knowledge 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "config",
+        "context",
+        "engine",
+        "providers",
+        "stages"
+      ],
+      "downstreamCapabilities": [
+        "asset"
+      ],
+      "externalDependencies": [
+        "zod"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/knowledge/index.ts",
+        "packages/sovei-core/src/knowledge/lifecycle.ts",
+        "packages/sovei-core/src/knowledge/schemas.ts",
+        "packages/sovei-core/src/knowledge/selectors.ts",
+        "packages/sovei-core/src/knowledge/store.ts"
+      ],
+      "confidence": "medium",
       "reviewStatus": "candidate"
     },
     {
@@ -252,6 +652,32 @@
       "reviewStatus": "candidate"
     },
     {
+      "id": "providers",
+      "name": "providers",
+      "description": "从代码目录自动识别的 providers 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli"
+      ],
+      "downstreamCapabilities": [
+        "asset",
+        "authentication",
+        "config",
+        "engine",
+        "knowledge"
+      ],
+      "externalDependencies": [],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/providers/bootstrap.ts",
+        "packages/sovei-core/src/providers/container.ts",
+        "packages/sovei-core/src/providers/contracts.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
       "id": "publishing",
       "name": "发布与分发",
       "description": "发布、分享与分发流程",
@@ -270,7 +696,10 @@
         "node:test",
         "node:util"
       ],
-      "redlineCandidateIds": [],
+      "redlineCandidateIds": [
+        "PERMISSION_PERMISSION_CHECK_DETECTED_CHANGE_MANIFES",
+        "PERMISSION_PERMISSION_CHECK_DETECTED_DECISION_LOG_M"
+      ],
       "codeEvidence": [
         "packages/sovei-core/scripts/build-release.mjs",
         "packages/sovei-core/test/release.test.mjs"
@@ -300,6 +729,56 @@
         "packages/sovei-core/test/redline-view.test.mjs"
       ],
       "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "review",
+      "name": "review",
+      "description": "从代码目录自动识别的 review 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli"
+      ],
+      "downstreamCapabilities": [],
+      "externalDependencies": [],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/review/index.ts",
+        "packages/sovei-core/src/review/parser.ts",
+        "packages/sovei-core/src/review/renderer.ts",
+        "packages/sovei-core/src/review/types.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "rules",
+      "name": "rules",
+      "description": "从代码目录自动识别的 rules 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "config",
+        "context"
+      ],
+      "downstreamCapabilities": [
+        "asset",
+        "config"
+      ],
+      "externalDependencies": [
+        "minimatch",
+        "zod"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/rules/adaptation.ts",
+        "packages/sovei-core/src/rules/index.ts",
+        "packages/sovei-core/src/rules/repository.ts",
+        "packages/sovei-core/src/rules/schemas.ts"
+      ],
+      "confidence": "medium",
       "reviewStatus": "candidate"
     },
     {
@@ -343,6 +822,7 @@
       "description": "从代码目录自动识别的 scanner-test 业务能力",
       "entrySurfaces": [],
       "contracts": [
+        "/api/billing/charge",
         "/api/orders",
         "https://example.com/windows-app"
       ],
@@ -367,6 +847,34 @@
       "reviewStatus": "candidate"
     },
     {
+      "id": "stages",
+      "name": "stages",
+      "description": "从代码目录自动识别的 stages 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "engine"
+      ],
+      "downstreamCapabilities": [
+        "artifacts",
+        "authentication",
+        "engine",
+        "knowledge"
+      ],
+      "externalDependencies": [
+        "zod"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/stages/define-stage.ts",
+        "packages/sovei-core/src/stages/index.ts",
+        "packages/sovei-core/src/stages/registry.ts"
+      ],
+      "confidence": "medium",
+      "reviewStatus": "candidate"
+    },
+    {
       "id": "verify-package",
       "name": "verify-package",
       "description": "从代码目录自动识别的 verify-package 业务能力",
@@ -386,6 +894,34 @@
         "packages/sovei-core/scripts/verify-package.mjs"
       ],
       "confidence": "low",
+      "reviewStatus": "candidate"
+    },
+    {
+      "id": "wayfinder",
+      "name": "wayfinder",
+      "description": "从代码目录自动识别的 wayfinder 业务能力",
+      "entrySurfaces": [],
+      "contracts": [],
+      "upstreamCapabilities": [
+        "cli",
+        "engine"
+      ],
+      "downstreamCapabilities": [
+        "asset"
+      ],
+      "externalDependencies": [
+        "node:crypto",
+        "zod"
+      ],
+      "redlineCandidateIds": [],
+      "codeEvidence": [
+        "packages/sovei-core/src/wayfinder/index.ts",
+        "packages/sovei-core/src/wayfinder/reducer.ts",
+        "packages/sovei-core/src/wayfinder/repository.ts",
+        "packages/sovei-core/src/wayfinder/schemas.ts",
+        "packages/sovei-core/src/wayfinder/selectors.ts"
+      ],
+      "confidence": "medium",
       "reviewStatus": "candidate"
     },
     {

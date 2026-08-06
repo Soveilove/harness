@@ -105,5 +105,55 @@
     "updatedAt": "2026-08-05T14:52:29.177Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-business-map-monorepo-codeevidence-d67e5cd2",
+    "type": "rule",
+    "title": "business-map 扫描已能到达 monorepo 真实源码，但仍需按 codeEvidence 交叉验证",
+    "content": "scanner v2.3.3 的 business-map 已改用路径推断（segmentAfterSource 取 src 后一段）与语义关键词表，能覆盖 packages/sovei-core/src/**，不再受早期版本'深度 4 层扫不到 monorepo 源码'的限制。但产物仍含大量噪声：test 文件、单字母名、构建脚本会被误当能力；redline-scanner 的 SURFACE_KEYWORDS 字典（auth/billing）会产生自指误报。验证能力/红线时必须打开 codeEvidence 指向的文件确认是真实业务逻辑，不能只看名称或 keywords。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard-repass",
+        "date": "2026-08-06T03:16:33.714Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "scanner",
+      "business-map",
+      "onboard"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T03:16:33.714Z",
+    "updatedAt": "2026-08-06T03:16:33.714Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-sovei-33d2ba08",
+    "type": "rule",
+    "title": "事件溯源 + 变更门禁是 sovei 核心业务语义所在",
+    "content": "sovei 的业务语义集中在三块：1) engine/state-machine.ts + event-store.ts + events.jsonl 的事件溯源状态机（ticket 生命周期，状态迁移幂等）；2) change-control/repository.ts + schemas.ts 的版本化变更对象（optimisticLock 乐观锁、change-manifest 校验、pendingChanges/committedChanges 分离）；3) wayfinder 决策地图（claim 归属 + 证据强制）。任何 feature 改到这里都先查现有红线与 reconciliation：NO_SILENT_DATA_LOSS / AUDIT_LOG_APPEND_ONLY / CONFIRMATION_GATE_INTEGRITY / CHANGE_REQUEST_OPTIMISTIC_LOCK 都源自这些模块。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard-repass",
+        "date": "2026-08-06T03:16:51.489Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "architecture",
+      "event-sourcing",
+      "core"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T03:16:51.489Z",
+    "updatedAt": "2026-08-06T03:16:51.489Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

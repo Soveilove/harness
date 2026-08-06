@@ -8,7 +8,7 @@
     "evidence": [
       {
         "feature": "project-onboard",
-        "date": "2026-08-05T14:28:30.758Z",
+        "date": "2026-08-06T03:14:45.104Z",
         "description": "Auto-detected from scan",
         "verified": false
       }
@@ -18,8 +18,8 @@
       "auto-detected"
     ],
     "scope": "project",
-    "createdAt": "2026-08-05T14:28:30.758Z",
-    "updatedAt": "2026-08-05T14:28:30.822Z",
+    "createdAt": "2026-08-06T03:14:45.104Z",
+    "updatedAt": "2026-08-06T03:14:45.164Z",
     "promotedAt": null,
     "deprecatedReason": null
   },

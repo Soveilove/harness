@@ -125,5 +125,30 @@
     "updatedAt": "2026-08-05T14:52:34.804Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-redline-scanner-surface-keywords-auth-billing-18d095b6",
+    "type": "pitfall",
+    "title": "redline-scanner 的 SURFACE_KEYWORDS 字典对本地工具类代码产生 auth/billing 自指误报",
+    "content": "redline-scanner 用 SURFACE_KEYWORDS（authentication/billing/database/permission）在源码里做子串匹配。本项目是纯本地 CLI 治理引擎，无 auth/账单/数据库/网络服务：'authentication' 命中仅来自 providers/tokens.ts 的 DI Symbols 与 artifact-version-guard.ts 里的 'token' 字样；'billing' 命中来自测试文件；'database schema' 命中来自 repository/schemas.ts 的持久化 schema（zod，无 DB）。seed 里的 AUTHENTICATION_*/BILLING_*/DATABASE_SCHEMA_* 均为误报，需人工剔除；真实红线须从事件溯源完整性/变更门禁等业务约束手工提炼。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard-repass",
+        "date": "2026-08-06T03:16:49.221Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "redline-scanner",
+      "false-positive",
+      "onboard"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T03:16:49.221Z",
+    "updatedAt": "2026-08-06T03:16:49.221Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

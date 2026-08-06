@@ -160,7 +160,7 @@ export function registerProjectCommands(program: Command): void {
       console.log('\n  正在初始化 Sovei 项目：' + resolvedTarget + '\n');
 
       // Create directory structure
-      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/templates'];
+      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance'];
       const storage = new FilesystemStorage(resolvedTarget);
       const projectExists = await storage.exists('harness/project/project.config.json');
       if (projectExists && !opts.force) {

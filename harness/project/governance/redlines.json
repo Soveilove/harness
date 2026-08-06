@@ -152,5 +152,37 @@
     "origin": "manual",
     "createdAt": "2026-08-05T14:46:44.265Z",
     "updatedAt": "2026-08-05T14:46:44.265Z"
+  },
+  {
+    "id": "WAYFINDER_CLAIM_OWNERSHIP",
+    "title": "决策票据只能由占有人解决或排除",
+    "rule": "resolve 或 exclude 决策票据前必须校验当前 actior 即为该票据的 claim.actor，claim 过期后 exclude 才允许 overrideExpired；未占有的票据禁止被他人 resolve",
+    "enforcement": "absolute",
+    "active": true,
+    "rationale": "wayfinder/repository.ts 与 reducer.ts 多处强制 claim 归属（resolve 要求 claim.actor===actor，exclude 要求未过期占有人一致），这是防止一个 agent 覆盖他人决策结论、保证决策地图唯一事实来源不被篡改的唯一机制。去掉后任何 ticket 都可被任意 actor 改写结论。hitting 与 research 票据的 resolve 还强制要求 evidence 或 contextPointers，删除该守卫会允许无证据结论通过。",
+    "scope": "packages/sovei-core/src/wayfinder/repository.ts, wayfinder/reducer.ts",
+    "examples": [
+      "绕过 claim 直接 resolve 他人占有的票据"
+    ],
+    "owner": "platform-team",
+    "origin": "agent-generated",
+    "createdAt": "2026-08-06T03:16:39.554Z",
+    "updatedAt": "2026-08-06T03:16:39.554Z"
+  },
+  {
+    "id": "WAYFINDER_EVENT_APPEND_ONLY",
+    "title": "wayfinder 事件日志必须追加且修订号单调",
+    "rule": "wayfinder-events.jsonl 的每条事件 revision 必须严格等于其顺序索引；读取时校验 revision===index，禁止改写、删除、重排已记录的事件",
+    "enforcement": "absolute",
+    "active": true,
+    "rationale": "wayfinder/repository.ts 的 readEvents 在还原聚合时强制校验每条 event.revision===index，任何缺失/重排/改写都会触发校验失败。它是决策地图事实来源的不可变日志，类似 AUDIT_LOG_APPEND_ONLY 但作用于 wayfinder 域。破坏后无法用事件溯源还原正确聚合，导致决策历史失真。",
+    "scope": "packages/sovei-core/src/wayfinder/repository.ts",
+    "examples": [
+      "删除或重排 wayfinder-events.jsonl 中的某条事件"
+    ],
+    "owner": "platform-team",
+    "origin": "agent-generated",
+    "createdAt": "2026-08-06T03:16:44.029Z",
+    "updatedAt": "2026-08-06T03:16:44.029Z"
   }
 ]
