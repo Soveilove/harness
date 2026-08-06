@@ -1,0 +1,17 @@
+{"timestamp":"2026-08-06T02:22:11.522Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"007-template-remediation"},"actor":"cli","sourceStage":null}
+{"timestamp":"2026-08-06T02:22:22.180Z","revision":1,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-06T02:23:29.780Z","revision":2,"event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-06T02:23:47.089Z","revision":3,"event":{"type":"STAGE_COMPLETE","stage":"wayfind","artifacts":["wayfinder.md"]},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-06T02:24:13.972Z","revision":4,"event":{"type":"STAGE_COMPLETE","stage":"spec","artifacts":["spec.md"]},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-06T02:24:35.116Z","revision":5,"event":{"type":"STAGE_COMPLETE","stage":"scope","artifacts":["scope.md","coverage-matrix.md"]},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-06T02:24:49.066Z","revision":6,"event":{"type":"STAGE_COMPLETE","stage":"plan","artifacts":["plan.md"]},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-06T02:25:01.770Z","revision":7,"event":{"type":"STAGE_COMPLETE","stage":"tasks","artifacts":["tasks.md"]},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-06T02:26:05.306Z","revision":8,"event":{"type":"TASK_COMPLETE","taskId":"TASK-001","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T02:26:20.970Z","revision":9,"event":{"type":"TASK_COMPLETE","taskId":"TASK-002","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T02:26:39.442Z","revision":10,"event":{"type":"STAGE_COMPLETE","stage":"implement","artifacts":["change-manifest.md"]},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T02:27:13.248Z","revision":11,"event":{"type":"STAGE_COMPLETE","stage":"converge","artifacts":["convergence-report.md"]},"actor":"cli","sourceStage":"converge"}
+{"timestamp":"2026-08-06T02:27:35.744Z","revision":12,"event":{"type":"STAGE_COMPLETE","stage":"verify","artifacts":["evidence.md"]},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T02:27:41.905Z","revision":13,"event":{"type":"CONFIRM","stage":"verify","role":"product","confirmedBy":"developer","reference":"evidence.md PASS"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T02:27:47.477Z","revision":14,"event":{"type":"CONFIRM","stage":"verify","role":"tech","confirmedBy":"developer","reference":"git rm + workflow test pass"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T02:28:04.297Z","revision":15,"event":{"type":"STAGE_COMPLETE","stage":"learn","artifacts":["learning-report.md"]},"actor":"cli","sourceStage":"learn"}
+{"timestamp":"2026-08-06T02:28:16.939Z","revision":16,"event":{"type":"STAGE_COMPLETE","stage":"sync","artifacts":["sync-report.md"]},"actor":"cli","sourceStage":"sync"}

@@ -1,0 +1,28 @@
+featureId: "007-template-remediation"
+status: completed
+currentStage: null
+nextStage: null
+completedStages:
+  - "load"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+  - "implement"
+  - "converge"
+  - "verify"
+  - "learn"
+  - "sync"
+reopenedStages:
+  []
+completedTaskIds:
+  - "TASK-001"
+  - "TASK-002"
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-06T02:28:16.940Z"

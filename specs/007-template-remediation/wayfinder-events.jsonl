@@ -1,0 +1,1 @@
+{"timestamp":"2026-08-06T02:23:39.894Z","revision":0,"actor":"agent","event":{"type":"MAP_SKIPPED","featureId":"007-template-remediation","reason":"决策已在 grill 全部解决，单会话删除死模板，无跨会话未知决策"}}

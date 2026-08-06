@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "featureId": "006-workflow-topology-fix",
+  "destination": "修复阶段定义的拓扑断链与声明不一致，spec 消费 wayfinder.md，grill/spec 声明对齐",
+  "notes": "",
+  "notRequiredReason": null,
+  "revision": 3,
+  "updatedAt": "2026-08-06T02:10:42.289Z",
+  "ticketIndex": [
+    {
+      "id": "D-001",
+      "title": "确定拓扑修复方案",
+      "type": "task",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    }
+  ],
+  "fog": []
+}

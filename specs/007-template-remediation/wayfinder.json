@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "007-template-remediation",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "决策已在 grill 全部解决，单会话删除死模板，无跨会话未知决策",
+  "revision": 0,
+  "updatedAt": "2026-08-06T02:23:39.894Z",
+  "ticketIndex": [],
+  "fog": []
+}

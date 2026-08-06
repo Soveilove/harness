@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "008-review-gate-alignment",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "决策已在 grill 全部解决，单会话文档澄清修复，无跨会话未知决策",
+  "revision": 0,
+  "updatedAt": "2026-08-06T02:30:42.942Z",
+  "ticketIndex": [],
+  "fog": []
+}
