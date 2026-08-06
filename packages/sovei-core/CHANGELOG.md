@@ -2,6 +2,12 @@
 
 All notable changes to the Sovei workflow engine are documented in this file.
 
+## [2.3.3] - 2026-08-06
+
+### Fixed
+
+- **`project init` 已存在项目不再抛错**：此前 `project init` 检测到 `project.config.json` 已存在时在第 165 行直接抛 `already exists`，导致 AGENTS.md 存在性保护永远无法触达。现改为检测到已存在项目且非 `--force` 时，输出同步提示并保留现有声明（AGENTS.md 与 config 均不被覆盖）；`--force` 仍强制重新初始化。
+
 ## [2.3.2] - 2026-08-06
 
 ### Fixed

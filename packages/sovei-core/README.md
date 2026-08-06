@@ -151,6 +151,6 @@ sovei context build --stage spec 002-next-feature --cross-feature
 
 ## 版本
 
-当前稳定版：`2.3.2`，npm `latest` 渠道。
+当前稳定版：`2.3.3`，npm `latest` 渠道。
 
 仓库：https://github.com/Soveilove/sovei
