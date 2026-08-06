@@ -1,7 +1,8 @@
 import { readdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const distDir = resolve(import.meta.dirname, '..', 'dist');
+const distDir = resolve(fileURLToPath(new URL('..', import.meta.url)), 'dist');
 
 async function removeMaps(directory) {
   let entries;

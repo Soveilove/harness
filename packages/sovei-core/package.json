@@ -1,6 +1,6 @@
 {
   "name": "@soveilove/sovei",
-  "version": "2.5.4",
+  "version": "2.5.5",
   "description": "⚠️ 高速迭代中：当前版本更新频率较高，建议关注最新版本。Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理。",
   "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
@@ -17,14 +17,14 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=14.18.0"
   },
   "files": [
-    "dist/release/sovei.js",
+    "dist/release/sovei.cjs",
     "LICENSE.md"
   ],
   "bin": {
-    "sovei": "dist/release/sovei.js"
+    "sovei": "dist/release/sovei.cjs"
   },
   "scripts": {
     "build": "node scripts/clean-dist.mjs && tsc && node scripts/build-release.mjs",

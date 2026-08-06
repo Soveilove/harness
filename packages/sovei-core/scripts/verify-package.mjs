@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 
 const execFileAsync = promisify(execFile);
 const packageRoot = fileURLToPath(new URL('..', import.meta.url));
-const bundlePath = resolve(packageRoot, 'dist/release/sovei.js');
+const bundlePath = resolve(packageRoot, 'dist/release/sovei.cjs');
 
 const npmCommand = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'npm';
 const npmArguments = process.platform === 'win32'
@@ -20,11 +20,11 @@ const { stdout } = await execFileAsync(
 );
 const report = JSON.parse(stdout)[0];
 const paths = report.files.map((file) => file.path).sort();
-const allowed = new Set(['README.md', 'package.json', 'dist/release/sovei.js']);
+const allowed = new Set(['README.md', 'package.json', 'dist/release/sovei.cjs']);
 const unexpected = paths.filter((path) => !allowed.has(path) && !/^LICEN[CS]E(?:\.|$)/i.test(path));
 
-if (!paths.includes('dist/release/sovei.js')) {
-  throw new Error('发布包缺少 dist/release/sovei.js');
+if (!paths.includes('dist/release/sovei.cjs')) {
+  throw new Error('发布包缺少 dist/release/sovei.cjs');
 }
 if (paths.some((path) => /\.(?:map|ts|tsx)$/.test(path))) {
   throw new Error('发布包包含 source map 或 TypeScript 源码');

@@ -3,7 +3,7 @@
  *
  * Read from package.json at runtime via createRequire. The `../../package.json`
  * path resolves correctly both in dev (this file at src/config/version.ts →
- * packages/sovei-core/) and in the bundled release (dist/release/sovei.js →
+ * packages/sovei-core/) and in the bundled release (dist/release/sovei.cjs →
  * packages/sovei-core/), since both locations sit two levels below the
  * package root. Bumping the version only requires editing package.json.
  */

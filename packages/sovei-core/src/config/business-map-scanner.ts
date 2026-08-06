@@ -189,7 +189,7 @@ export class BusinessMapScanner {
       ['features', 'feature', 'modules', 'module', 'domains', 'domain', 'pages', 'views', 'controllers', 'services'].includes(segment),
     );
     const preferred = markerIndex >= 0 ? segments[markerIndex + 1] : this.segmentAfterSource(segments);
-    const key = this.cleanKey(preferred ?? segments.at(-1) ?? '');
+    const key = this.cleanKey(preferred ?? segments[segments.length - 1] ?? '');
     if (!key || GENERIC_SEGMENTS.has(key)) return null;
     return { key, name: key, description: `从代码目录自动识别的 ${key} 业务能力` };
   }

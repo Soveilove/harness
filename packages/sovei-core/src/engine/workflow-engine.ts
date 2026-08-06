@@ -377,7 +377,7 @@ export class WorkflowEngine {
       summary,
       reason,
       changeDimensions,
-      events.at(-1)?.revision ?? 0,
+      events[events.length - 1]?.revision ?? 0,
       state.currentStage,
     );
   }
@@ -391,7 +391,7 @@ export class WorkflowEngine {
     if (request.featureId !== featureId) throw new Error(`Change request belongs to feature '${request.featureId}'`);
     this.assertChangeTarget(state, request.targetStage);
     const events = await this.eventStore.readAll(featurePath);
-    const currentEventRevision = events.at(-1)?.revision ?? 0;
+    const currentEventRevision = events[events.length - 1]?.revision ?? 0;
     if (request.baseEventRevision !== currentEventRevision || request.baseCurrentStage !== state.currentStage) {
       throw new Error(
         `Change request is stale: prepared at event ${request.baseEventRevision}/${request.baseCurrentStage}, `

@@ -23,6 +23,15 @@
 - **prepareStage 强制检查**（Feature 016，2026-08-06）：`completeStage` 在调用前检查 `preparedStages` 中是否包含当前阶段，未 prepare 时 throw。`prepareStage` 追加 `STAGE_PREPARED` 事件到事件日志。确保外部 skill 注入不会被绕过。
 - 待解决：问题三（drift detection）、问题二（S0 fast-track）、问题四（统一关系模型）。
 
+## 开发环境约定（Windows PowerShell）
+
+- **CLIXML 干扰**：在 PowerShell 运行 sovei/node 时，stdout 可能被 CLIXML 序列化包装（进度条 `<Objs...>`、编码乱码），影响可读性但**不影响命令执行与写文件**。
+- **规避方式**（已沉淀，2026-08-07）：
+  - 仓库根 `.profile.ps1`：设置 UTF-8 编码 + `$ProgressPreference='SilentlyContinue'` + 提供 `RunRaw <cmd>` 辅助函数（cmd /c 透传，返回干净 stdout）。`source . .\.profile.ps1` 使用。
+  - 或在 AI/手动执行时用 `cmd /c "sovei ..."` 透传，或把输出重定向到文件再读。
+  - AGENTS.md 末尾有对应说明。
+- **Node 14 环境**：本机 nvm settings.txt 已配淘宝镜像（node_mirror/npm_mirror=npmmirror）。nvm install 14.x 时 npm zip 可能下载失败，可用手动解压 node-v14.x-win-x64.zip 验证 Node 本体。
+
 ## 待解决问题（2026-08-06 讨论确定）
 
 1. ~~问题一：skills 空壳~~ → 已通过 Feature 014 解决

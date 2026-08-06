@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": "decision-面向旧-node-环境的-cli-包-产物模块形态需匹配目标环境-a8f5ada4",
+    "type": "decision",
+    "title": "面向旧 Node 环境的 CLI 包，产物模块形态需匹配目标环境",
+    "content": "分发 CLI/库包时，发布产物的模块形态（ESM vs CommonJS）必须匹配目标运行环境的模块支持能力。目标环境是旧版 Node（如 Node 14）时，优先用 CommonJS，因其 ESM 支持有严重缺陷（import.meta 相关能力不可用）。运行时 API 也需按最低支持子版本校验（如 .at() 需 16.6+、crypto.randomUUID 需 14.17+）。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "017-node14-compat",
+        "date": "2026-08-06T17:21:49.927Z",
+        "description": "017-node14-compat 因公司 Node 14 环境，将发布产物从 ESM 改为 CJS，并在 Node 14.21.3 上实测 --version/--help/project status/workflow status 全部通过",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "release",
+      "runtime-compat",
+      "module-format",
+      "node"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T17:21:49.927Z",
+    "updatedAt": "2026-08-06T17:21:49.927Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "decision-跨-node-大版本兼容需精确到最低支持子版本-8a45a552",
+    "type": "decision",
+    "title": "跨 Node 大版本兼容需精确到最低支持子版本",
+    "content": "做跨 Node 大版本兼容时，engines 声明和方案决策要精确到最低支持的子版本（如 Node 14.17/14.18），而非笼统的大版本，因为不同 Node API 有不同的最低子版本门槛。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "017-node14-compat",
+        "date": "2026-08-06T17:21:49.927Z",
+        "description": "017-node14-compat 将 engines.node 定为 >=14.18.0（覆盖 CJS require('node:') 前缀 14.18 + randomUUID 14.17）",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "node",
+      "compatibility",
+      "engines"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T17:21:49.927Z",
+    "updatedAt": "2026-08-06T17:21:49.927Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  }
+]

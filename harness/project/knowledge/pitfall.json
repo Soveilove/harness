@@ -150,5 +150,31 @@
     "updatedAt": "2026-08-06T03:16:49.221Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-产物打包格式变更后-基于产物文本的校验必须重新审视-b67e3e27",
+    "type": "pitfall",
+    "title": "产物打包格式变更后，基于产物文本的校验必须重新审视",
+    "content": "改变产物打包格式（如 ESM 改 CJS）会连锁改变产物中模块标识符的形式：内置模块的 node: 前缀可能被剥离成无前缀形式，第三方库字符串文案可能被 import/require 检测正则误匹配。所有对产物做文本级自检/校验的流程，在格式调整后都必须重审：正确排除内置模块、规避字符串文案误匹配。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "017-node14-compat",
+        "date": "2026-08-06T17:21:49.927Z",
+        "description": "017-node14-compat 改 CJS 后 build-release.mjs 的 externalModules 校验因未排除内置模块 + commander 错误文案被误匹配而必然失败，修复后全绿",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "build",
+      "packaging",
+      "verification",
+      "regex"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T17:21:49.927Z",
+    "updatedAt": "2026-08-06T17:21:49.927Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

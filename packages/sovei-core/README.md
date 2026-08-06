@@ -207,9 +207,9 @@ sovei skills sync
 
 ## 版本与发布
 
-- 当前稳定版：`2.5.4`，通过 npm `latest` 渠道发布。
-- 环境要求：Node.js `>= 20`，纯 ESM 模块，零运行时依赖（dependencies 为空）。
-- 安装的是单一可执行文件 `dist/release/sovei.js`（已混淆），无需构建即可运行。
+- 当前稳定版：`2.5.5`，通过 npm `latest` 渠道发布。
+- 环境要求：Node.js `>= 14.18`，发布产物为 CommonJS 单文件，零运行时依赖（dependencies 为空）。
+- 安装的是单一可执行文件 `dist/release/sovei.cjs`（已混淆），无需构建即可运行。
 - 发布渠道为公开包（`publishConfig.access: public`），全局安装后提供 `sovei` 命令。
 - **更新频率**：处于高速迭代期，API 可能在 minor 版本间调整，发布默认只递增 patch 版本号；
   有破坏性变更时会递增 minor/major。建议定期 `npm update -g @soveilove/sovei`。

@@ -41,3 +41,11 @@ The spec stage produces `reconciliation.md` — a structured alignment document 
 4. Extracts questions for product and tech confirmation
 
 Run `sovei governance review-pack generate <feature>` to render tech-review.md and product-review.md from it.
+
+## Windows PowerShell 开发环境
+
+When running `sovei`/`node` from PowerShell, stdout may be wrapped in CLIXML noise (progress bars, `<Objs ...>` serialization, encoding mojibake). Mitigations:
+
+- Source the repo config for UTF-8 + silent progress: `. .\.profile.ps1`
+- Or run raw/transparent via cmd (recommended when output matters): `cmd /c "sovei workflow status <feature>"`
+- `.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.
