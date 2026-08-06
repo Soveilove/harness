@@ -71,7 +71,7 @@ export const grillStage = defineStage({
     return {
       stage: 'grill',
       artifactsWritten: ['decision-log.md'],
-      nextStage: 'spec',
+      nextStage: 'wayfind',
       blockers: [],
       knowledgeSourcesUsed: ctx.knowledge.getLoadedSources(),
       prompt: `# 阶段：grill
@@ -160,8 +160,8 @@ export const specStage = defineStage({
   name: 'spec',
   description: '定义问题、用户可见行为、边界和验收场景',
   contract: {
-    requiredArtifacts: ['decision-log.md'],
-    producesArtifacts: ['spec.md'],
+    requiredArtifacts: ['decision-log.md', 'wayfinder.md'],
+    producesArtifacts: ['spec.md', 'reconciliation.md'],
   },
   async preExecute(ctx) {
     await ctx.knowledge.loadByTaskType('specification');

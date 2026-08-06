@@ -220,8 +220,15 @@ export function registerProjectCommands(program: Command): void {
         'Run `sovei governance review-pack generate <feature>` to render tech-review.md and product-review.md from it.',
         '',
       ].join('\n');
-      await storage.write('AGENTS.md', agentsMd);
-      console.log('  · 已创建 AGENTS.md（Sovei 声明）');
+      if ((await storage.exists('AGENTS.md')) && !opts.force) {
+        console.log('  · AGENTS.md 已存在，保留现有内容（未被覆盖）');
+        console.log('    如需与最新 Sovei 工作流声明同步，请复制以下指令给你的 AI 助手，由它审查并决定如何更新：');
+        console.log('    「请审查本项目的 AGENTS.md，确认其 Sovei Workflow 部分（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
+        console.log('    （强制覆盖生成默认 AGENTS.md：sovei project init <path> --force）');
+      } else {
+        await storage.write('AGENTS.md', agentsMd);
+        console.log('  · 已创建 AGENTS.md（Sovei 声明）');
+      }
 
       // Create knowledge files
       const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];

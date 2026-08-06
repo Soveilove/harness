@@ -71,6 +71,7 @@ test('applying a reviewed change archives stale artifacts and reopens the earlie
     await events.append(featurePath, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
   }
   await storage.write(`${featurePath}/decision-log.md`, '# Decisions\n\nAuthentication stays required.');
+  await storage.write(`${featurePath}/wayfinder.md`, '# 决策地图\n\nDestination accepted.');
   await storage.write(`${featurePath}/spec.md`, '# Old Spec\n\nLegacy purchase flow.');
   await storage.write(`${featurePath}/scope.md`, '# Old Scope\n\nLegacy modules.');
   await storage.write(`${featurePath}/plan.md`, '# Old Plan\n\nLegacy design.');

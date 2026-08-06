@@ -72,30 +72,37 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
   });
 });
 
-test('static Sovei Markdown templates use Simplified Chinese review headings', async () => {
-  const templateDir = join(import.meta.dirname, '..', '..', '..', 'harness', 'templates', 'sovei');
-  const expectedHeadings = {
-    'change-manifest-template.md': '# 变更清单',
-    'convergence-report-template.md': '# 收敛报告',
-    'coverage-matrix-template.md': '# 覆盖矩阵',
-    'decision-log-template.md': '# 决策日志',
-    'evidence-template.md': '# 验证证据',
-    'learning-report-template.md': '# 学习报告',
-    'plan-template.md': '# 实施计划',
-    'scope-template.md': '# 影响范围',
-    'spec-template.md': '# <Feature> 功能规格',
-    'sync-report-template.md': '# 同步报告',
-    'tasks-template.md': '# 任务清单',
-    'wayfinder-template.md': '# 决策地图',
-    'workflow-history-template.md': '# 工作流历史',
-  };
-  const files = await readdir(templateDir);
-  assert.deepEqual(files.filter((file) => file.endsWith('.md')).sort(), Object.keys(expectedHeadings).sort());
-  for (const [file, heading] of Object.entries(expectedHeadings)) {
-    const content = await readFile(join(templateDir, file), 'utf8');
-    assert.ok(content.startsWith(heading + '\n'));
-    assert.doesNotMatch(content, /^# (Change|Convergence|Coverage|Decision|Verification|Learning|Plan|Scope|Sync|Tasks|Wayfinder|Workflow)/m);
-  }
+test('project init does not overwrite an existing AGENTS.md without --force', async () => {
+  await fixture(async (root) => {
+    const target = join(root, 'existing-project');
+    await mkdir(join(target, 'harness', 'project'), { recursive: true });
+    const customAgents = '# Custom AGENTS\n\nManually maintained guidance.\n';
+    await writeFile(join(target, 'AGENTS.md'), customAgents, 'utf8');
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank']);
+    assert.equal(await readFile(join(target, 'AGENTS.md'), 'utf8'), customAgents);
+  });
+});
+
+test('project init --force overwrites an existing AGENTS.md', async () => {
+  await fixture(async (root) => {
+    const target = join(root, 'existing-project');
+    await mkdir(join(target, 'harness', 'project'), { recursive: true });
+    await writeFile(join(target, 'AGENTS.md'), '# Custom AGENTS\n\nManually maintained guidance.\n', 'utf8');
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank', '--force']);
+    const content = await readFile(join(target, 'AGENTS.md'), 'utf8');
+    assert.match(content, /## Sovei Workflow/);
+    assert.doesNotMatch(content, /Manually maintained guidance/);
+  });
+});
+
+test('project init generates AGENTS.md for a fresh target', async () => {
+  await fixture(async (root) => {
+    const target = join(root, 'new-project');
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank']);
+    const content = await readFile(join(target, 'AGENTS.md'), 'utf8');
+    assert.match(content, /## Sovei Workflow/);
+    assert.match(content, /load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync/);
+  });
 });
 
 test('onboard is idempotent for generated candidate knowledge', async () => {

@@ -42,7 +42,7 @@ export const DEFAULT_WORKFLOW: WorkflowDefinition = {
     load:       { name: 'load',       status: 'active', requiredArtifacts: [],                                                    producesArtifacts: [],                     next: ['grill'] },
     grill:      { name: 'grill',      status: 'active', requiredArtifacts: [],                                                    producesArtifacts: ['decision-log.md'],    next: ['wayfind', 'spec'] },
     wayfind:    { name: 'wayfind',    status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['wayfinder.md'],      next: ['spec'] },
-    spec:       { name: 'spec',       status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['spec.md', 'reconciliation.md'],           next: ['scope'] },
+    spec:       { name: 'spec',       status: 'active', requiredArtifacts: ['decision-log.md', 'wayfinder.md'],                      producesArtifacts: ['spec.md', 'reconciliation.md'],           next: ['scope'] },
     scope:      { name: 'scope',      status: 'active', requiredArtifacts: ['spec.md'],                                            producesArtifacts: ['scope.md', 'coverage-matrix.md'], next: ['plan'] },
     plan:       { name: 'plan',       status: 'active', requiredArtifacts: ['spec.md', 'scope.md', 'coverage-matrix.md'],          producesArtifacts: ['plan.md'],           next: ['tasks'] },
     tasks:      { name: 'tasks',      status: 'active', requiredArtifacts: ['plan.md'],                                            producesArtifacts: ['tasks.md'],          next: ['implement'] },
