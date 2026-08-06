@@ -6,5 +6,5 @@ packages/sovei-core/dist/
 # Embedded separate repository (public scaffold), not part of the harness repo
 public-repo/
 
-# IDE/agent internal memory (cross-session working notes, not part of the repo)
-.codebuddy/
+# # IDE/agent internal memory (cross-session working notes, not part of the repo)
+# .codebuddy/
