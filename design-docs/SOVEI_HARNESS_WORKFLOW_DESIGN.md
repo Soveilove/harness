@@ -10,9 +10,9 @@
 
 本文件定义目标架构，不是运行时能力清单。任何命令、状态机、外部 Skill、Baseline 或协调机制，只有在实现文件、验证证据和发布版本均存在时才可被 Agent 调用；设计文字本身不产生系统能力。
 
-当前真实能力：`sovei-workflow` 1.1.0 已实现 `load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync` 十二个阶段，以及确定性的 `reopen` 返工控制和 `completed` 终态。系统具有文件状态校验、Artifact 模板、Codex Skill、Claude/CodeBuddy/Trae 薄适配和机器可读 Skill Map；每次正常调用仍只允许执行一个阶段。
+当前真实能力：`packages/sovei-core` 已实现 `load`、`grill`、`wayfind`、`spec`、`scope`、`plan`、`tasks`、`implement`、`converge`、`verify`、`learn`、`sync` 十二个阶段，以及确定性的 `reopen` 返工控制和 `completed` 终态。系统具有文件状态校验、Artifact 模板、Sovei 原生 CLI 阶段和 Wayfinder 决策地图；每次正常调用仍只允许执行一个阶段。当前仓库尚未落地独立的 Codex Skill 包、第三方 Skill loader、`skill-map.yaml`、vendor lock 或外部 Skill 运行时调用，这些属于后续开发目标。
 
-中枢开发工具以私有 package `packages/sovei-system` 独立迭代。它拥有自己的 `package.json`、`pnpm-lock.yaml` 和本地 `node_modules`，用于配置校验、Skill 依赖审计和后续安装器；该 package 不分发到 A/B/C，产品侧 Harness 不能依赖其中的 Node 运行时。
+中枢开发工具目前位于 `packages/sovei-core`，拥有自己的 `package.json` 和依赖锁定文件。后续将在此基础上增加 Skill 协议、依赖审计和安装器；在这些能力完成前，产品侧 Harness 不应宣称已经加载第三方 Skill。
 
 Sovei Harness 不重新实现一个完整 IDE Agent，也不复制 OpenSpec、SpecKit、Matt Pocock Skills 等项目的全部能力。
 

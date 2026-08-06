@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="480" viewBox="0 0 1400 480">
+<rect width="1400" height="480" fill="#f8fafc"/>
+<text x="55" y="52" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="30" font-weight="700" fill="#0f172a">不是替代关系，而是三层协作</text>
+<g font-family="Arial,'Microsoft YaHei',sans-serif">
+<rect x="90" y="105" width="1220" height="85" rx="16" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/><text x="700" y="143" text-anchor="middle" font-size="25" font-weight="700" fill="#075985">OpenSpec</text><text x="700" y="171" text-anchor="middle" font-size="18" fill="#075985">把一次变更说清楚：Why / What / How / Tasks / Acceptance</text>
+<rect x="90" y="220" width="1220" height="85" rx="16" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/><text x="700" y="258" text-anchor="middle" font-size="25" font-weight="700" fill="#166534">Superpowers / Skills</text><text x="700" y="286" text-anchor="middle" font-size="18" fill="#166534">让当前实现更可靠：TDD / 调试 / Review / Handoff</text>
+<rect x="90" y="335" width="1220" height="85" rx="16" fill="#f3e8ff" stroke="#9333ea" stroke-width="3"/><text x="700" y="373" text-anchor="middle" font-size="25" font-weight="700" fill="#6b21a8">Sovei / Harness</text><text x="700" y="401" text-anchor="middle" font-size="18" fill="#6b21a8">让知识、状态、规则和证据跨会话、跨工具、跨项目持续生效</text>
+</g></svg>

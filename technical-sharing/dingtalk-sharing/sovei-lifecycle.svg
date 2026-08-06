@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker></defs>
+<rect width="1400" height="760" rx="24" fill="#f8fafc"/>
+<text x="700" y="58" text-anchor="middle" font-family="Arial,Microsoft YaHei" font-size="30" font-weight="700" fill="#0f172a">Sovei&#xff1a;&#x628a; Graph Coding &#x53d8;&#x6210;&#x53ef;&#x6267;&#x884c;&#x6d41;&#x7a0b;</text>
+<text x="700" y="94" text-anchor="middle" font-family="Arial,Microsoft YaHei" font-size="18" fill="#64748b">&#x6bcf;&#x4e2a;&#x9636;&#x6bb5;&#x90fd;&#x6709;&#x8f93;&#x5165;&#x3001;&#x4ea7;&#x7269;&#x3001;&#x5b8c;&#x6210;&#x6761;&#x4ef6;&#x3001;&#x8bc1;&#x636e;&#x548c;&#x4e0b;&#x4e00;&#x6b65;</text>
+<g font-family="Arial,Microsoft YaHei" text-anchor="middle">
+<rect x="55" y="135" width="300" height="475" rx="22" fill="#eff6ff" stroke="#bfdbfe" stroke-width="2"/>
+<rect x="385" y="135" width="300" height="475" rx="22" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="2"/>
+<rect x="715" y="135" width="300" height="475" rx="22" fill="#fffbeb" stroke="#fde68a" stroke-width="2"/>
+<rect x="1045" y="135" width="300" height="475" rx="22" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="2"/>
+<text x="205" y="180" font-size="23" font-weight="700" fill="#1e3a8a">&#x4e00;&#x3001;&#x7406;&#x89e3;&#x5173;&#x7cfb;</text>
+<text x="535" y="180" font-size="23" font-weight="700" fill="#5b21b6">&#x4e8c;&#x3001;&#x5b9a;&#x4e49;&#x5951;&#x7ea6;</text>
+<text x="865" y="180" font-size="23" font-weight="700" fill="#92400e">&#x4e09;&#x3001;&#x6267;&#x884c;&#x53d8;&#x66f4;</text>
+<text x="1195" y="180" font-size="23" font-weight="700" fill="#166534">&#x56db;&#x3001;&#x9a8c;&#x8bc1;&#x6c89;&#x6dc0;</text>
+<g fill="#dbeafe" stroke="#93c5fd" stroke-width="2"><rect x="105" y="220" width="200" height="72" rx="14"/><rect x="105" y="325" width="200" height="72" rx="14"/><rect x="105" y="430" width="200" height="72" rx="14"/></g>
+<g fill="#ede9fe" stroke="#c4b5fd" stroke-width="2"><rect x="435" y="220" width="200" height="72" rx="14"/><rect x="435" y="325" width="200" height="72" rx="14"/><rect x="435" y="430" width="200" height="72" rx="14"/></g>
+<g fill="#fef3c7" stroke="#fcd34d" stroke-width="2"><rect x="765" y="220" width="200" height="72" rx="14"/><rect x="765" y="325" width="200" height="72" rx="14"/><rect x="765" y="430" width="200" height="72" rx="14"/></g>
+<g fill="#dcfce7" stroke="#86efac" stroke-width="2"><rect x="1095" y="220" width="200" height="72" rx="14"/><rect x="1095" y="325" width="200" height="72" rx="14"/><rect x="1095" y="430" width="200" height="72" rx="14"/></g>
+<g font-size="20" fill="#1e3a8a"><text x="205" y="264">&#x52a0;&#x8f7d;&#x4e0a;&#x4e0b;&#x6587;</text><text x="205" y="369">&#x6f84;&#x6e05;&#x51b3;&#x7b56;</text><text x="205" y="474">&#x62c6;&#x89e3;&#x672a;&#x77e5;</text></g>
+<g font-size="20" fill="#5b21b6"><text x="535" y="264">&#x5efa;&#x7acb;&#x89c4;&#x683c;</text><text x="535" y="369">&#x754c;&#x5b9a;&#x5f71;&#x54cd;&#x9762;</text><text x="535" y="474">&#x5236;&#x5b9a;&#x65b9;&#x6848;</text></g>
+<g font-size="20" fill="#92400e"><text x="865" y="264">&#x62c6;&#x5206;&#x4efb;&#x52a1;</text><text x="865" y="369">&#x5b9e;&#x73b0;&#x4ee3;&#x7801;</text><text x="865" y="474">&#x6536;&#x655b;&#x53d8;&#x66f4;</text></g>
+<g font-size="20" fill="#166534"><text x="1195" y="264">&#x9a8c;&#x8bc1;&#x7ed3;&#x679c;</text><text x="1195" y="369">&#x6c89;&#x6dc0;&#x7ecf;&#x9a8c;</text><text x="1195" y="474">&#x540c;&#x6b65;&#x77e5;&#x8bc6;</text></g>
+<g stroke="#64748b" stroke-width="3" fill="none" marker-end="url(#arrow)"><path d="M205 292v30"/><path d="M205 397v30"/><path d="M535 292v30"/><path d="M535 397v30"/><path d="M865 292v30"/><path d="M865 397v30"/><path d="M1195 292v30"/><path d="M1195 397v30"/><path d="M305 466H405"/><path d="M635 466H735"/><path d="M965 466H1065"/></g>
+</g>
+<path d="M1195 502v86H205v-86" fill="none" stroke="#64748b" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow)"/>
+<text x="700" y="650" text-anchor="middle" font-family="Arial,Microsoft YaHei" font-size="22" fill="#475569">&#x540c;&#x6b65;&#x540e;&#x7684;&#x65b0;&#x77e5;&#x8bc6;&#x548c;&#x9a8c;&#x8bc1;&#x8bc1;&#x636e;&#xff0c;&#x4f1a;&#x8fdb;&#x5165;&#x4e0b;&#x4e00;&#x8f6e;&#x5de5;&#x4f5c;&#x6d41;</text>
+<text x="700" y="700" text-anchor="middle" font-family="Arial,Microsoft YaHei" font-size="20" fill="#64748b">&#x7406;&#x89e3;&#x5173;&#x7cfb; &#x2192; &#x5b9a;&#x4e49;&#x5951;&#x7ea6; &#x2192; &#x6267;&#x884c;&#x53d8;&#x66f4; &#x2192; &#x9a8c;&#x8bc1;&#x5e76;&#x6c89;&#x6dc0;</text>
+</svg>

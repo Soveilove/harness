@@ -81,3 +81,6 @@ export * from './context/snapshot.js';
 export { adapterRegistry } from './adapters/registry.js';
 export type { IDEAdapter, AdapterCapabilities } from './adapters/registry.js';
 export type { EmbeddingProvider, LLMProvider, ScoredItem } from './providers/contracts.js';
+
+// External Skill runtime contracts
+export * from './skills/index.js';

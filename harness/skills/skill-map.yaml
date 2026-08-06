@@ -1,0 +1,14 @@
+schemaVersion: 1
+bindings:
+  - stage: grill
+    skillId: sovei/native/grill
+    status: enabled
+    fallback: native
+  - stage: spec
+    skillId: sovei/native/spec
+    status: enabled
+    fallback: native
+  - stage: wayfind
+    skillId: sovei/native/wayfind
+    status: enabled
+    fallback: native

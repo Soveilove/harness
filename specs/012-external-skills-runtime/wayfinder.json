@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "featureId": "012-external-skills-runtime",
+  "destination": "sovei init 能读取锁定配置并安装/校验第三方 Skills，workflow 阶段可审计地调用并在失败时回退 native",
+  "notes": "优先解决安装边界、运行时协议和 CLI 初始化时机；所有第三方能力保持可锁定、可回退、可审计。",
+  "notRequiredReason": null,
+  "revision": 9,
+  "updatedAt": "2026-08-06T09:48:30.621Z",
+  "ticketIndex": [
+    {
+      "id": "D-001",
+      "title": "运行时协议与适配器边界",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-002",
+      "title": "安装生命周期与初始化策略",
+      "type": "grilling",
+      "interaction": "HITL",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-003",
+      "title": "首批接入范围与安全治理",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    }
+  ],
+  "fog": []
+}

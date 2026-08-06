@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="500" viewBox="0 0 1400 500">
+<rect width="1400" height="500" fill="#f8fafc"/>
+<text x="55" y="52" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="30" font-weight="700" fill="#0f172a">当前能力与最终 Graph Coding 的差距</text>
+<g font-family="Arial,'Microsoft YaHei',sans-serif" text-anchor="middle">
+<rect x="70" y="115" width="480" height="275" rx="18" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/><text x="310" y="155" font-size="25" font-weight="700" fill="#075985">当前已具备</text>
+<text x="120" y="205" text-anchor="start" font-size="19" fill="#075985">✓ 业务地图 / 代码地图</text><text x="120" y="245" text-anchor="start" font-size="19" fill="#075985">✓ 业务红线 / 规则 / 决策</text><text x="120" y="285" text-anchor="start" font-size="19" fill="#075985">✓ Context / Scope / Coverage</text><text x="120" y="325" text-anchor="start" font-size="19" fill="#075985">✓ Spec / Task / Evidence</text><text x="120" y="365" text-anchor="start" font-size="19" fill="#075985">✓ 人工触发的治理闭环</text>
+<rect x="850" y="115" width="480" height="275" rx="18" fill="#ffedd5" stroke="#ea580c" stroke-width="3"/><text x="1090" y="155" font-size="25" font-weight="700" fill="#9a3412">最终希望实现</text>
+<text x="900" y="205" text-anchor="start" font-size="19" fill="#9a3412">→ 统一的关系模型</text><text x="900" y="245" text-anchor="start" font-size="19" fill="#9a3412">→ 需求变化自动重算影响面</text><text x="900" y="285" text-anchor="start" font-size="19" fill="#9a3412">→ 代码与业务地图双向同步</text><text x="900" y="325" text-anchor="start" font-size="19" fill="#9a3412">→ 自动发现业务语义冲突</text><text x="900" y="365" text-anchor="start" font-size="19" fill="#9a3412">→ 自动生成最小正确上下文</text>
+<path d="M550 252h300" stroke="#64748b" stroke-width="5"/><path d="M835 237l20 15-20 15z" fill="#64748b"/><text x="700" y="225" font-size="18" fill="#475569">主要是实现成熟度差距</text><text x="700" y="300" font-size="18" fill="#475569">不是整体方向错误</text>
+</g></svg>

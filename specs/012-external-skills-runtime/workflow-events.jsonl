@@ -1,0 +1,12 @@
+{"timestamp":"2026-08-06T09:45:55.448Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"012-external-skills-runtime"},"actor":"cli","sourceStage":null}
+{"timestamp":"2026-08-06T09:46:03.807Z","revision":1,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-06T09:46:16.045Z","revision":2,"event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-06T09:48:37.485Z","revision":3,"event":{"type":"STAGE_COMPLETE","stage":"wayfind","artifacts":["wayfinder.md"]},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-06T09:49:26.373Z","revision":4,"event":{"type":"STAGE_COMPLETE","stage":"spec","artifacts":["spec.md","reconciliation.md"]},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-06T09:50:18.118Z","revision":5,"event":{"type":"STAGE_COMPLETE","stage":"scope","artifacts":["scope.md","coverage-matrix.md"]},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-06T09:50:25.760Z","revision":6,"event":{"type":"STAGE_COMPLETE","stage":"plan","artifacts":["plan.md"]},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-06T09:50:32.799Z","revision":7,"event":{"type":"STAGE_COMPLETE","stage":"tasks","artifacts":["tasks.md"]},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-06T09:52:15.797Z","revision":8,"event":{"type":"TASK_COMPLETE","taskId":"TASK-001","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T09:54:04.349Z","revision":9,"event":{"type":"TASK_COMPLETE","taskId":"TASK-002","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T09:54:54.051Z","revision":10,"event":{"type":"TASK_COMPLETE","taskId":"TASK-003","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T09:54:58.150Z","revision":11,"event":{"type":"TASK_COMPLETE","taskId":"TASK-004","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}

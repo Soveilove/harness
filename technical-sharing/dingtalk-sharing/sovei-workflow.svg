@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="300" viewBox="0 0 1500 300">
+<rect width="1500" height="300" fill="#f8fafc"/>
+<text x="50" y="50" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="30" font-weight="700" fill="#0f172a">Sovei：每个阶段都有输入、产物、门禁和证据</text>
+<g font-family="Arial,'Microsoft YaHei',sans-serif" text-anchor="middle" font-size="18" font-weight="700">
+<g fill="#e0f2fe" stroke="#0284c7" stroke-width="2">
+<rect x="40" y="105" width="105" height="58" rx="12"/><rect x="175" y="105" width="105" height="58" rx="12"/><rect x="310" y="105" width="105" height="58" rx="12"/><rect x="445" y="105" width="105" height="58" rx="12"/><rect x="580" y="105" width="105" height="58" rx="12"/><rect x="715" y="105" width="105" height="58" rx="12"/><rect x="850" y="105" width="105" height="58" rx="12"/><rect x="985" y="105" width="105" height="58" rx="12"/><rect x="1120" y="105" width="105" height="58" rx="12"/><rect x="1255" y="105" width="105" height="58" rx="12"/>
+</g>
+<text x="92" y="141">load</text><text x="227" y="141">grill</text><text x="362" y="141">wayfind</text><text x="497" y="141">spec</text><text x="632" y="141">scope</text><text x="767" y="141">plan</text><text x="902" y="141">tasks</text><text x="1037" y="141">implement</text><text x="1172" y="141">verify</text><text x="1307" y="141">learn / sync</text>
+<g stroke="#64748b" stroke-width="3"><path d="M145 134h30"/><path d="M280 134h30"/><path d="M415 134h30"/><path d="M550 134h30"/><path d="M685 134h30"/><path d="M820 134h30"/><path d="M955 134h30"/><path d="M1090 134h30"/><path d="M1225 134h30"/></g>
+<g fill="#64748b"><path d="M168 127l9 7-9 7z"/><path d="M303 127l9 7-9 7z"/><path d="M438 127l9 7-9 7z"/><path d="M573 127l9 7-9 7z"/><path d="M708 127l9 7-9 7z"/><path d="M843 127l9 7-9 7z"/><path d="M978 127l9 7-9 7z"/><path d="M1113 127l9 7-9 7z"/><path d="M1248 127l9 7-9 7z"/></g>
+<text x="750" y="225" font-size="20" fill="#475569">prepare ≠ complete；发现缺口可以返工，但不能静默跳过</text>
+</g></svg>

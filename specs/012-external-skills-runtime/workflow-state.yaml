@@ -1,0 +1,25 @@
+featureId: "012-external-skills-runtime"
+status: in_progress
+currentStage: "implement"
+nextStage: "converge"
+completedStages:
+  - "load"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+reopenedStages:
+  []
+completedTaskIds:
+  - "TASK-001"
+  - "TASK-002"
+  - "TASK-003"
+  - "TASK-004"
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-06T09:54:58.152Z"
