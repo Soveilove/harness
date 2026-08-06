@@ -47,5 +47,31 @@
     "updatedAt": "2026-08-05T14:47:06.417Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-knowledge-reconciliation-pattern-c54d31eb",
+    "type": "architecture",
+    "title": "Knowledge Reconciliation Pattern",
+    "content": "learn 阶段 postExecute 自动解析 learning-report.md 中的 yaml:knowledge-delta 块，通过标题相似度+标签重叠匹配已有知识条目，自动执行 ADD/PROMOTE 操作。新观察→candidate，2证据→pending，3证据→自动stable。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "015-learn-reconcile-verify",
+        "date": "2026-08-06T15:41:41.016Z",
+        "description": "015 首次实现知识自动对账引擎，闭合 learn→knowledge 循环",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "knowledge",
+      "reconciliation",
+      "learn",
+      "architecture"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T15:41:41.016Z",
+    "updatedAt": "2026-08-06T15:41:41.016Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

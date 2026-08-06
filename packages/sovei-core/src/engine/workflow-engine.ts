@@ -32,7 +32,15 @@ import type { SkillResolver, SkillExecutionReport } from '../skills/types.js';
 import { MarkdownSkillAdapter } from '../skills/adapter.js';
 import { randomUUID } from 'node:crypto';
 
-/** Default workflow definition for Sovei 2.0 */
+/**
+ * Default workflow definition.
+ *
+ * version: '2.0.0' — tracks WorkflowDefinition structure (stages, stageOrder,
+ * maxStagesPerInvocation, allowChaining). See WorkflowDefinition JSDoc for
+ * bump rules. This version has not changed since the TypeScript rewrite:
+ * the 12-stage pipeline and all stage configs are structurally identical.
+ * (2.3.2 fixed spec's missing requiredArtifacts — a bugfix, not a version bump.)
+ */
 export const DEFAULT_WORKFLOW: WorkflowDefinition = {
   version: '2.0.0',
   maxStagesPerInvocation: 1,
@@ -266,12 +274,25 @@ export class WorkflowEngine {
     }
 
     this.logger.info(`阶段 ${stageName} 已准备；完成其产物契约后才能推进。`);
+
+    // Record preparation in the event log so completeStage can enforce it.
+    await this.eventStore.append(featurePath, { type: 'STAGE_PREPARED', stage: stageName }, stageName);
+
     return result;
   }
 
   /** Validate real artifacts and append the stage completion event. */
   async completeStage(featureId: string, stageName: string): Promise<WorkflowState> {
     const { featurePath, state, stageDef, artifacts, ctx } = await this.createStageContext(featureId, stageName);
+
+    // Enforce that prepareStage was called before completion.
+    if (!state.preparedStages.includes(stageName)) {
+      throw new Error(
+        `Cannot complete '${stageName}': stage was not prepared. ` +
+        `Run \`sovei workflow ${stageName} ${featureId}\` first to trigger skill injection and template creation.`,
+      );
+    }
+
     const validation = await artifacts.validateProduced(stageDef.contract.producesArtifacts);
     if (validation.missing.length || validation.placeholders.length) {
       const details = [

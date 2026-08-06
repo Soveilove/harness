@@ -52,6 +52,16 @@ export function loadConfig(rootPath: string): SoveiConfig {
       throw new Error(`Invalid workflow.stageOrder in ${configPath}`);
     }
   }
+  const configuredVersion = configured.workflow?.version;
+  if (configuredVersion && configuredVersion !== DEFAULT_CONFIG.workflow.version) {
+    process.stderr.write(
+      `\n  \u26A0\uFE0F  workflow.version mismatch: project declares "${configuredVersion}", ` +
+      `engine expects "${DEFAULT_CONFIG.workflow.version}"\n` +
+      `     If this is intentional, update harness/project/project.config.json to match.\n` +
+      `     If unsure, run: sovei project init --force\n\n`,
+    );
+  }
+
   return {
     ...DEFAULT_CONFIG,
     ...configured,

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "016-skill-verify",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "单会话验证",
+  "revision": 0,
+  "updatedAt": "2026-08-06T16:38:06.573Z",
+  "ticketIndex": [],
+  "fog": []
+}

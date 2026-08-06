@@ -26,6 +26,7 @@ function createEngine() {
 test('bootstrap is idempotent and preparation cannot complete placeholder artifacts', async () => {
   const { storage, engine } = createEngine();
   await engine.bootstrap('001-safe-state');
+  await engine.prepareStage('001-safe-state', 'load');
   await engine.completeStage('001-safe-state', 'load');
   const before = await storage.read('specs/001-safe-state/workflow-events.jsonl');
 
@@ -55,8 +56,10 @@ test('implement tracks individual tasks and blocks stage completion while tasks 
   const path = 'specs/002-multi-task';
   await events.append(path, { type: 'BOOTSTRAP', featureId: '002-multi-task' });
   for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 7)) {
+    await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
     await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
   }
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'implement' }, 'implement');
   await storage.write(`${path}/tasks.md`, '# Tasks\n\n- [ ] TASK-001: first\n- [ ] TASK-002: second\n');
   await storage.write(`${path}/change-manifest.md`, '# Changes\n\nTASK-001 implemented and verified.');
 
@@ -79,4 +82,29 @@ test('event replay rejects a duplicate bootstrap event in a corrupted log', asyn
   await events.append(path, { type: 'BOOTSTRAP', featureId: '003-corrupt' });
   await events.append(path, { type: 'BOOTSTRAP', featureId: '003-corrupt' });
   await assert.rejects(events.replay(path, DEFAULT_WORKFLOW), /Duplicate BOOTSTRAP/);
+});
+
+test('completeStage throws when stage was not prepared', async () => {
+  const { storage, engine } = createEngine();
+  await engine.bootstrap('004-no-prepare');
+  // load stage exists, no artifacts needed, but prepareStage was never called
+  await assert.rejects(
+    engine.completeStage('004-no-prepare', 'load'),
+    /stage was not prepared/,
+  );
+});
+
+test('prepareStage enables completeStage and records STAGE_PREPARED event', async () => {
+  const { storage, engine } = createEngine();
+  await engine.bootstrap('005-prepare-then-complete');
+  const stateBefore = await engine.getState('005-prepare-then-complete');
+  assert.deepEqual(stateBefore.preparedStages, []);
+
+  await engine.prepareStage('005-prepare-then-complete', 'load');
+  const stateAfter = await engine.getState('005-prepare-then-complete');
+  assert.deepEqual(stateAfter.preparedStages, ['load']);
+
+  const completed = await engine.completeStage('005-prepare-then-complete', 'load');
+  assert.deepEqual(completed.preparedStages, []);
+  assert.deepEqual(completed.completedStages, ['load']);
 });

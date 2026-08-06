@@ -48,3 +48,11 @@ skills:
     checksum: sha256:57c9f1f392d7352cdc85b1e39ca49eddc70ce1dc278bd9653fb4f23dfc2560fc
     license: MIT
     status: enabled
+  softaworks/lesson-learned:
+    source: harness/vendor/softaworks/skills/lesson-learned
+    version: 1.0.0
+    ref: main
+    commit: vendor-manual-2026-08-07
+    checksum: sha256:f2ee51f30ea8c2f15f961eac7d403945c0db5af042c1dc56c0d3b6a6561b9894
+    license: MIT
+    status: enabled

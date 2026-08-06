@@ -6,6 +6,7 @@
 
 import { defineStage } from './define-stage.js';
 import { stageRegistry } from './registry.js';
+import { parseLearningReport, reconcileObservations, formatReconcileReport } from '../knowledge/reconcile.js';
 
 // ──────────────────────────────────────────────
 // load - Initialize or resume a feature
@@ -490,7 +491,7 @@ evidence.md，包含命令、结果、证据位置、限制和结论。
 // ──────────────────────────────────────────────
 export const learnStage = defineStage({
   name: 'learn',
-  description: '分类观察结果，禁止自动晋级 stable',
+  description: '分类观察结果，自动提取知识并对账到知识库',
   contract: {
     requiredArtifacts: ['evidence.md'],
     producesArtifacts: ['learning-report.md'],
@@ -506,22 +507,88 @@ export const learnStage = defineStage({
 
 ## 输入
 决策、实施偏差、收敛发现、验证证据、当前 Harness 知识和架构健康变化。
+当前知识库中的 candidate/pending 条目（供匹配参考）。
 
 ## 操作
-将观察分类为仅项目适用、candidate/pending、stable 晋级提案或拒绝模式。单次观察不得直接晋级 stable。
-多个 Feature 反复触及同一热点时，应基于证据提出架构债务条目，不能静默接受职责增长。
+1. 将观察分类为仅项目适用、candidate/pending、stable 晋升提案或拒绝模式。
+2. 多个 Feature 反复触及同一热点时，应基于证据提出架构债务条目。
+3. **必须**在 learning-report.md 末尾添加 "## 知识提取" 段落，包含一个 yaml:knowledge-delta 代码块，
+   将所有可沉淀的观察以结构化格式输出，引擎将自动对账到知识库。
+4. 用蒸馏判断准则提炼观察——区分领域级知识 vs 一次性实现细节。知识条目应捕捉
+   "为什么值得记住"，而非"怎么实现的"。核心测试：
+   - "Would we rebuild it?"：重写系统时这个结论还会进约定吗？会才沉淀。
+   - "Why" 测试：后续 Feature 为什么关心这个？说不清就是实现细节。
+   - "Could it be different?"：换实现方式还成立吗？成立才沉淀。
+   - "Means vs Ends"：沉淀"目的/原则"，不沉淀"手段/具体 API"。
+   - 排除：具体库名/API、文件行号、一次性变量、框架语法、基础设施（除非影响约定）。
+   多个 Feature 反复触及同一热点时，归并到同一知识条目累积证据，不要各写一条。
 
 ## 输出
-learning-report.md，包含来源 Feature、证据、适用范围和建议目标。
+learning-report.md，包含：
+- 观察分类（来源 Feature、证据、适用范围、建议目标）
+- "## 知识提取" 段落，包含 yaml:knowledge-delta 结构化块
+
+### knowledge-delta 格式
+
+在 learning-report.md 末尾添加如下结构化块（用三反引号包裹，语言标记为 yaml:knowledge-delta）：
+
+    observations:
+      - title: "观察标题"
+        type: rule          # rule | pitfall | decision | architecture | code-map | preference | constitution
+        content: "知识条目内容"
+        tags: [tag1, tag2]
+        category: candidate # candidate | pending-proposal | stable-proposal | rejected
+        evidence: "本 Feature 提供的证据描述"
+        relatedEntryId: null # 认出现有条目时填 ID，否则 null
+
+category 含义：
+- candidate: 新观察，首次记录
+- pending-proposal: 跨 2+ Feature 的观察，建议晋级 pending
+- stable-proposal: 跨 3+ Feature 的观察，建议晋级 stable
+- rejected: 拒绝模式，仅记录在报告中，不进入知识库
+
+匹配规则：如果本 Feature 的观察与已有知识条目描述同一问题，填入 relatedEntryId。
+引擎会自动按标题相似度 + 标签重叠度匹配，relatedEntryId 是加速提示。
+
+## 自动化行为
+引擎在 postExecute 中自动执行：
+- 新观察 ADD 为 candidate
+- 已有条目 + 新证据 PROMOTE（candidate 到 pending 需 2 证据，pending 到 stable 需 3 证据）
+- 自动晋级 stable 的条目记录在 knowledge-delta.md 中，供事后审查
+- 拒绝模式（category: rejected）不会进入知识库
 
 ## 停止条件
-修改 stable Harness 知识前必须人工审查。
+无。stable 晋级由证据数量自动驱动，人工审查改为事后回退模式。
 `,
     };
   },
   async postExecute(ctx) {
     const artifact = await ctx.artifacts.read('learning-report.md');
     if (!artifact) throw new Error('learning-report.md not generated');
+
+    // ── Auto-reconcile observations into knowledge store ──
+    const observations = parseLearningReport(artifact);
+
+    if (observations.length > 0) {
+      await ctx.knowledge.load();
+      const result = reconcileObservations(observations, ctx.knowledge, ctx.featureId);
+      await ctx.knowledge.persist();
+
+      const report = formatReconcileReport(result, ctx.featureId);
+      await ctx.artifacts.write('knowledge-delta.md', report);
+
+      ctx.logger.info(
+        '知识对账完成: ' + result.added.length + ' 新增, ' + result.promoted.length + ' 晋级' +
+        (result.autoStable.length > 0
+          ? ', ' + result.autoStable.length + ' 自动 stable（需事后审查）'
+          : ''),
+      );
+    } else {
+      await ctx.artifacts.write(
+        'knowledge-delta.md',
+        '# 知识对账报告\n\n> Feature: ' + ctx.featureId + '\n\n（learning-report.md 未包含 knowledge-delta 块，无知识变更）\n',
+      );
+    }
   },
 });
 

@@ -62,6 +62,19 @@ try {
         Write-Host '警告：正在从脏工作区发布。' -ForegroundColor Yellow
     }
 
+    # 同步 README.md 版本号到 package.json
+    $readmeFile = Join-Path $packageDir 'README.md'
+    if (Test-Path -LiteralPath $readmeFile) {
+        $readmeContent = Get-Content -Raw -Encoding UTF8 -LiteralPath $readmeFile
+        $readmePattern = '(当前稳定版：`)[0-9]+\.[0-9]+\.[0-9]+'
+        $readmeReplacement = '${1}' + $version
+        $readmeUpdated = $readmeContent -replace $readmePattern, $readmeReplacement
+        if ($readmeUpdated -ne $readmeContent) {
+            [System.IO.File]::WriteAllText($readmeFile, $readmeUpdated, (New-Object System.Text.UTF8Encoding $false))
+            Write-Host "README.md 版本号已同步为 $version（请发布后提交此变更）" -ForegroundColor Yellow
+        }
+    }
+
     Write-Host '1/6 检查 npm 登录身份'
     Invoke-Checked 'npm' @('whoami')
 

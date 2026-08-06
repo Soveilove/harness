@@ -80,7 +80,8 @@ export function bootstrap(rootPath: string, logger?: Logger): SoveiConfig {
           readOnly: true,
           protocolVersion: '1.0.0',
         };
-        const adapter = new MarkdownSkillAdapter(manifest, skillContent);
+        const skillDir = join(rootPath, lockEntry.source);
+        const adapter = new MarkdownSkillAdapter(manifest, skillContent, skillDir);
         skillRegistry.registerAdapter(adapter);
       } catch {
         // Skill file not found or invalid – skip; fallback will handle at runtime

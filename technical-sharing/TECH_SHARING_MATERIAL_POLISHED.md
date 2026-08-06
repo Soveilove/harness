@@ -12,7 +12,7 @@
 
 ### 先说明一个实现边界
 
-当前 CLI 没有加载或运行 OpenSpec、Superpowers、Wayfinder 等第三方 Skill 包。实际执行的是 Sovei 自己实现的 Stage、WorkflowEngine、KnowledgeStore、Artifact 校验和状态机。OpenSpec、Superpowers 以及其他外部 Skills 在本分享中分别作为方法论参考、设计启发或未来适配对象出现；下文不会把“借鉴了思想”表述成“已经接入运行时”。
+Sovei 的核心运行时（Stage、WorkflowEngine、KnowledgeStore、Artifact 校验、状态机、对账引擎）是自研的；同时它已具备一套**外部 Skill 运行时协议**，可以把第三方 Skill（如 Matt Pocock 的 grilling/domain-modeling/code-review、softaworks 的 lesson-learned）作为**提示词注入**接入对应阶段，失败时自动回退到原生提示。OpenSpec、Superpowers 则仍作为方法论参考和设计启发出现，尚未作为运行时接入。
 
 ---
 
@@ -260,19 +260,19 @@ load → grill → wayfind → spec → scope → plan → tasks
 | 工作流节点 | 这个节点解决什么问题 | 主要产物 | 当前实际 Sovei 能力 | 外部参考或未来适配对象 |
 |---|---|---|---|---|
 | `load` | 校验 Feature 的真实状态，加载当前基线、项目知识、业务红线和相关历史，避免 AI 凭聊天记忆开始工作 | 上下文包、知识来源清单、风险与下一合法阶段 | `sovei-workflow`、`knowledge-loader` | 暂无 |
-| `grill` | 区分可查证事实、可推断决策和必须由用户确认的范围决策；一次解决一个关键问题 | `decision-log.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/grilling`；备选 `grill-me`、`grill-with-docs` |
+| `grill` | 区分可查证事实、可推断决策和必须由用户确认的范围决策；一次解决一个关键问题 | `decision-log.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/grilling`（已接入）；备选 `grill-me`、`grill-with-docs` |
 | `wayfind` | 面对大型或高不确定需求时，把未知区域拆成决策票据，标出依赖、阻塞、负责人和证据 | `wayfinder-events.jsonl`、`wayfinder.json`、`decision-tickets/*.json`、`wayfinder.md` | `sovei-workflow`、`knowledge-loader` | 已内化 `mattpocock/wayfinder` 的决策地图思想 |
-| `spec` | 把 PM 原话翻译成稳定契约，说明做什么、不做什么、用户可见行为和验收条件，并与历史决策对齐 | `spec.md`、`reconciliation.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling`、`mattpocock/to-spec` |
-| `scope` | 沿真实代码和业务链路追踪影响面，覆盖入口、状态、参数、I/O、异步回调、消费者、兼容路径和验证面 | `scope.md`、`coverage-matrix.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling` |
-| `plan` | 把需求契约和影响面转换成技术设计，定义模块边界、状态与数据流、接口契约、迁移和验证策略 | `plan.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling` |
-| `tasks` | 将方案拆成可独立实现、可独立验证的纵向任务，声明依赖、文件范围和完成标准 | `tasks.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/to-tickets` |
-| `implement` | 一次只执行一个已就绪任务，遵守业务红线和文件边界，保留无关改动，并记录实现与验证结果 | 代码变更、`change-manifest.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/implement`；可吸收 Superpowers 的 TDD 与系统化调试纪律 |
-| `converge` | 对照 Spec、Scope、Plan、Tasks 检查实现差距，将问题分类为缺失、部分满足、冲突或额外改动 | `convergence-report.md`、纠正任务 | `sovei-workflow`、`knowledge-loader` | `mattpocock/code-review`；可吸收 Superpowers 的 Review 纪律 |
-| `verify` | 分开验证需求符合性和工程质量，用测试、真实流程、日志或视觉结果形成可追溯证据 | `evidence.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/code-review`；可吸收 Superpowers 的证据优先验证方式 |
-| `learn` | 从决策、偏差、验证和架构变化中提炼经验，区分项目观察、候选知识和稳定规则，禁止单次观察自动升级 | `learning-report.md`、候选知识 | `sovei-workflow`、`knowledge-loader` | `mattpocock/handoff` |
+| `spec` | 把 PM 原话翻译成稳定契约，说明做什么、不做什么、用户可见行为和验收条件，并与历史决策对齐 | `spec.md`、`reconciliation.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling`（已接入）；备选 `to-spec` |
+| `scope` | 沿真实代码和业务链路追踪影响面，覆盖入口、状态、参数、I/O、异步回调、消费者、兼容路径和验证面 | `scope.md`、`coverage-matrix.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling`（已接入） |
+| `plan` | 把需求契约和影响面转换成技术设计，定义模块边界、状态与数据流、接口契约、迁移和验证策略 | `plan.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/domain-modeling`（已接入） |
+| `tasks` | 将方案拆成可独立实现、可独立验证的纵向任务，声明依赖、文件范围和完成标准 | `tasks.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/to-tickets`（已接入） |
+| `implement` | 一次只执行一个已就绪任务，遵守业务红线和文件边界，保留无关改动，并记录实现与验证结果 | 代码变更、`change-manifest.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/implement`（已接入）；可吸收 Superpowers 的 TDD 与系统化调试纪律 |
+| `converge` | 对照 Spec、Scope、Plan、Tasks 检查实现差距，将问题分类为缺失、部分满足、冲突或额外改动 | `convergence-report.md`、纠正任务 | `sovei-workflow`、`knowledge-loader` | `mattpocock/code-review`（已接入）；可吸收 Superpowers 的 Review 纪律 |
+| `verify` | 分开验证需求符合性和工程质量，用测试、真实流程、日志或视觉结果形成可追溯证据 | `evidence.md` | `sovei-workflow`、`knowledge-loader` | `mattpocock/code-review`（已接入）；可吸收 Superpowers 的证据优先验证方式 |
+| `learn` | 从决策、偏差、验证和架构变化中提炼经验，区分项目观察、候选知识和稳定规则；用 AI Skill 辅助蒸馏，并自动把观察对账回知识库按证据晋级 | `learning-report.md`、`knowledge-delta.md`、对账后的知识库 | `sovei-workflow`、`knowledge-loader`、`knowledge/reconcile.ts` | `softaworks/lesson-learned`（已接入）；参考 `mattpocock/handoff`、`juxt/allium/distill` |
 | `sync` | 只同步经过审核且明确授权的知识、规则和报告，检查受保护路径和同步前后差异，完成本轮闭环 | `sync-report.md`、更新后的知识库 | `sovei-workflow`、`knowledge-loader` | 暂无 |
 
-这张表还说明了 Sovei 与外部 Skills 的边界：当前表格中的“当前实际 Sovei 能力”指 Sovei 内部的阶段协议和运行时实现，并不是已经安装并由 Agent 调度的独立 Skill 包；“外部参考或未来适配对象”只表示方法论来源或候选集成方向。当前第三方 Skill 的运行时依赖为零，后续只有在完成 Skill 协议、版本锁定、适配器、兼容验证和历史 Feature 回放后，才会正式接入。
+这张表还说明了 Sovei 与外部 Skills 的边界：表格中的“当前实际 Sovei 能力”指 Sovei 内部的阶段协议和运行时实现；而“外部参考或未来适配对象”表示方法论来源或候选集成方向。需要注意，Sovei 已经完成外部 Skill 运行时协议（`skill-map.yaml` 绑定、`skill-lock.yaml` 版本锁定、MarkdownSkillAdapter 注入、SkillInstaller/SkillUpgrader、失败回退 native），并已把 grilling、domain-modeling、to-tickets、implement、code-review、lesson-learned 等 Skill 作为提示词注入接入对应阶段。外部 Skill 是只读的提示词来源，不拥有 Sovei 的工作流状态。
 
 ### 为什么 `grill-me` 后面可能进入 `wayfind`
 
@@ -323,13 +323,13 @@ Sovei 将知识分为 pitfall、rule、decision、code-map、architecture、pref
 candidate → pending → stable → deprecated
 ```
 
-一次观察只能成为 candidate，不能直接成为 stable。只有经过重复证据和人工确认，它才会进入 AI 真正复用的知识集合。
+一次观察只能成为 candidate，不能直接成为 stable。候选知识在 `learn` 阶段由对账引擎自动处理：新观察进入 candidate，重复证据累计到 2 条进入 pending，累计到 3 条（来自 3 个独立 Feature）自动晋级 stable。每次晋级都记录来源 Feature 和证据，stable 晋级会单独标记为"自动晋级、需事后审查"，可用 `sovei knowledge review` 查看、用 `deprecate` 回退误判。知识库里的扫描候选仍要人工核对 codeEvidence，但 learn 阶段沉淀的 Feature 经验按"信任但可验证"的方式自动进入 AI 复用的知识集合。
 
 例如扫描器曾经因为关键词把 `authentication` 和 `billing` 判成项目能力。回到 `codeEvidence` 核对后，发现命中的是关键词表、测试或 DI token，而不是真实业务逻辑，于是这些候选被拒绝。
 
 这体现了一个原则：
 
-> **AI 可以帮忙发现候选，但不能自动替人确认事实。**
+> **AI 可以帮忙发现候选，也可以用多源证据让经验稳定；事实确认仍由人工掌握回退权。**
 
 ---
 
@@ -383,6 +383,16 @@ candidate → pending → stable → deprecated
 → 008 Review Gate 与确认依据对齐
 ```
 
+最近把外部 Skills 与学习闭环补上：
+
+```text
+012 外部 Skill 配置层（map/lock/CLI/渲染）
+→ 013 Skill 与 Agent 上下文集成（AGENTS.md 等渲染）
+→ 014 Skill 运行时层（MarkdownSkillAdapter 注入 + 安装/升级治理）
+→ 015 learn 阶段知识自动对账引擎（reconcile.ts，闭合 learn→knowledge 循环）
+→ 016 learn 接入第三方 Skill（softaworks/lesson-learned）并融合蒸馏方法论
+```
+
 这里能验证的不是“效率提升了多少”，而是：
 
 - 问题可以被写成明确的 Feature；
@@ -404,10 +414,12 @@ candidate → pending → stable → deprecated
 | AI 执行时漏掉影响面 | Scope、Coverage Matrix、Converge、Verify | 核心已实现 |
 | config 和规则会过期 | Scanner、Rules、Context Snapshot | 部分解决 |
 | 跨工具切换需要重新解释 | 状态文件、事件、Context Pack、Adapter | 基础已实现 |
-| 经验无法复用 | 类型化知识和生命周期 | 已实现 |
+| 经验无法复用 | 类型化知识、生命周期、learn 对账引擎 | 已实现（自动晋级 stable + 事后回退） |
 | 多项目公共规范重复维护 | Hub / 卫星同步方向 | 部分实现 |
+| 外部 Skill 无法接入 | 运行时协议、map/lock、adapter 注入、install/upgrade | 已实现 |
+| 学习经验只写报告不回库 | learn 阶段 reconcile 自动对账到知识库 | 已实现 |
 
-还有一些目前明确没有完全解决：业务拓扑变化后的自动影响评估、分支级红线隔离、业务语义 merge preflight、知识复用价值阈值，以及外部 Skills 的安装和版本治理。
+还有一些目前明确没有完全解决：业务拓扑变化后的自动影响评估、分支级红线隔离、业务语义 merge preflight、知识复用价值阈值，以及统一关系模型驱动的自动影响分析。
 
 这部分需要诚实表达：
 

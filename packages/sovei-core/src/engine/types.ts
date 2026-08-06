@@ -36,12 +36,15 @@ export interface WorkflowState {
   riskLevel: RiskLevel;
   blockers: string[];
   pendingConfirmations: PendingConfirmation[];
+  /** Stages that have been prepared (via prepareStage) but not yet completed. */
+  preparedStages: string[];
   updatedAt: string;
 }
 
 /** Discriminated union of all workflow events (Redux-inspired typed actions) */
 export type WorkflowEvent =
   | { type: 'BOOTSTRAP'; featureId: string }
+  | { type: 'STAGE_PREPARED'; stage: string }
   | { type: 'STAGE_COMPLETE'; stage: string; artifacts: string[] }
   | { type: 'TASK_COMPLETE'; taskId: string; artifact: string }
   | { type: 'CHANGE_DECLARED'; changeId: string; target: string; summary: string }
@@ -69,7 +72,24 @@ export interface StageConfig {
   next: string[];
 }
 
-/** Complete workflow definition */
+/**
+ * Complete workflow definition.
+ *
+ * `version` tracks structural changes to this definition only:
+ * - **minor bump**: add/remove a stage, change stageOrder
+ * - **patch bump**: modify stage config (requiredArtifacts / producesArtifacts / next)
+ * - **major bump**: breaking refactor of the workflow model
+ *
+ * `version` does NOT track:
+ * - Confirmation gate logic (hardcoded in state-machine.ts)
+ * - Skills / Wayfinder / Change Control subsystems (injected via constructor)
+ * - CLI commands (tracked by npm package version)
+ * - Stage prompt content (tracked by stage contracts and external skills)
+ *
+ * Unlike `schemaVersion` (which guards persisted data), `workflow.version`
+ * is not persisted in Feature event logs — event replay always uses the
+ * current WorkflowDefinition, so version changes require no migration.
+ */
 export interface WorkflowDefinition {
   version: string;
   stageOrder: string[];

@@ -145,13 +145,16 @@ test('workflow wayfind gate uses the typed map and reopen archives its projectio
   const featureId = '004-workflow';
   const path = `specs/${featureId}`;
   await events.append(path, { type: 'BOOTSTRAP', featureId });
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'load' }, 'load');
   await events.append(path, { type: 'STAGE_COMPLETE', stage: 'load', artifacts: [] }, 'load');
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'grill' }, 'grill');
   await events.append(path, { type: 'STAGE_COMPLETE', stage: 'grill', artifacts: ['decision-log.md'] }, 'grill');
   await storage.write(`${path}/decision-log.md`, '# Decisions\n\nDestination accepted.');
   await repository.chart(path, featureId, 'A complete decision map', '', 'planner');
   const ticket = await repository.addTicket(path, {
     title: 'Choose contract', question: 'Which contract is current?', type: 'research', interaction: 'AFK', blockedBy: [],
   }, 'planner');
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'wayfind' }, 'wayfind');
   await assert.rejects(engine.completeStage(featureId, 'wayfind'), /open decision tickets: Choose contract/);
   await repository.claim(path, ticket.id, 'research-agent');
   await repository.resolve(path, ticket.id, 'research-agent', 'Contract v2 is current.', ['contract-v2'], []);

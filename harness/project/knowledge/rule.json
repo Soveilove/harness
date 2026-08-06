@@ -29,12 +29,24 @@
     "type": "rule",
     "title": "阶段推进前置校验集中在 workflow-engine，不要绕开",
     "content": "executeStage/completeStage 的守卫顺序固定：assertNoPendingChanges → canExecuteStage → preExecute → checkRequired(必需产物) → 模板占位符 SOVEI_TEMPLATE_PLACEHOLDER 检查 → 阶段特有校验（implement 校验 tasks.md 全部完成且 change-manifest.md 引用 taskId；wayfind 校验 decisionMap）。新增阶段应把校验挂在这条链上（stageDef.contract / preExecute），不要在 CLI 层各自实现，否则校验会被其他入口绕过。",
-    "lifecycle": "candidate",
+    "lifecycle": "stable",
     "evidence": [
       {
         "feature": "onboard",
         "date": "2026-08-05T14:47:35.539Z",
         "description": "Initial observation",
+        "verified": false
+      },
+      {
+        "feature": "015-learn-reconcile-verify",
+        "date": "2026-08-06T15:41:41.017Z",
+        "description": "015 在 learn postExecute 中新增对账逻辑，遵循引擎钩子而非 CLI 层实现的原则",
+        "verified": false
+      },
+      {
+        "feature": "016-skill-verify",
+        "date": "2026-08-06T16:38:29.446Z",
+        "description": "016 修改 learn 阶段，验证引擎钩子 vs CLI 层逻辑的边界",
         "verified": false
       }
     ],
@@ -45,8 +57,8 @@
     ],
     "scope": "project",
     "createdAt": "2026-08-05T14:47:35.539Z",
-    "updatedAt": "2026-08-05T14:47:35.539Z",
-    "promotedAt": null,
+    "updatedAt": "2026-08-06T16:38:29.446Z",
+    "promotedAt": "2026-08-06T16:38:29.446Z",
     "deprecatedReason": null
   },
   {
@@ -153,6 +165,32 @@
     "scope": "project",
     "createdAt": "2026-08-06T03:16:51.489Z",
     "updatedAt": "2026-08-06T03:16:51.489Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-带-references-目录的三方-skill-必须内联参考文件才能自包含-120b5c98",
+    "type": "rule",
+    "title": "带 references 目录的三方 skill 必须内联参考文件才能自包含",
+    "content": "MarkdownSkillAdapter 自动加载 SKILL.md 同目录的 references/*.md 并拼接注入。lesson-learned 依赖 se-principles.md（原则目录）和 anti-patterns.md（反模式），必须内联才能让注入的 prompt 自包含，避免 AI 读到引用却找不到文件。这是领域级经验：任何带 references 的三方 skill 都应内联。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "016-skill-verify",
+        "date": "2026-08-06T16:38:29.444Z",
+        "description": "016 验证 learn 阶段注入含 se-principles/anti-patterns/distillation-guide 三份参考，AI 可完整理解 lesson-learned",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "skills",
+      "adapter",
+      "references",
+      "prompt-injection"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T16:38:29.444Z",
+    "updatedAt": "2026-08-06T16:38:29.444Z",
     "promotedAt": null,
     "deprecatedReason": null
   }

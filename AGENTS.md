@@ -14,6 +14,11 @@ This project uses [Sovei](https://github.com/sovei) for structured development w
 - `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)
 - `sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md
 - `sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation
+- `sovei skills status`: Show connected external skills (local + global)
+- `sovei skills use --global <dir>`: Connect a global skill into the local lock
+- `sovei skills bind --stage <stage> --skill <id> --enable`: Bind a skill to a stage
+- `sovei skills sync`: Render connected skills into agent context files (AGENTS.md/CLAUDE.md/.cursorrules/GEMINI.md/.aiderrules/.windsurfrules)
+- `sovei skills clean`: Remove the sovei skills section from agent context files
 
 ### Workflow Stages
 

@@ -29,6 +29,6 @@ bindings:
     status: enabled
     fallback: native
   - stage: learn
-    skillId: mattpocock/handoff
+    skillId: softaworks/lesson-learned
     status: enabled
     fallback: native

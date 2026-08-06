@@ -34,7 +34,7 @@ export type {
   SkillsBindResult,
   SkillsInitResult,
 } from './manager.js';
-export { MarkdownSkillAdapter, parseSkillFile, PROMPT_INJECTION_PROPOSAL } from './adapter.js';
+export { MarkdownSkillAdapter, parseSkillFile, loadReferenceFiles, PROMPT_INJECTION_PROPOSAL } from './adapter.js';
 export type { ParsedSkillFile } from './adapter.js';
 export { SkillInstaller } from './installer.js';
 export type { GitSkillSpec, InstallResult } from './installer.js';

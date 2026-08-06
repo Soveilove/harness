@@ -27,6 +27,7 @@ export function createInitialState(featureId: string): WorkflowState {
     riskLevel: 'S1',
     blockers: [],
     pendingConfirmations: [],
+    preparedStages: [],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -43,6 +44,17 @@ export function workflowReducer(
   switch (event.type) {
     case 'BOOTSTRAP': {
       throw new Error(`Duplicate BOOTSTRAP event for feature '${event.featureId}'`);
+    }
+
+    case 'STAGE_PREPARED': {
+      if (state.preparedStages.includes(event.stage)) {
+        return state;
+      }
+      return {
+        ...state,
+        preparedStages: [...state.preparedStages, event.stage],
+        updatedAt: new Date().toISOString(),
+      };
     }
 
     case 'STAGE_COMPLETE': {
@@ -70,6 +82,7 @@ export function workflowReducer(
         status: next ? 'in_progress' : 'completed',
         blockers: [],
         pendingConfirmations: [],
+        preparedStages: state.preparedStages.filter((s) => s !== event.stage),
         updatedAt: new Date().toISOString(),
       };
 
@@ -129,6 +142,9 @@ export function workflowReducer(
         activeChangeId: event.changeId,
         revision: state.revision + 1,
         blockers: [],
+        preparedStages: state.preparedStages.filter(
+          (s) => workflow.stageOrder.indexOf(s) < targetIndex,
+        ),
         updatedAt: new Date().toISOString(),
       };
     }
@@ -163,6 +179,9 @@ export function workflowReducer(
         status: 'in_progress',
         revision: state.revision + 1,
         blockers: [],
+        preparedStages: state.preparedStages.filter(
+          (s) => workflow.stageOrder.indexOf(s) < targetIndex,
+        ),
         updatedAt: new Date().toISOString(),
       };
     }

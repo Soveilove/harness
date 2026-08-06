@@ -1,0 +1,28 @@
+featureId: "015-learn-reconcile-verify"
+status: in_progress
+currentStage: "sync"
+nextStage: null
+completedStages:
+  - "load"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+  - "implement"
+  - "converge"
+  - "verify"
+  - "learn"
+reopenedStages:
+  []
+completedTaskIds:
+  - "TASK-001"
+  - "TASK-002"
+  - "TASK-003"
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-06T15:41:41.029Z"

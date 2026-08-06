@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "016-prepare-stage-enforcement",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "S1 single-concern fix, no cross-cutting decisions",
+  "revision": 0,
+  "updatedAt": "2026-08-06T15:40:43.850Z",
+  "ticketIndex": [],
+  "fog": []
+}

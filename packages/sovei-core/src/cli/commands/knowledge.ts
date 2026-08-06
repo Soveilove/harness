@@ -196,6 +196,69 @@ export function registerKnowledgeCommands(program: Command): void {
       }
     });
 
+  // ── review ──
+  knowledge
+   .command('review')
+   .description('审查自动晋级的知识条目（candidate/pending/stable 概览）')
+   .option('--lifecycle <lifecycle>', 'Filter by lifecycle (candidate/pending/stable)')
+   .option('--auto-stable', '只显示自动晋级到 stable 的条目（3+ 证据）')
+   .action(async (opts: { lifecycle?: string; autoStable?: boolean }) => {
+      const store = getStore();
+      await store.load();
+      let entries = store.selectAll();
+
+      if (opts.autoStable) {
+        entries = entries.filter((e) => e.lifecycle === 'stable' && e.evidence.length >= 3);
+      } else if (opts.lifecycle) {
+        entries = entries.filter((e) => e.lifecycle === opts.lifecycle);
+      } else {
+        // Show non-deprecated, sorted by lifecycle priority
+        entries = entries.filter((e) => e.lifecycle !== 'deprecated');
+      }
+
+      // Sort: stable first, then pending, then candidate
+      const order: Record<string, number> = { stable: 0, pending: 1, candidate: 2, deprecated: 3 };
+      entries.sort((a, b) => (order[a.lifecycle] ?? 9) - (order[b.lifecycle] ?? 9));
+
+      if (entries.length === 0) {
+        console.log('\n  No entries to review.\n');
+        return;
+      }
+
+      console.log('\n  Knowledge Review');
+      console.log('  ────────────────────────\n');
+
+      const grouped: Record<string, KnowledgeEntry[]> = {};
+      for (const entry of entries) {
+        if (!grouped[entry.lifecycle]) grouped[entry.lifecycle] = [];
+        grouped[entry.lifecycle].push(entry);
+      }
+
+      for (const [lifecycle, group] of Object.entries(grouped)) {
+        const icon = { candidate: '?', pending: '~', stable: '✓', deprecated: '✗' }[lifecycle] || ' ';
+        console.log(`  ${icon} ${lifecycle.toUpperCase()} (${group.length}):`);
+        for (const entry of group) {
+          const evidenceCount = entry.evidence.length;
+          const features = [...new Set(entry.evidence.map((e) => e.feature))].join(', ');
+          console.log(`    [${entry.type}] ${entry.title}`);
+          console.log(`      id: ${entry.id}  |  evidence: ${evidenceCount}  |  features: ${features}`);
+          if (entry.tags.length > 0) {
+            console.log(`      tags: ${entry.tags.join(', ')}`);
+          }
+          if (lifecycle === 'stable' && evidenceCount >= 3) {
+            console.log(`      ⚠️ 自动晋级 stable — 如有误判运行: sovei knowledge deprecate ${entry.id} --reason "..."`);
+          }
+          console.log('');
+        }
+      }
+
+      const stableCount = grouped['stable']?.length ?? 0;
+      const pendingCount = grouped['pending']?.length ?? 0;
+      const candidateCount = grouped['candidate']?.length ?? 0;
+      console.log(`  Summary: ${stableCount} stable, ${pendingCount} pending, ${candidateCount} candidate`);
+      console.log('');
+    });
+
   // ── stats ──
   knowledge
    .command('stats')

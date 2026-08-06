@@ -65,6 +65,7 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
     assert.match(stdout, /已初始化 Feature：001-chinese-output/);
     assert.match(stdout, /Sovei 工作流状态/);
     assert.match(stdout, /下一步命令：\s+sovei workflow load 001-chinese-output/);
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output']);
     await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output', '--complete']);
     const grill = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'grill', '001-chinese-output']);
     assert.match(grill.stdout, /grill 已触发：CLI 负责生成决策提示契约/);
@@ -161,6 +162,52 @@ test('onboard reports nested packages while preserving root project identity', a
     assert.equal(businessMap.lifecycle, 'candidate');
     assert.equal(businessMap.generator.mode, 'builtin-static-analysis');
     await assert.rejects(access(join(root, 'harness', 'project', 'rules', 'adapted.rules.json')));
+  });
+});
+
+test('loadConfig warns on workflow.version mismatch', async () => {
+  await fixture(async (root) => {
+    const directory = join(root, 'harness', 'project');
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'project.config.json'), JSON.stringify({
+      project: { name: 'test-project' },
+      workflow: { version: '9.9.9' },
+    }), 'utf8');
+
+    const originalStderr = process.stderr.write.bind(process.stderr);
+    const captured = [];
+    process.stderr.write = (chunk) => { captured.push(String(chunk)); return true; };
+    try {
+      loadConfig(root);
+    } finally {
+      process.stderr.write = originalStderr;
+    }
+    const output = captured.join('');
+    assert.match(output, /workflow\.version mismatch/);
+    assert.match(output, /9\.9\.9/);
+    assert.match(output, /2\.0\.0/);
+  });
+});
+
+test('loadConfig does not warn when workflow.version matches', async () => {
+  await fixture(async (root) => {
+    const directory = join(root, 'harness', 'project');
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'project.config.json'), JSON.stringify({
+      project: { name: 'test-project' },
+      workflow: { version: '2.0.0' },
+    }), 'utf8');
+
+    const originalStderr = process.stderr.write.bind(process.stderr);
+    const captured = [];
+    process.stderr.write = (chunk) => { captured.push(String(chunk)); return true; };
+    try {
+      loadConfig(root);
+    } finally {
+      process.stderr.write = originalStderr;
+    }
+    const output = captured.join('');
+    assert.doesNotMatch(output, /workflow\.version mismatch/);
   });
 });
 

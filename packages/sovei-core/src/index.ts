@@ -26,6 +26,7 @@ export { KnowledgeStore } from './knowledge/store.js';
 export type { KnowledgeAction } from './knowledge/store.js';
 export * from './knowledge/schemas.js';
 export * from './knowledge/lifecycle.js';
+export * from './knowledge/reconcile.js';
 
 // Storage
 export { FilesystemStorage } from './storage/filesystem.js';

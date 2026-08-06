@@ -6,7 +6,7 @@
       "title": "发布版本递增策略：默认仅 patch，大版本需显式声明",
       "instruction": "每次发布时，AI 默认只递增 patch 版本号（即 semver 第三位，如 2.5.1 → 2.5.2）。禁止自行根据 commit 类型（feat/fix 等）推断 minor 或 major bump。只有当用户显式声明升级大版本时（如'升 minor'、'升 major'、'发大版本'、'bump minor'、'bump major'），才允许递增 minor 或 major 位。用户未声明时，AI 不得将 minor 或 major 版本号作为默认行为，也不得以 commit 历史中有 feat 提交为由自行升级 minor。",
       "rationale": "版本递增过快会误导使用者对变更规模的预期。项目维护者需要手动控制 minor/major 发布节奏，patch 用于日常发布。",
-      "lifecycle": "stable",
+      "lifecycle": "active",
       "enforcement": "required",
       "appliesTo": {
         "paths": [
@@ -18,7 +18,7 @@
       },
       "verification": [
         {
-          "type": "check",
+          "type": "review",
           "description": "对比远端最新版本与待发布版本，确认仅 patch 位递增；若 minor/major 递增，需用户显式声明"
         }
       ],
@@ -28,8 +28,10 @@
         "semver"
       ],
       "provenance": {
-        "kind": "manual",
-        "sources": []
+        "kind": "declared",
+        "sources": [
+          "用户显式声明（2026-08-06）"
+        ]
       }
     }
   ]

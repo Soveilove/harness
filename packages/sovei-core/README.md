@@ -1,7 +1,27 @@
 # Sovei
 
+> ⚠️ **高速迭代中**：当前版本更新频率较高，API 可能在 minor 版本间调整。建议关注最新版本。
+
 Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、
 决策地图、重大变更控制和演进式架构治理。
+
+## 能力概览
+
+Sovei 把「AI 辅助开发」变成一条可审计、可回放、可治理的工程流水线，
+而不是一次性提示词。核心能力包括：
+
+| 能力 | 说明 |
+|---|---|
+| **结构化开发工作流** | 12 阶段 SOP（load → learn → sync），一次只推进一步，每步产出可审查的产物 |
+| **类型化项目知识** | 知识条目有生命周期（candidate → pending → stable），单次观察不能直接晋级 |
+| **业务红线治理** | 认证、计费、数据完整性等不可碰的红线被显式记录并自动守卫 |
+| **决策地图** | 跨会话的大型工作用 wayfinder 拆成可认领、可追踪的决策区域 |
+| **重大变更控制** | 自动检测代码变更是否触碰红线和知识边界 |
+| **演进式架构治理** | 记录架构意图，扫描架构漂移，输出治理报告 |
+| **需求对齐与确认门** | spec 产出 reconciliation.md，PM/技术双确认后放行 |
+| **外部 Skills 生态** | 把第三方 AI skills（grilling、code-review 等）绑定到各阶段，增强 agent 能力 |
+| **多 Agent 适配** | 自动把规范/知识/skills 渲染进 Codex、Claude Code、Cursor 等上下文文件 |
+| **老项目快速接入** | `onboard --evidence-only` 采集证据，生成 onboarding 指南供 agent 消化 |
 
 ## 安装
 
@@ -118,6 +138,35 @@ sovei workflow override-confirm 001-my-feature --stage verify --role product
 sovei context build --stage spec 002-next-feature --cross-feature
 ```
 
+### 外部 Skills（增强 Agent 能力）
+
+Sovei 可以把第三方 AI skills 绑定到各阶段，让开发 Agent 在执行某阶段时
+自动加载对应 skill 的指令与参考资料。当前版本内置以下绑定（全部可替换）：
+
+| 阶段 | 绑定 Skill | 作用 |
+|---|---|---|
+| grill | `mattpocock/grilling` | 用持续追问打磨需求与方案 |
+| wayfind | `sovei/native/wayfind` | 决策地图原生实现 |
+| spec | `mattpocock/domain-modeling` | 领域建模，产出规范 spec |
+| tasks | `mattpocock/to-tickets` | 把 spec 拆成可执行的 tickets |
+| implement | `mattpocock/implement` | 落地实现 |
+| converge / verify | `mattpocock/code-review` | 代码审查 |
+| learn | `softaworks/lesson-learned` | 从 git diff 提取工程经验回流知识库 |
+
+外部 skill 失败时自动回退到内置实现，CLI 会报告实际 skill 来源，
+保证流程不会被单点故障卡死。
+
+```bash
+# 查看当前绑定状态
+sovei skills status
+
+# 把新 skill 绑定到某个阶段
+sovei skills bind --stage grill --skill mattpocock/grilling --enable
+
+# 将已接入 skills 渲染进 Agent 上下文文件（AGENTS.md / CLAUDE.md / .cursorrules）
+sovei skills sync
+```
+
 ## 命令速查
 
 | 命令 | 用途 |
@@ -136,9 +185,14 @@ sovei context build --stage spec 002-next-feature --cross-feature
 | `sovei context build --stage spec <feature> --cross-feature` | 包含其他 Feature 决策 |
 | `sovei governance redline add/list/update/deactivate` | 管理业务红线 |
 | `sovei governance review-pack generate/import` | 需求对齐审查文件 |
-| `sovei knowledge add/list/promote` | 管理项目知识 |
-| `sovei rules adapt` | 适配已有 Agent/IDE 规范 |
+| `sovei knowledge add/list/promote/deprecate/query/review/stats` | 管理项目知识 |
+| `sovei rules validate/adapt/activate/refine/deprecate/list/resolve` | 项目工程规范治理 |
 | `sovei architecture scan/status/check` | 演进式架构治理 |
+| `sovei skills init/status/bind/use/sync/clean/install/upgrade/diff` | 外部 Skills 接入与管理 |
+| `sovei agent list/show` | 查看宿主 Agent 能力画像 |
+| `sovei wayfinder chart/skip/status/frontier/ticket/fog/claim/release/resolve/exclude` | 跨会话决策地图 |
+| `sovei workspace register/list/sync/promote/unregister` | 多工作区管理 |
+| `sovei change list/apply` | 重大变更控制 |
 
 ## 架构
 
@@ -148,10 +202,17 @@ sovei context build --stage spec 002-next-feature --cross-feature
 - **知识生命周期**：candidate → pending → stable，单次观察不得直接晋级。
 - **确认门**：按风险等级自动阻塞，不是第 13 个阶段。
 - **三层 agent 模型**：脚本采集证据，agent 做语义判断，人做最终决策。
+- **决策地图**：wayfinder 把跨会话的大型工作拆成可认领、可追踪的决策区域（含 fog 待澄清区）。
+- **多工作区**：同一项目多处 checkout 时，hub 持有稳定知识，satellite 同步到本地。
 
-## 版本
+## 版本与发布
 
-当前稳定版：`2.5.0`，npm `latest` 渠道。
+- 当前稳定版：`2.5.4`，通过 npm `latest` 渠道发布。
+- 环境要求：Node.js `>= 20`，纯 ESM 模块，零运行时依赖（dependencies 为空）。
+- 安装的是单一可执行文件 `dist/release/sovei.js`（已混淆），无需构建即可运行。
+- 发布渠道为公开包（`publishConfig.access: public`），全局安装后提供 `sovei` 命令。
+- **更新频率**：处于高速迭代期，API 可能在 minor 版本间调整，发布默认只递增 patch 版本号；
+  有破坏性变更时会递增 minor/major。建议定期 `npm update -g @soveilove/sovei`。
 
 仓库：https://github.com/Soveilove/sovei
 

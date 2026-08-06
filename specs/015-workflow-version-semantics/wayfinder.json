@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "015-workflow-version-semantics",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "S1 single-file enhancement, no cross-cutting decisions needed",
+  "revision": 0,
+  "updatedAt": "2026-08-06T15:32:18.698Z",
+  "ticketIndex": [],
+  "fog": []
+}
