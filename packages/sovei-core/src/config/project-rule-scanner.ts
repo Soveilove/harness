@@ -262,5 +262,14 @@ export async function scanProjectRuleCandidates(storage: StorageBackend): Promis
     }
   }
 
-  return candidates.sort((a, b) => a.id.localeCompare(b.id));
+  // 同一文档章节内若出现完全相同的语句，idFor 输入相同会生成重复 id；
+  // 去重（保留首个出现），避免写入 adapted.rules.json 后违反 id 唯一性约束。
+  const seen = new Set<string>();
+  const deduped = candidates.filter((rule) => {
+    if (seen.has(rule.id)) return false;
+    seen.add(rule.id);
+    return true;
+  });
+
+  return deduped.sort((a, b) => a.id.localeCompare(b.id));
 }

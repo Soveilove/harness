@@ -193,5 +193,31 @@
     "updatedAt": "2026-08-06T16:38:29.444Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-规则适配器生成的规则-id-必须唯一-787b44d4",
+    "type": "rule",
+    "title": "规则适配器生成的规则 id 必须唯一",
+    "content": "从 Agent Rules / 团队文档自动适配项目规则时，规则 id 由内容派生；当同一文档章节内出现重复语句时，必须去重，保证生成的规则 id 唯一。规则集的 id 唯一性是加载层的硬约束（fail-closed），重复 id 会导致加载失败。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "018-adapted-rule-dedup",
+        "date": "2026-08-06T18:03:35.433Z",
+        "description": "018-adapted-rule-dedup：scanProjectRuleCandidates 未对同章节重复语句去重，导致重复 id 触发 repository.load() 报错；修复为返回前按 id 去重，并在 ad-materials-frontend 复跑验证 492 条规则 0 重复。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "rules",
+      "adaptation",
+      "id-uniqueness",
+      "project-rules"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-06T18:03:35.433Z",
+    "updatedAt": "2026-08-06T18:03:35.433Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

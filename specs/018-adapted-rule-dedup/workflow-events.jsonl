@@ -1,0 +1,30 @@
+{"timestamp":"2026-08-06T17:56:25.847Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"018-adapted-rule-dedup"},"actor":"cli","sourceStage":null}
+{"timestamp":"2026-08-06T17:56:32.239Z","revision":1,"event":{"type":"STAGE_PREPARED","stage":"load"},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-06T17:56:39.116Z","revision":2,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-06T17:56:42.468Z","revision":3,"event":{"type":"STAGE_PREPARED","stage":"grill"},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-06T17:57:55.419Z","revision":4,"event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-06T17:57:58.895Z","revision":5,"event":{"type":"STAGE_PREPARED","stage":"wayfind"},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-06T17:58:21.527Z","revision":6,"event":{"type":"STAGE_COMPLETE","stage":"wayfind","artifacts":["wayfinder.md"]},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-06T17:58:27.724Z","revision":7,"event":{"type":"STAGE_PREPARED","stage":"spec"},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-06T17:58:54.726Z","revision":8,"event":{"type":"STAGE_COMPLETE","stage":"spec","artifacts":["spec.md","reconciliation.md"]},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-06T17:58:58.203Z","revision":9,"event":{"type":"STAGE_PREPARED","stage":"scope"},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-06T17:59:13.429Z","revision":10,"event":{"type":"STAGE_COMPLETE","stage":"scope","artifacts":["scope.md","coverage-matrix.md"]},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-06T17:59:16.387Z","revision":11,"event":{"type":"STAGE_PREPARED","stage":"plan"},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-06T17:59:26.270Z","revision":12,"event":{"type":"STAGE_COMPLETE","stage":"plan","artifacts":["plan.md"]},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-06T17:59:29.606Z","revision":13,"event":{"type":"STAGE_PREPARED","stage":"tasks"},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-06T17:59:39.325Z","revision":14,"event":{"type":"STAGE_COMPLETE","stage":"tasks","artifacts":["tasks.md"]},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-06T17:59:45.445Z","revision":15,"event":{"type":"STAGE_PREPARED","stage":"implement"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T18:01:24.197Z","revision":16,"event":{"type":"TASK_COMPLETE","taskId":"TASK-003","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T18:01:27.844Z","revision":17,"event":{"type":"TASK_COMPLETE","taskId":"TASK-001","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T18:01:31.485Z","revision":18,"event":{"type":"TASK_COMPLETE","taskId":"TASK-002","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T18:01:34.826Z","revision":19,"event":{"type":"STAGE_COMPLETE","stage":"implement","artifacts":["change-manifest.md"]},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-06T18:01:38.450Z","revision":20,"event":{"type":"STAGE_PREPARED","stage":"converge"},"actor":"cli","sourceStage":"converge"}
+{"timestamp":"2026-08-06T18:01:50.358Z","revision":21,"event":{"type":"STAGE_COMPLETE","stage":"converge","artifacts":["convergence-report.md"]},"actor":"cli","sourceStage":"converge"}
+{"timestamp":"2026-08-06T18:01:54.626Z","revision":22,"event":{"type":"STAGE_PREPARED","stage":"verify"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T18:02:26.936Z","revision":23,"event":{"type":"STAGE_COMPLETE","stage":"verify","artifacts":["evidence.md"]},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T18:03:15.468Z","revision":24,"event":{"type":"CONFIRM","stage":"verify","role":"product","confirmedBy":"user","reference":"018-adapted-rule-dedup / evidence.md"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T18:03:19.734Z","revision":25,"event":{"type":"CONFIRM","stage":"verify","role":"tech","confirmedBy":"user","reference":"018-adapted-rule-dedup / evidence.md / 109 tests pass"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-06T18:03:23.042Z","revision":26,"event":{"type":"STAGE_PREPARED","stage":"learn"},"actor":"cli","sourceStage":"learn"}
+{"timestamp":"2026-08-06T18:03:35.443Z","revision":27,"event":{"type":"STAGE_COMPLETE","stage":"learn","artifacts":["learning-report.md"]},"actor":"cli","sourceStage":"learn"}
+{"timestamp":"2026-08-06T18:03:39.538Z","revision":28,"event":{"type":"STAGE_PREPARED","stage":"sync"},"actor":"cli","sourceStage":"sync"}
+{"timestamp":"2026-08-06T18:03:47.514Z","revision":29,"event":{"type":"STAGE_COMPLETE","stage":"sync","artifacts":["sync-report.md"]},"actor":"cli","sourceStage":"sync"}

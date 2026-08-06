@@ -2,6 +2,14 @@
 
 All notable changes to the Sovei workflow engine are documented in this file.
 
+## [2.5.6] - 2026-08-07
+
+### Fixed
+
+- **文档适配器不再生成重复规则 id**：`scanProjectRuleCandidates` 此前对同一文档章节内重复出现的相同语句不先去重，导致 `idFor` 对相同输入生成相同 id，写入 `adapted.rules.json` 后违反 id 唯一性，触发 `Duplicate project rule id` 加载错误。现改为返回前按 id 去重（保留首个出现），从源头杜绝重复。
+- **重复规则 id 报错信息可诊断**：`repository.load()` 遇到同一文件内重复 id 时，此前打印两个相同路径（误导性）。现区分「同一文件内重复规则 id（附 title）」与「跨文件冲突（保留双路径）」。
+- 补充回归测试：同章节重复语句只生成一条候选、同文件重复 id 报错含「同一文件内」提示。`node --test` 109 用例通过。
+
 ## [2.3.3] - 2026-08-06
 
 ### Fixed

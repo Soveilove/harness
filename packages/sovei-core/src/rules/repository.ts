@@ -47,7 +47,12 @@ export class ProjectRulesRepository {
       if (!parsed.success) throw formatSchemaError(source, parsed.error.issues);
       for (const rule of parsed.data.rules) {
         const previous = ids.get(rule.id);
-        if (previous) throw new Error(`Duplicate project rule id ${rule.id} in ${previous} and ${source}`);
+        if (previous) {
+          const location = previous === source
+            ? `同一文件内存在重复规则 id ${rule.id}（title: ${rule.title}）`
+            : `Duplicate project rule id ${rule.id} in ${previous} and ${source}`;
+          throw new Error(location);
+        }
         ids.set(rule.id, source);
         loaded.push({ ...rule, source });
       }

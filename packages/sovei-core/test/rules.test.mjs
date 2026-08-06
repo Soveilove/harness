@@ -230,3 +230,44 @@ test('project rules deprecation preserves provenance and appends audit evidence'
     /already deprecated/,
   );
 });
+
+test('adapted candidates deduplicate repeated statements within the same section', async () => {
+  const storage = new MemoryStorage();
+  // 同一章节（「九、schemaJson 完整示例」）内出现两行完全相同的语句 `"required": true,`
+  await storage.write('docs/方案文档/节点说明.md', [
+    '# 节点说明',
+    '',
+    '## 九、schemaJson 完整示例',
+    '- "required": true,',
+    '- "required": true,',
+    '',
+    '## 输出区域',
+    '- 保持只读',
+    '',
+  ].join('\n'));
+
+  const candidates = await scanProjectRuleCandidates(storage);
+  const ids = candidates.map((c) => c.id);
+  assert.equal(new Set(ids).size, ids.length, '候选规则 id 必须唯一');
+  // 重复语句只提取一次
+  const target = candidates.filter((c) => c.instruction === '"required": true,');
+  assert.equal(target.length, 1, '同章节重复语句应只生成一条候选规则');
+  assert.equal(candidates.filter((c) => c.instruction === '保持只读').length, 1);
+});
+
+test('project rules fail closed with a diagnostic message for duplicates within the same file', async () => {
+  const storage = new MemoryStorage();
+  const repository = new ProjectRulesRepository(storage);
+  // 同一文件内存在两条相同 id 的规则（title 不同用于校验报错信息）
+  await repository.writeDocument('harness/project/rules/same.rules.json', {
+    schemaVersion: 1,
+    rules: [
+      rule('IN_FILE_DUP', { title: 'First copy' }),
+      rule('IN_FILE_DUP', { title: 'Second copy' }),
+    ],
+  });
+  await assert.rejects(
+    repository.load(),
+    /同一文件内存在重复规则 id IN_FILE_DUP（title: Second copy）/,
+  );
+});
