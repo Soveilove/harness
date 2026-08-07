@@ -1,7 +1,12 @@
 /**
- * Sovei Workflow 2.0 - Stage Definitions
+ * Sovei Workflow - Stage Definitions
  * All 12 stages with typed contracts and lifecycle hooks.
  * Prompt contracts derived from the original stage-contracts.md.
+ *
+ * Each stage's `contract` (requiredArtifacts / producesArtifacts) is the single
+ * source of truth for that stage's artifact contract. The workflow definition
+ * (`WorkflowDefinition`) intentionally does NOT duplicate these — it carries only
+ * orchestration concerns (stageOrder / version / ...). See engine/types.ts.
  */
 
 import { defineStage } from './define-stage.js';

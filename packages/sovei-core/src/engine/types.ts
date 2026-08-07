@@ -63,21 +63,17 @@ export interface WorkflowEventEntry {
   sourceStage: string | null;
 }
 
-/** Stage definition in the workflow */
-export interface StageConfig {
-  name: string;
-  status: 'active' | 'deprecated';
-  requiredArtifacts: string[];
-  producesArtifacts: string[];
-  next: string[];
-}
-
 /**
- * Complete workflow definition.
+ * Complete workflow definition — pure orchestration concerns.
+ *
+ * Per-stage artifact contracts (requiredArtifacts / producesArtifacts) are NOT
+ * held here. They are cohesive to the stage entity and live solely in the stage
+ * registry (`StageDefinition.contract`, see `stages/define-stage.ts`), which is
+ * the single source of truth. The legal stage set is carried by `stageOrder`,
+ * which always equals the full stage list.
  *
  * `version` tracks structural changes to this definition only:
  * - **minor bump**: add/remove a stage, change stageOrder
- * - **patch bump**: modify stage config (requiredArtifacts / producesArtifacts / next)
  * - **major bump**: breaking refactor of the workflow model
  *
  * `version` does NOT track:
@@ -93,7 +89,6 @@ export interface StageConfig {
 export interface WorkflowDefinition {
   version: string;
   stageOrder: string[];
-  stages: Record<string, StageConfig>;
   maxStagesPerInvocation: number;
   allowChaining: boolean;
 }

@@ -298,7 +298,71 @@ grill：把当前关键决策问清楚
 
 ---
 
-## 八、最核心的实现：让状态成为事实，而不是聊天记忆
+## 八、PRD 下来后，前后端如何并行开发
+
+前后端联合开发的重点不是把任务简单分成两堆，而是先建立一份共同契约，再让两个执行轨道围绕垂直业务切片并行，最后按切片汇合。这样可以把“各自完成、合并后才发现语义不一致”的风险提前暴露。
+
+![PRD 到前后端联合交付：统一契约、双轨执行、按切片持续汇合](dingtalk-sharing/frontend-backend-collaboration.svg)
+
+### 先把 PRD 转成共同契约
+
+PRD 说明用户目标，但通常没有完整描述页面状态、接口错误、幂等性、兼容路径和后端责任边界。进入开发前，`spec`、`scope` 和 `plan` 应该共同沉淀以下内容：
+
+```text
+用户场景与验收标准
+页面状态：加载、空数据、错误、无权限、处理中
+API / 数据 / 事件契约
+业务规则和前后端责任边界
+兼容性、权限、幂等性和异常路径
+可独立验证的垂直业务切片
+```
+
+例如“创建订单”可以拆成“确定创建订单契约”“创建订单表单与状态”“创建订单接口与业务规则”“异常处理”“前后端联调”“E2E 验证”。这里的任务不是把所有前端任务集中在一起、所有后端任务集中在一起，而是让每个任务都能回到同一个业务切片和验收场景。
+
+### 前端和后端怎么同时开始
+
+契约稳定后，前端可以使用 Mock 数据开发页面、交互和所有状态；后端同时实现真实接口、领域规则、数据变化和契约测试。双方通过同一组请求、响应、错误码和验收示例工作，避免前端凭想象造数据、后端凭实现反推需求。
+
+当前 CLI 的使用方式是一个需求只建立一个 Feature，前后端任务都登记在同一份 `tasks.md` 中：
+
+```bash
+sovei workflow bootstrap 020-create-order
+sovei context build --stage load --feature 020-create-order
+
+# 依次完成 load → grill → wayfind（复杂需求才进入）→ spec → scope → plan → tasks
+sovei workflow implement 020-create-order --task TASK-FE-001
+sovei workflow implement 020-create-order --task TASK-BE-001
+
+# 完成代码并在 change-manifest.md 中记录对应任务
+sovei workflow implement 020-create-order --task TASK-FE-001 --complete
+sovei workflow implement 020-create-order --task TASK-BE-001 --complete
+```
+
+前后端可以分别在自己的分支或工作区开发，但共享 Feature 产物不能无协调地同时修改。当前较稳妥的做法是由 Feature 负责人统一合并变更、维护 `change-manifest.md` 并登记任务完成；这属于协作约定，不应描述成 CLI 已经具备的自动调度能力。
+
+### 为什么要按切片汇合
+
+前后端都完成并不代表需求完成。`converge` 要对照契约检查真实接口和真实交互是否已经打通，覆盖正常路径、错误码、重复提交、权限、空数据和加载态。一个切片通过后，再开始下一切片，能够降低一次性大批量联调带来的定位成本。
+
+```bash
+sovei workflow implement 020-create-order --complete
+sovei workflow converge 020-create-order
+sovei workflow verify 020-create-order
+```
+
+这套节奏不是所有需求的固定最优解。API 稳定、前后端边界清晰时可以扩大并行范围；业务规则不清晰或领域模型变化频繁时，应先缩短契约和原型反馈周期；小型需求则可以由一个人端到端完成，不必人为制造两条轨道。
+
+### CLI 当前支持到哪里
+
+当前 Sovei CLI 已经能够提供统一 Feature、阶段门禁、上下文构建、纵向任务、任务完成证据、`converge`、`verify`、产品/技术确认、返工和变更审计。外部 Skills 也已经通过项目映射、锁定和阶段绑定接入，执行失败时可以回退到原生阶段提示。
+
+但前后端并行协作还有明确的未实现部分：任务负责人和泳道状态不是一等数据，API 契约尚未由 CLI 自动校验，Mock 不会自动生成，前后端各自的证据和联调检查点也没有独立的原生模型。因此，当前 CLI 可以支撑这套协作方法，但不能宣称已经提供完整的前后端并行编排平台。
+
+这不是缺陷叙事，而是能力边界：先用现有 CLI 管住 Feature、契约、任务和验证证据；当团队实际使用中出现稳定的协作痛点，再把 owner、lane、dependsOn、contract 和 checkpoint 逐步产品化。
+
+---
+
+## 九、最核心的实现：让状态成为事实，而不是聊天记忆
 
 Sovei 使用事件溯源状态机：
 
@@ -315,7 +379,7 @@ Sovei 使用事件溯源状态机：
 
 ---
 
-## 九、知识不是聊天记录，而是有生命周期的资产
+## 十、知识不是聊天记录，而是有生命周期的资产
 
 Sovei 将知识分为 pitfall、rule、decision、code-map、architecture、preference 和 constitution，并使用生命周期：
 
@@ -333,7 +397,7 @@ candidate → pending → stable → deprecated
 
 ---
 
-## 十、一个真实案例：AGENTS.md 为什么不能被静默覆盖
+## 十一、一个真实案例：AGENTS.md 为什么不能被静默覆盖
 
 `project init` 原本会用硬编码模板生成 `AGENTS.md`。后来人工在文件中补充了门禁说明，重跑 init 时，人工内容被无条件覆盖。
 
@@ -352,7 +416,7 @@ candidate → pending → stable → deprecated
 
 ---
 
-## 十一、Sovei 是怎样用自己的流程迭代自己的
+## 十二、Sovei 是怎样用自己的流程迭代自己的
 
 痛点来自真实业务开发，而不是因为开发 Sovei 才发现问题。Sovei 建成之后，才开始用这套流程验证自身：
 
@@ -405,7 +469,7 @@ candidate → pending → stable → deprecated
 
 ---
 
-## 十二、公司已有痛点与 Sovei 的覆盖边界
+## 十三、公司已有痛点与 Sovei 的覆盖边界
 
 | 已观察到的问题 | Sovei 的处理 | 当前状态 |
 |---|---|---|
@@ -427,7 +491,7 @@ candidate → pending → stable → deprecated
 
 ---
 
-## 十三、最后留下的三句话
+## 十四、最后留下的三句话
 
 第一，代码规模增长之后，程序员不可能靠阅读记住整个系统，知识、决策和证据必须成为代码之外的长期资产。
 
@@ -437,7 +501,7 @@ candidate → pending → stable → deprecated
 
 ---
 
-## 十四、我们现在是不是 Graph Coding
+## 十五、我们现在是不是 Graph Coding
 
 严格来说，Sovei 还没有完整实现 Graph Coding。更准确的说法是：
 
@@ -473,7 +537,7 @@ AI 最终回答的不只是“应该改哪个文件”，而是：
 
 ---
 
-## 十五、Graph Coding 现在有没有可复用的三方工具
+## 十六、Graph Coding 现在有没有可复用的三方工具
 
 Graph Coding 目前还不是一个统一的产品类别，也没有一个三方轮子可以直接覆盖业务图、代码图、Spec、规则、状态、验证证据和 Agent 执行的完整链路。
 
@@ -517,7 +581,7 @@ Sovei        → 把这些关系连接到一次真实的业务变更
 
 ---
 
-## 十六、一次真实的自我迭代：让 Sovei 支持 Node 14
+## 十七、一次真实的自我迭代：让 Sovei 支持 Node 14
 
 这是 017 号 Feature 的完整记录，也是"用 Sovei 开发 Sovei"的又一次实践。问题很具体：公司代码环境主流是 Node 14，但 `@soveilove/sovei` 要求 Node >=20，用户没法在 Node 14 的电脑上 `npm install -g` 后直接跑 CLI。
 

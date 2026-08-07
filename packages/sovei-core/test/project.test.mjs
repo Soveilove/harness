@@ -185,7 +185,7 @@ test('loadConfig warns on workflow.version mismatch', async () => {
     const output = captured.join('');
     assert.match(output, /workflow\.version mismatch/);
     assert.match(output, /9\.9\.9/);
-    assert.match(output, /2\.0\.0/);
+    assert.match(output, /3\.0\.0/);
   });
 });
 
@@ -195,7 +195,7 @@ test('loadConfig does not warn when workflow.version matches', async () => {
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'project.config.json'), JSON.stringify({
       project: { name: 'test-project' },
-      workflow: { version: '2.0.0' },
+      workflow: { version: '3.0.0' },
     }), 'utf8');
 
     const originalStderr = process.stderr.write.bind(process.stderr);

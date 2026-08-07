@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: Omit<SoveiConfig, 'rootPath'> = {
     started: new Date().toISOString().split('T')[0],
   },
   workflow: {
-    version: '2.0.0',
+    version: '3.0.0',
     stageOrder: DEFAULT_STAGE_ORDER,
   },
 };

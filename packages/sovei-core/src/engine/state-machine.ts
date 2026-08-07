@@ -64,8 +64,8 @@ export function workflowReducer(
           `Stage mismatch: expected '${state.currentStage}', got '${event.stage}'`,
         );
       }
-      // Guard: stage must exist in workflow
-      if (!workflow.stages[event.stage]) {
+      // Guard: stage must be a known stage (stageOrder is always the full stage list)
+      if (!workflow.stageOrder.includes(event.stage)) {
         throw new Error(`Unknown stage: ${event.stage}`);
       }
 
@@ -122,7 +122,7 @@ export function workflowReducer(
     }
 
     case 'CHANGE_DECLARED': {
-      if (!workflow.stages[event.target]) throw new Error(`Unknown change target: ${event.target}`);
+      if (!workflow.stageOrder.includes(event.target)) throw new Error(`Unknown change target: ${event.target}`);
       const targetIndex = workflow.stageOrder.indexOf(event.target);
       const remaining = state.completedStages.filter(
         (stage) => workflow.stageOrder.indexOf(stage) < targetIndex,
@@ -150,8 +150,8 @@ export function workflowReducer(
     }
 
     case 'REOPEN': {
-      // Guard: target must be a known stage
-      if (!workflow.stages[event.target]) {
+      // Guard: target must be a known stage (stageOrder is always the full stage list)
+      if (!workflow.stageOrder.includes(event.target)) {
         throw new Error(`Unknown reopen target: ${event.target}`);
       }
       // Guard: target must be completed
@@ -267,7 +267,7 @@ export function canExecuteStage(
       reason: `Expected stage '${state.currentStage}', got '${stage}'`,
     };
   }
-  if (!workflow.stages[stage]) {
+  if (!workflow.stageOrder.includes(stage)) {
     return { valid: false, reason: `Unknown stage: ${stage}` };
   }
   return { valid: true };

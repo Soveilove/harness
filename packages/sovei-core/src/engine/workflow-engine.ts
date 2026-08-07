@@ -35,34 +35,22 @@ import { randomUUID } from 'node:crypto';
 /**
  * Default workflow definition.
  *
- * version: '2.0.0' — tracks WorkflowDefinition structure (stages, stageOrder,
+ * version: '3.0.0' — tracks WorkflowDefinition structure (stageOrder,
  * maxStagesPerInvocation, allowChaining). See WorkflowDefinition JSDoc for
- * bump rules. This version has not changed since the TypeScript rewrite:
- * the 12-stage pipeline and all stage configs are structurally identical.
- * (2.3.2 fixed spec's missing requiredArtifacts — a bugfix, not a version bump.)
+ * bump rules. 3.0.0 is a breaking refactor: the duplicated per-stage artifact
+ * contracts (`stages`) were removed — they are cohesive to the stage entity and
+ * now live solely in the stage registry (`StageDefinition.contract`), the single
+ * source of truth. The legal stage set is carried by `stageOrder` (always the
+ * full stage list).
  */
 export const DEFAULT_WORKFLOW: WorkflowDefinition = {
-  version: '2.0.0',
+  version: '3.0.0',
   maxStagesPerInvocation: 1,
   allowChaining: false,
   stageOrder: [
     'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
     'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
   ],
-  stages: {
-    load:       { name: 'load',       status: 'active', requiredArtifacts: [],                                                    producesArtifacts: [],                     next: ['grill'] },
-    grill:      { name: 'grill',      status: 'active', requiredArtifacts: [],                                                    producesArtifacts: ['decision-log.md'],    next: ['wayfind', 'spec'] },
-    wayfind:    { name: 'wayfind',    status: 'active', requiredArtifacts: ['decision-log.md'],                                    producesArtifacts: ['wayfinder.md'],      next: ['spec'] },
-    spec:       { name: 'spec',       status: 'active', requiredArtifacts: ['decision-log.md', 'wayfinder.md'],                      producesArtifacts: ['spec.md', 'reconciliation.md'],           next: ['scope'] },
-    scope:      { name: 'scope',      status: 'active', requiredArtifacts: ['spec.md'],                                            producesArtifacts: ['scope.md', 'coverage-matrix.md'], next: ['plan'] },
-    plan:       { name: 'plan',       status: 'active', requiredArtifacts: ['spec.md', 'scope.md', 'coverage-matrix.md'],          producesArtifacts: ['plan.md'],           next: ['tasks'] },
-    tasks:      { name: 'tasks',      status: 'active', requiredArtifacts: ['plan.md'],                                            producesArtifacts: ['tasks.md'],          next: ['implement'] },
-    implement:  { name: 'implement',  status: 'active', requiredArtifacts: ['tasks.md'],                                           producesArtifacts: ['change-manifest.md'], next: ['converge'] },
-    converge:   { name: 'converge',   status: 'active', requiredArtifacts: ['change-manifest.md'],                                 producesArtifacts: ['convergence-report.md'], next: ['verify'] },
-    verify:     { name: 'verify',     status: 'active', requiredArtifacts: ['convergence-report.md'],                              producesArtifacts: ['evidence.md'],       next: ['learn'] },
-    learn:      { name: 'learn',      status: 'active', requiredArtifacts: ['evidence.md'],                                        producesArtifacts: ['learning-report.md'], next: ['sync'] },
-    sync:       { name: 'sync',       status: 'active', requiredArtifacts: ['learning-report.md'],                                 producesArtifacts: ['sync-report.md'],    next: [] },
-  },
 };
 
 export class WorkflowEngine {
@@ -577,9 +565,11 @@ export class WorkflowEngine {
     extraArtifacts: string[] = [],
   ): Promise<void> {
     const targetIndex = this.workflow.stageOrder.indexOf(targetStage);
+    // Artifact contracts are owned by the stage registry (single source of truth),
+    // not the workflow definition. stageOrder always equals the full stage list.
     const produced = this.workflow.stageOrder
       .slice(targetIndex)
-      .flatMap((stage) => this.workflow.stages[stage].producesArtifacts);
+      .flatMap((stage) => stageRegistry.get(stage).contract.producesArtifacts);
     const wayfinderArtifacts = targetIndex <= this.workflow.stageOrder.indexOf('wayfind')
       ? [
           'wayfinder.json',

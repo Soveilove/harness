@@ -73,5 +73,31 @@
     "updatedAt": "2026-08-06T15:41:41.016Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-阶段契约必须由阶段注册表单一持有-9bfed5d3",
+    "type": "architecture",
+    "title": "阶段契约必须由阶段注册表单一持有",
+    "content": "阶段的依赖产物、生成产物及其他阶段级契约必须由阶段定义的权威注册表单一持有；工作流编排模型只描述阶段顺序与依赖关系，不复制阶段契约。所有执行、归档和展示消费者应读取同一契约来源。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "019-contract-single-source",
+        "date": "2026-08-07T06:11:50.464Z",
+        "description": "019-contract-single-source：删除 WorkflowDefinition.stages 与 StageConfig；状态机保留阶段顺序判断，归档逻辑从阶段注册表读取产物契约；check、build、109/109 测试及 list-stages 回归通过。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "workflow",
+      "stage-contract",
+      "single-source-of-truth",
+      "architecture"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-07T06:11:50.464Z",
+    "updatedAt": "2026-08-07T06:11:50.464Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

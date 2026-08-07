@@ -219,5 +219,69 @@
     "updatedAt": "2026-08-06T18:03:35.433Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-sync-851e0638",
+    "type": "rule",
+    "title": "声明式适配器注册 + sync 遍历",
+    "content": "adapters/registry.ts 以声明式注册 IDEAdapter（上下文文件、调用/重开格式、能力画像），skills/sync.ts 通过 adapterRegistry.list() 遍历渲染到全部 Agent 上下文文件。新增 Agent 仅需注册适配器声明，无需改动 sync 逻辑。",
+    "lifecycle": "stable",
+    "evidence": [
+      {
+        "feature": "013-skills-agent-integration",
+        "date": "2026-08-07T02:16:01.496Z",
+        "description": "Initial observation",
+        "verified": false
+      },
+      {
+        "feature": "013-skills-agent-integration",
+        "date": "2026-08-07T02:16:23.745Z",
+        "description": "candidate→pending：012/013 两轮验证",
+        "verified": false
+      },
+      {
+        "feature": "013-skills-agent-integration",
+        "date": "2026-08-07T02:16:27.954Z",
+        "description": "人工审查通过：012 引入 + 013 扩展至 7 适配器，新增 3 适配器零逻辑改动、sync 自动覆盖；80/80 测试 + 临时项目实测通过",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "adapter",
+      "registry",
+      "sync",
+      "skills"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-07T02:16:01.496Z",
+    "updatedAt": "2026-08-07T02:16:27.954Z",
+    "promotedAt": "2026-08-07T02:16:27.954Z",
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-共享契约重构必须验证行为等价-0b03bfe8",
+    "type": "rule",
+    "title": "共享契约重构必须验证行为等价",
+    "content": "重构共享契约的表示方式时，必须同时验证编译约束、全量行为回归以及关键 CLI/归档路径的输出，确保删除重复表示没有改变外部工作流语义。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "019-contract-single-source",
+        "date": "2026-08-07T06:11:50.464Z",
+        "description": "019-contract-single-source：AC1–AC8 全部通过，TypeScript check、构建、109/109 测试、12 阶段 list-stages 输出和归档相关路径均验证通过。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "workflow",
+      "refactoring",
+      "contract",
+      "regression"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-07T06:11:50.464Z",
+    "updatedAt": "2026-08-07T06:11:50.464Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]
