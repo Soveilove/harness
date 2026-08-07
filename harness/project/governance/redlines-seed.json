@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-06T03:14:45.171Z",
-  "scannerVersion": "2.3.3",
+  "generatedAt": "2026-08-07T09:12:25.164Z",
+  "scannerVersion": "2.5.6",
   "redlines": [
     {
       "id": "AUTHENTICATION_AUTHENTICATION_SURFACE_DETECTED_IN_CODE_",

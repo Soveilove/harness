@@ -12,6 +12,7 @@ import { registerWorkspaceCommands } from './commands/workspace.js';
 import { registerGovernanceCommands } from './commands/governance.js';
 import { registerWayfinderCommands } from './commands/wayfinder.js';
 import { registerRulesCommands } from './commands/rules.js';
+import { registerQuickCommands } from './commands/quick.js';
 import { registerSkillsCommands } from './commands/skills.js';
 import { bootstrap } from '../providers/bootstrap.js';
 
@@ -39,6 +40,7 @@ registerArchitectureCommands(program);
 registerContextCommands(program);
 registerAgentCommands(program);
 registerRulesCommands(program);
+registerQuickCommands(program);
 registerSkillsCommands(program);
 
 // commander v12 默认静默忽略多余位置参数(例如 `project onboard ./path` 的 path 被丢弃，

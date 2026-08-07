@@ -4,8 +4,8 @@
 > 事实源是 `redlines.json`（当前状态）与 `redline-events.jsonl`（审计事件），AI 上下文从事实源读取。
 > 请勿手改本文件；修改红线请使用 `sovei governance redline add/update/deactivate`，操作后会自动重新生成。
 
-- 生成时间：2026-08-06T03:16:44.034Z
-- 生效红线：9 条（绝对 7 / 审批 2）
+- 生成时间：2026-08-07T09:14:02.674Z
+- 生效红线：12 条（绝对 9 / 审批 3）
 - 已停用：3 条
 - 待审候选：5 条（扫描器生成，未激活）
 
@@ -27,6 +27,9 @@
 | CLI_CONTRACT_STABILITY | CLI 命令契约是对外契约 | 审批红线 | 已发布的命令名、子命令、必填选项与退出码构成对外契约；重命名或删除必须先弃用并给出迁移期，不得直接破坏 | sovei 以 npm 包 + bin 分发，AGENTS.md 中记录的命令被用户脚本、CI 与 AI agent 提示词直接引用。破坏性重命名会让下游自动化静默失败。 | 2026-08-05 |
 | WAYFINDER_CLAIM_OWNERSHIP | 决策票据只能由占有人解决或排除 | 绝对红线 | resolve 或 exclude 决策票据前必须校验当前 actior 即为该票据的 claim.actor，claim 过期后 exclude 才允许 overrideExpired；未占有的票据禁止被他人 resolve | wayfinder/repository.ts 与 reducer.ts 多处强制 claim 归属（resolve 要求 claim.actor===actor，exclude 要求未过期占有人一致），这是防止一个 agent 覆盖他人决策结论、保证决策地图唯一事实来源不被篡改的唯一机制。去掉后任何 ticket 都可被任意 actor 改写结论。hitting 与 research 票据的 resolve 还强制要求 evidence 或 contextPointers，删除该守卫会允许无证据结论通过。 | 2026-08-06 |
 | WAYFINDER_EVENT_APPEND_ONLY | wayfinder 事件日志必须追加且修订号单调 | 绝对红线 | wayfinder-events.jsonl 的每条事件 revision 必须严格等于其顺序索引；读取时校验 revision===index，禁止改写、删除、重排已记录的事件 | wayfinder/repository.ts 的 readEvents 在还原聚合时强制校验每条 event.revision===index，任何缺失/重排/改写都会触发校验失败。它是决策地图事实来源的不可变日志，类似 AUDIT_LOG_APPEND_ONLY 但作用于 wayfinder 域。破坏后无法用事件溯源还原正确聚合，导致决策历史失真。 | 2026-08-06 |
+| ARTIFACT_VERSION_GUARD_INTEGRITY | onboarding 产物版本守卫不可绕过 | 绝对红线 | business-map.json 与 redlines-seed.json 记录的 scannerVersion 与当前 CLI VERSION 不一致时，读取侧默认必须拦截（除非显式 --force/--refresh 且打印放行告警），写入侧必须提示即将全量刷新；不得静默把旧版生成的 onboarding 产物当作当前事实读取 | CLI 升级后旧版扫描产物可能因深度/过滤规则差异而不完整，静默当作当前事实会驱动错误的决策。守卫被绕过或移除会让旧产物无警告地进入上下文。 | 2026-08-07 |
+| REDLINE_ASSESSMENT_REQUIRED | 每一条生效红线在重大变更前必须显式评估 | 绝对红线 | applyChange 前 validateForApply 必须为每一条 active 红线得出明确 disposition：compliant 需附 evidence、approved-exception 需有批准人/时间/参考且 absolute 红线不可豁免、violation 直接阻断；不得缺失评估或留 review-required 通过 | redlineAssessments 是红线从'声明'落到'执行'的唯一闸门（repository.ts:262-289）。若允许未评估或虚假 compliant 通过，任何 material change 都能绕过全部业务红线治理。 | 2026-08-07 |
+| STORAGE_WRITE_DISCIPLINE | harness/project 与 specs 的写操作必须走 storage 层 | 审批红线 | 对 harness/project/ 与 specs/ 下文件的写入应通过 StorageBackend（原子写 + withLock + 路径包含校验），不得直接用 node:fs 覆盖写或绕过锁做读-改-写并发 | FilesystemStorage.write 用临时文件+rename 原子写防崩溃半截文件，withLock 防并发竞态，resolve 做路径包含校验。直接 node:fs 会绕过这三层保护，可能导致项目数据损坏或并发覆盖。 | 2026-08-07 |
 
 ## 红线详情
 
@@ -141,6 +144,42 @@
 - **来源**：agent-generated
 - **创建**：2026-08-06 **最后更新**：2026-08-06
 
+### ARTIFACT_VERSION_GUARD_INTEGRITY — onboarding 产物版本守卫不可绕过
+
+- **级别**：绝对红线（absolute）
+- **规则**：business-map.json 与 redlines-seed.json 记录的 scannerVersion 与当前 CLI VERSION 不一致时，读取侧默认必须拦截（除非显式 --force/--refresh 且打印放行告警），写入侧必须提示即将全量刷新；不得静默把旧版生成的 onboarding 产物当作当前事实读取
+- **为什么有这条红线**：CLI 升级后旧版扫描产物可能因深度/过滤规则差异而不完整，静默当作当前事实会驱动错误的决策。守卫被绕过或移除会让旧产物无警告地进入上下文。
+- **适用范围**：packages/sovei-core/src/config/artifact-version-guard.ts, harness/project/codegraph/business-map.json, harness/project/governance/redlines-seed.json
+- **典型违规示例**：
+  - 升级后直接读取 v2.4 生成的 business-map.json 而不触发拦截
+- **人工审查**：未审查。确认后执行：`sovei governance redline update ARTIFACT_VERSION_GUARD_INTEGRITY --reviewer "..."`
+- **来源**：agent-generated
+- **创建**：2026-08-07 **最后更新**：2026-08-07
+
+### REDLINE_ASSESSMENT_REQUIRED — 每一条生效红线在重大变更前必须显式评估
+
+- **级别**：绝对红线（absolute）
+- **规则**：applyChange 前 validateForApply 必须为每一条 active 红线得出明确 disposition：compliant 需附 evidence、approved-exception 需有批准人/时间/参考且 absolute 红线不可豁免、violation 直接阻断；不得缺失评估或留 review-required 通过
+- **为什么有这条红线**：redlineAssessments 是红线从'声明'落到'执行'的唯一闸门（repository.ts:262-289）。若允许未评估或虚假 compliant 通过，任何 material change 都能绕过全部业务红线治理。
+- **适用范围**：packages/sovei-core/src/change-control/repository.ts validateForApply, 变更请求 redlineAssessments
+- **典型违规示例**：
+  - 删掉某条 active 红线的 assessment 后仍应用变更
+- **人工审查**：未审查。确认后执行：`sovei governance redline update REDLINE_ASSESSMENT_REQUIRED --reviewer "..."`
+- **来源**：agent-generated
+- **创建**：2026-08-07 **最后更新**：2026-08-07
+
+### STORAGE_WRITE_DISCIPLINE — harness/project 与 specs 的写操作必须走 storage 层
+
+- **级别**：审批红线（approval-required）
+- **规则**：对 harness/project/ 与 specs/ 下文件的写入应通过 StorageBackend（原子写 + withLock + 路径包含校验），不得直接用 node:fs 覆盖写或绕过锁做读-改-写并发
+- **为什么有这条红线**：FilesystemStorage.write 用临时文件+rename 原子写防崩溃半截文件，withLock 防并发竞态，resolve 做路径包含校验。直接 node:fs 会绕过这三层保护，可能导致项目数据损坏或并发覆盖。
+- **适用范围**：packages/sovei-core/src/storage/filesystem.ts, 所有写 harness/project 或 specs 的代码
+- **典型违规示例**：
+  - 用 fs.writeFile 直接覆盖 redlines.json 而非走 storage.write
+- **人工审查**：未审查。确认后执行：`sovei governance redline update STORAGE_WRITE_DISCIPLINE --reviewer "..."`
+- **来源**：agent-generated
+- **创建**：2026-08-07 **最后更新**：2026-08-07
+
 ## 已停用红线
 
 - **AUTH_REQUIRED** — Protected actions require authentication（2026-08-05 停用：误报：本项目是本地 CLI 工作流引擎，无用户账户、无登录、无购买流程。扫描器命中的是 redline-scanner.ts/business-map-scanner.ts 自身的关键词字典以及 DI 的 TOKENS 常量，非真实鉴权逻辑。）
@@ -165,6 +204,9 @@
 
 | 时间 | 事件 |
 |---|---|
+| 2026-08-07T09:14:02.658Z | 新增红线 STORAGE_WRITE_DISCIPLINE |
+| 2026-08-07T09:14:01.747Z | 新增红线 REDLINE_ASSESSMENT_REQUIRED |
+| 2026-08-07T09:14:00.248Z | 新增红线 ARTIFACT_VERSION_GUARD_INTEGRITY |
 | 2026-08-06T03:16:44.029Z | 新增红线 WAYFINDER_EVENT_APPEND_ONLY |
 | 2026-08-06T03:16:39.554Z | 新增红线 WAYFINDER_CLAIM_OWNERSHIP |
 | 2026-08-05T14:46:56.010Z | 停用红线 BILLING_CONTRACT：误报：代码库中不存在计费、支付、订阅或退款逻辑。命中来源为 redline-scanner.ts:38 的 billing 关键词字典本身。 |
@@ -182,5 +224,3 @@
 | 2026-08-05T02:55:41.317Z | 更新红线 BILLING_CONTRACT（字段：rationale, scope, owner, reviewedBy, reviewedAt） |
 | 2026-08-05T02:55:41.163Z | 更新红线 AUTH_REQUIRED（字段：rationale, scope, owner, reviewedBy, reviewedAt） |
 | 2026-08-03T08:18:52.591Z | 新增红线 NO_SILENT_DATA_LOSS |
-| 2026-08-03T08:18:52.589Z | 新增红线 BILLING_CONTRACT |
-| 2026-08-03T08:18:52.584Z | 新增红线 AUTH_REQUIRED |

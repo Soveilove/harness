@@ -2,15 +2,16 @@
   "schemaVersion": 1,
   "rules": [
     {
-      "id": "ADAPTED_INSTRUCTION_1F07EFD912",
-      "title": "Lists solutions and their costs",
-      "instruction": "Lists solutions and their costs",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_14F20D42CC",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a6f24948a82671f83/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -18,31 +19,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a6f24948a82671f83/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_27AEC23D58",
-      "title": "Translates PM requirements into technical understanding",
-      "instruction": "Translates PM requirements into technical understanding",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_482594BD7A",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a104172c0cd81b97e/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -50,31 +52,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_2820A74A89",
-      "title": "After **verify** (always): product + tech confirmation required befor...",
-      "instruction": "After **verify** (always): product + tech confirmation required before learn",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_629E90EF67",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a91b5101ce9fa854b/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -82,31 +85,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_3CD62A2477",
-      "title": "`sovei workflow bootstrap <feature>`: Start a new feature",
-      "instruction": "`sovei workflow bootstrap <feature>`: Start a new feature",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_631AEF814C",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -114,31 +118,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_4BA9E954D4",
-      "title": "`sovei workflow <stage> <feature> --complete`: Complete a stage and a...",
-      "instruction": "`sovei workflow <stage> <feature> --complete`: Complete a stage and advance",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_6F17132640",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a6f24948a82671f83/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -146,31 +151,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a6f24948a82671f83/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_5052AE4F88",
-      "title": "After **spec** (S2/S3 risk): product + tech confirmation required bef...",
-      "instruction": "After **spec** (S2/S3 risk): product + tech confirmation required before scope",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_7229D45C0D",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a0b276d332a9678a3/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -178,31 +184,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_62BAD8C7E3",
-      "title": "`sovei governance review-pack generate <feature>`: Render tech-review...",
-      "instruction": "`sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_83F5747D29",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-ac76539d1dc984edb/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -210,31 +217,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_654E5A9BB7",
-      "title": "`sovei context build --stage spec --feature <feature> --cross-feature...",
-      "instruction": "`sovei context build --stage spec --feature <feature> --cross-feature`: Include other features decision logs",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_84517F2C2D",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a349b951c3a805427/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -242,31 +250,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a349b951c3a805427/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_67B6206FE6",
-      "title": "Override: `sovei workflow override-confirm <feature> --stage <stage> ...",
-      "instruction": "Override: `sovei workflow override-confirm <feature> --stage <stage> --role <role> --by <name> --reason <reason>`",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_91861B922B",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a104172c0cd81b97e/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -274,31 +283,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_6D49CCDF8C",
-      "title": "`sovei workflow confirm <feature> --stage <stage> --role <role> --by ...",
-      "instruction": "`sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_92621FF30A",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a349b951c3a805427/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -306,31 +316,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a349b951c3a805427/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_851A0FF0D8",
-      "title": "`sovei governance review-pack import <feature> --product <file> --by ...",
-      "instruction": "`sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_9E46A2A144",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a91b5101ce9fa854b/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -338,31 +349,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_92FE6C2EA6",
-      "title": "`sovei workflow <stage> <feature>`: Prepare a workflow stage",
-      "instruction": "`sovei workflow <stage> <feature>`: Prepare a workflow stage",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_AFB921DA49",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a0b276d332a9678a3/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -370,31 +382,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_9526F67076",
-      "title": "`sovei context build --stage <stage> --feature <feature>`: Get stage ...",
-      "instruction": "`sovei context build --stage <stage> --feature <feature>`: Get stage prompt + context pack",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_B0D26E918E",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a349b951c3a805427/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -402,31 +415,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a349b951c3a805427/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a349b951c3a805427/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_9E2CD8CAFD",
-      "title": "This project uses [Sovei](https://github.com/sovei) for structured de...",
-      "instruction": "This project uses [Sovei](https://github.com/sovei) for structured development workflows.",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_B4B355131C",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-ac76539d1dc984edb/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -434,31 +448,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_D03BE9E8F5",
-      "title": "`sovei project onboard --evidence-only`: Collect evidence for agent a...",
-      "instruction": "`sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_D53B044697",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a104172c0cd81b97e/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -466,31 +481,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a104172c0cd81b97e/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_D0ABBE85C8",
-      "title": "Restores current state (why code is the way it is, referencing prior ...",
-      "instruction": "Restores current state (why code is the way it is, referencing prior feature decisions)",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_DD17C9455A",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a6f24948a82671f83/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -498,31 +514,32 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a6f24948a82671f83/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a6f24948a82671f83/AGENTS.md"
         ]
       }
     },
     {
-      "id": "ADAPTED_INSTRUCTION_F5DCFFE52C",
-      "title": "Extracts questions for product and tech confirmation",
-      "instruction": "Extracts questions for product and tech confirmation",
-      "rationale": "从现有 codex 规则文件 AGENTS.md 适配，激活前需确认仍代表当前规范。",
-      "lifecycle": "candidate",
+      "id": "ADAPTED_codex_DE5A70E402",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
       "enforcement": "required",
+      "confidence": "medium",
       "appliesTo": {
         "paths": [
-          "**/*"
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/**/*"
         ],
         "excludePaths": [],
         "stages": []
@@ -530,18 +547,150 @@
       "verification": [
         {
           "type": "review",
-          "description": "核对 AGENTS.md 与当前代码和团队约定是否一致"
+          "description": "核对 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
         }
       ],
       "tags": [
         "legacy-adaptation",
         "codex",
-        "agent-rule-file"
+        "rule-source"
       ],
       "provenance": {
         "kind": "adapted",
         "sources": [
-          "AGENTS.md"
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_codex_E097D3EA02",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
+      "enforcement": "required",
+      "confidence": "medium",
+      "appliesTo": {
+        "paths": [
+          ".claude/worktrees/agent-a91b5101ce9fa854b/**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 .claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "rule-source"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          ".claude/worktrees/agent-a91b5101ce9fa854b/AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_codex_F1C0141058",
+      "title": "Or run raw/transparent via cmd (recommended when output matters): `cm...",
+      "instruction": "Or run raw/transparent via cmd (recommended when output matters): `cmd /c \"sovei workflow status <feature>\"`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
+      "enforcement": "required",
+      "confidence": "medium",
+      "appliesTo": {
+        "paths": [
+          ".claude/worktrees/agent-a0b276d332a9678a3/**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 .claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "rule-source"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          ".claude/worktrees/agent-a0b276d332a9678a3/AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_codex_F93B20443D",
+      "title": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw ...",
+      "instruction": "`.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
+      "enforcement": "required",
+      "confidence": "medium",
+      "appliesTo": {
+        "paths": [
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 .claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "rule-source"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          ".claude/worktrees/agent-a29d19c1e9c29e9ec/AGENTS.md"
+        ]
+      }
+    },
+    {
+      "id": "ADAPTED_codex_FEC8C199D3",
+      "title": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "instruction": "Source the repo config for UTF-8 + silent progress: `. .\\.profile.ps1`",
+      "rationale": "从现有 codex 规则来源 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」适配，激活前需确认仍代表当前规范。",
+      "lifecycle": "deprecated",
+      "enforcement": "required",
+      "confidence": "medium",
+      "appliesTo": {
+        "paths": [
+          ".claude/worktrees/agent-ac76539d1dc984edb/**/*"
+        ],
+        "excludePaths": [],
+        "stages": []
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "核对 .claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md 章节「Windows PowerShell 开发环境」与当前代码和团队约定是否一致"
+        }
+      ],
+      "tags": [
+        "legacy-adaptation",
+        "codex",
+        "rule-source"
+      ],
+      "provenance": {
+        "kind": "adapted",
+        "sources": [
+          ".claude/worktrees/agent-ac76539d1dc984edb/AGENTS.md"
         ]
       }
     }

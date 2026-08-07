@@ -1,0 +1,25 @@
+{
+  "id": "D-002",
+  "title": "快速通道最小上下文",
+  "question": "确定 Quick 在 Capture/Check/Verify 各步骤加载的固定控制面、目标索引、按需展开规则与解释输出。",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [
+    "D-001"
+  ],
+  "claim": null,
+  "resolution": "Quick 共用统一 Context Policy，采用固定控制面 + 目标索引 + 按需展开三层，不加载完整标准 Feature 产物。固定控制面跨步骤保持不变：Context Policy 版本、baseline revision、全局不变量/绝对红线 ID、已命中的结构化红线 ID、上下文选择决策、未加载候选项和升级状态。Capture 只需请求目标/排除项、工作树基线摘要和策略元数据；不把完整用户原话或源码写入 usage。Check 加载固定控制面、目标路径/符号/域索引、适用规则与红线摘要，命中项全文按需展开；无法判断相关性的候选只进索引并触发一次自动扩展，仍不确定则升级/停止。Confirm 复用 Check 结果，至少包含将改什么/不改什么及风险判断依据。Implement 只展开目标路径相关规则、已确认的红线和必要契约，不加载无关跨 Feature 全文。Verify 在固定控制面基础上增加真实 Git baseline/diff、实际修改文件、风险信号和声明测试结果；若 diff 或语义与声明不一致则升级。所有步骤记录 required/indexed/expanded/unloaded 计数和选择决策，超临时观测预算先标记 over-budget 并保留现有行为，不静默截断。",
+  "evidence": [
+    "specs/020-quick-context-governance/exploration.md#L70-L81",
+    "specs/020-quick-context-governance/exploration.md#L115-L157",
+    "specs/020-quick-context-governance/exploration.md#L161-L187"
+  ],
+  "contextPointers": [
+    "当前 context builder 无条件注入 active redlines 与 stable rules；D-004 已确定先影子计算、后受控切换；D-001 已确定 QuickRun 统一契约。"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-07T08:17:10.171Z",
+  "updatedAt": "2026-08-07T08:36:41.056Z",
+  "resolvedAt": "2026-08-07T08:36:41.056Z"
+}

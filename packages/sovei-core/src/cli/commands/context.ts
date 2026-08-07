@@ -16,6 +16,7 @@ import { buildContextPack, renderContextPackMarkdown } from '../../context/build
 import { buildSnapshot, saveSnapshot, loadSnapshot, isStale, computeSourceHash } from '../../context/snapshot.js';
 import { ProjectRulesRepository, resolveProjectRules } from '../../rules/repository.js';
 import { VERSION } from '../../config/version.js';
+import { buildContextPolicy } from '../../context/policy.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -94,6 +95,10 @@ export function registerContextCommands(program: Command): void {
         artifacts: artifactContents,
         crossFeatureArtifacts,
         snapshot: freshSnapshot,
+      });
+      pack.policy = buildContextPolicy(pack, redlines, projectRules, {
+        paths: opts.paths?.split(',').map((path) => path.trim()).filter(Boolean),
+        stage: opts.stage,
       });
 
       if (opts.json) {

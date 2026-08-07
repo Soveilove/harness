@@ -12,6 +12,7 @@ This project uses [Sovei](https://github.com/sovei) for structured development w
 - `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate
 - `sovei workflow bootstrap <feature>`: Start a new feature
 - `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)
+- `/sovei-quick`: Claude Code thin wrapper that forwards to the same local `sovei quick` contract; confirm scope before editing, then rerun verification after the change
 - `sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md
 - `sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation
 - `sovei skills status`: Show connected external skills (local + global)
@@ -41,11 +42,3 @@ The spec stage produces `reconciliation.md` — a structured alignment document 
 4. Extracts questions for product and tech confirmation
 
 Run `sovei governance review-pack generate <feature>` to render tech-review.md and product-review.md from it.
-
-## Windows PowerShell 开发环境
-
-When running `sovei`/`node` from PowerShell, stdout may be wrapped in CLIXML noise (progress bars, `<Objs ...>` serialization, encoding mojibake). Mitigations:
-
-- Source the repo config for UTF-8 + silent progress: `. .\.profile.ps1`
-- Or run raw/transparent via cmd (recommended when output matters): `cmd /c "sovei workflow status <feature>"`
-- `.profile.ps1` also defines a `RunRaw <cmd>` helper that returns raw stdout without CLIXML wrapping.

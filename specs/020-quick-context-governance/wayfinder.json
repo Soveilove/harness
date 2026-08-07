@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "featureId": "020-quick-context-governance",
+  "destination": "形成可实施的快速通道、统一 Context Policy 与 usage 观测方案，并明确进入 spec 前的边界",
+  "notes": "已有探索记录已完成第一轮收敛；U1-U5 是当前决策前沿。按用户指示直接进入 wayfind，不在 grill 阶段逐题阻塞。",
+  "notRequiredReason": null,
+  "revision": 15,
+  "updatedAt": "2026-08-07T08:37:04.372Z",
+  "ticketIndex": [
+    {
+      "id": "D-001",
+      "title": "快速通道权威入口",
+      "type": "grilling",
+      "interaction": "HITL",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-002",
+      "title": "快速通道最小上下文",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [
+        "D-001"
+      ],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-003",
+      "title": "usage 脱敏导出边界",
+      "type": "grilling",
+      "interaction": "HITL",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-004",
+      "title": "context paths 语义范围",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-005",
+      "title": "标准阶段预算观测",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [
+        "D-002"
+      ],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    }
+  ],
+  "fog": []
+}

@@ -1,0 +1,22 @@
+featureId: "020-quick-context-governance"
+status: in_progress
+currentStage: "implement"
+nextStage: "converge"
+completedStages:
+  - "load"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+reopenedStages:
+  []
+completedTaskIds:
+  []
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+updatedAt: "2026-08-07T08:51:06.878Z"

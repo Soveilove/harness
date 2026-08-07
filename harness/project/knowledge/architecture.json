@@ -3,12 +3,12 @@
     "id": "architecture-detected-project-architecture-e653d953",
     "type": "architecture",
     "title": "Detected Project Architecture",
-    "content": "# 自动检测的架构\n\n> 由 sovei project onboard 生成。\n\n## 项目：sovei-engine-workspace\n\n## 检测到的模式\n\n- Test suite present\n- Monorepo structure\n\n## 入口\n\n- packages/sovei-core/dist/release/sovei.js\n- packages/sovei-core/src/index.ts",
+    "content": "# 自动检测的架构\n\n> 由 sovei project onboard 生成。\n\n## 项目：sovei-engine-workspace\n\n## 检测到的模式\n\n- Test suite present\n- Monorepo structure\n\n## 入口\n\n- packages/sovei-core/dist/release/sovei.cjs\n- packages/sovei-core/src/index.ts",
     "lifecycle": "candidate",
     "evidence": [
       {
         "feature": "project-onboard",
-        "date": "2026-08-06T03:14:45.104Z",
+        "date": "2026-08-07T09:12:24.901Z",
         "description": "Auto-detected from scan",
         "verified": false
       }
@@ -18,8 +18,8 @@
       "auto-detected"
     ],
     "scope": "project",
-    "createdAt": "2026-08-06T03:14:45.104Z",
-    "updatedAt": "2026-08-06T03:14:45.164Z",
+    "createdAt": "2026-08-07T09:12:24.901Z",
+    "updatedAt": "2026-08-07T09:12:25.147Z",
     "promotedAt": null,
     "deprecatedReason": null
   },

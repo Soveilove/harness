@@ -13,6 +13,8 @@ import { searchEntries } from '../knowledge/selectors.js';
 import type { KnowledgeSnapshot } from './snapshot.js';
 import type { LoadedProjectRule } from '../rules/schemas.js';
 
+import type { ContextPolicyResult } from './policy.js';
+
 export interface ContextItem {
   source: string;
   id: string;
@@ -34,6 +36,7 @@ export interface ContextPack {
   suggested: ContextItem[];
   snapshot: KnowledgeSnapshot | null;
   builtAt: string;
+  policy?: ContextPolicyResult;
 }
 
 function hashContent(text: string): string {

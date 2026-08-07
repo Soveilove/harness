@@ -1,0 +1,22 @@
+{
+  "id": "D-001",
+  "title": "快速通道权威入口",
+  "question": "确定 sovei quick 与 IDE slash 命令的权威关系、触发方式及 QuickRun 统一契约。",
+  "type": "grilling",
+  "interaction": "HITL",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "以 sovei quick 作为唯一权威实现入口；IDE 侧可提供 /sovei-quick 薄封装，但不得维护第二套 Quick 语义或风险规则。两者必须落到同一个 QuickRun 契约。用户显式调用允许进入 quick；Agent 只能建议调用且需先展示目标与排除项；CLI 硬触发风险检查不可被参数关闭，高风险需求必须停止或升级。",
+  "evidence": [
+    "specs/020-quick-context-governance/exploration.md#L61-L81",
+    "specs/020-quick-context-governance/exploration.md#L83-L90"
+  ],
+  "contextPointers": [
+    "用户在 2026-08-07 确认 CLI 权威 + IDE slash 薄封装。"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-07T08:16:47.920Z",
+  "updatedAt": "2026-08-07T08:35:37.368Z",
+  "resolvedAt": "2026-08-07T08:35:37.368Z"
+}

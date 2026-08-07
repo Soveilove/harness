@@ -283,5 +283,57 @@
     "updatedAt": "2026-08-07T06:11:50.464Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-onboarding-artifact-version-guard-b75b0278",
+    "type": "rule",
+    "title": "onboarding 产物版本守卫（artifact-version-guard）",
+    "content": "business-map.json 与 redlines-seed.json 会记录生成时的 scannerVersion（artifact-version-guard.ts）。read 侧 assertArtifactsCurrent 在版本与当前 CLI VERSION 不一致时默认抛错拦截（除非 --force/--refresh 并打印放行告警），write 侧 getStaleArtifactVersion 提示全量刷新。版本比较是精确字符串相等，缺失/损坏文件按非过期静默跳过以免未 onboard 项目报错。这是防 CLI 升级后旧产物被静默当作当前事实的数据完整性护栏。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-07T09:14:15.626Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "scanner",
+      "guard",
+      "data-integrity",
+      "onboard"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-07T09:14:15.626Z",
+    "updatedAt": "2026-08-07T09:14:15.626Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule--a7a0b9b8",
+    "type": "rule",
+    "title": "重大变更应用前每条生效红线必须显式评估",
+    "content": "applyChange 走 change-control/repository.ts validateForApply：对每条 active 红线必须有 disposition，missing assessment/review-required/violation 均阻断；compliant 需附 evidence；approved-exception 需批准人/时间/参考且 absolute 红线不可豁免。changeDimensions 决定 targetStage 不得过晚，authorizedBy/At/Reference 必须齐备。这是红线从声明落到执行的核心闸门，改这里必须先查现有红线与 reconciliation。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "onboard",
+        "date": "2026-08-07T09:14:16.958Z",
+        "description": "Initial observation",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "change-control",
+      "redline",
+      "validation",
+      "governance"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-07T09:14:16.958Z",
+    "updatedAt": "2026-08-07T09:14:16.958Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

@@ -23,6 +23,7 @@ import { resolve } from 'node:path';
 import { emptyRulesDocument, ProjectRulesRepository, DEFAULT_RULES_FILE } from '../../rules/repository.js';
 import { adaptProjectRules } from '../../rules/adaptation.js';
 import { SkillManager } from '../../skills/manager.js';
+import { DEFAULT_WORKFLOW } from '../../engine/workflow-engine.js';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -175,6 +176,14 @@ export function registerProjectCommands(program: Command): void {
         await storage.write(dir + '/.gitkeep', '');
         console.log('  · 已创建 ' + dir + '/');
       }
+      const usageCreated = await storage.writeIfAbsent('harness/project/usage.jsonl', '');
+      if (usageCreated) console.log('  · 已创建 harness/project/usage.jsonl（原始 usage 默认不提交 Git）');
+      const existingGitignore = await storage.read('.gitignore');
+      if (existingGitignore === null) {
+        await storage.write('.gitignore', 'harness/project/usage.jsonl\n');
+      } else if (!existingGitignore.split(/\r?\n/).some((line) => line.trim() === 'harness/project/usage.jsonl')) {
+        await storage.write('.gitignore', existingGitignore.replace(/\s*$/, '') + '\nharness/project/usage.jsonl\n');
+      }
 
       // Initialize external skills skeleton (skill-map + skill-lock)
       await new SkillManager(storage).ensureSkeleton();
@@ -183,7 +192,7 @@ export function registerProjectCommands(program: Command): void {
       // Create project.config.json
       const projectConfig = {
         project: { name: projectName, description: 'New project', techStack: stack, started: new Date().toISOString().split('T')[0] },
-        workflow: { version: '2.0.0' },
+        workflow: { version: DEFAULT_WORKFLOW.version },
       };
       await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
       console.log('  · 已创建 harness/project/project.config.json');
@@ -203,6 +212,8 @@ export function registerProjectCommands(program: Command): void {
         '- `sovei workflow <stage> <feature> --complete`: Complete a stage and advance',
         '- `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate',
         '- `sovei workflow bootstrap <feature>`: Start a new feature',
+        '- `sovei quick <target> --paths <path> --json`: Machine-first local change check; escalates uncertain or out-of-scope work',
+        '- `/sovei-quick`: Claude Code thin wrapper forwarding to the same Quick contract; confirm scope before editing, then rerun verification',
         '- `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)',
         '- `sovei governance review-pack generate <feature>`: Render tech-review.md + product-review.md from reconciliation.md',
         '- `sovei governance review-pack import <feature> --product <file> --by <name> --reference <ref>`: Import PM confirmation',

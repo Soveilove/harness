@@ -31,6 +31,11 @@ import { WayfinderRepository } from '../wayfinder/repository.js';
 import type { SkillResolver, SkillExecutionReport } from '../skills/types.js';
 import { MarkdownSkillAdapter } from '../skills/adapter.js';
 import { randomUUID } from 'node:crypto';
+import { buildContextPack } from '../context/builder.js';
+import { buildContextPolicy, summarizeContextShadow, CONTEXT_POLICY_VERSION } from '../context/policy.js';
+import { loadSnapshot } from '../context/snapshot.js';
+import { ProjectRulesRepository, resolveProjectRules } from '../rules/repository.js';
+import { UsageRecorder, unknownTokenUsage } from '../quick/usage.js';
 
 /**
  * Default workflow definition.
@@ -141,6 +146,9 @@ export class WorkflowEngine {
 
     // Execute the preparation hook and return its prompt contract.
     const result = await stageDef.execute(ctx);
+    // Record shadow context observation without changing the stage prompt or workflow state.
+    await this.recordContextObservation(featureId, stageName, state, artifacts);
+
     const authorityNotice = state.activeChangeId
       ? `## 权威规则\n\n当前 revision：${state.revision}。当前变更：${state.activeChangeId}。`
         + `执行前先阅读 ${featurePath}/change-requests/${state.activeChangeId}.json。`

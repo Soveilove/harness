@@ -184,5 +184,50 @@
     "origin": "agent-generated",
     "createdAt": "2026-08-06T03:16:44.029Z",
     "updatedAt": "2026-08-06T03:16:44.029Z"
+  },
+  {
+    "id": "ARTIFACT_VERSION_GUARD_INTEGRITY",
+    "title": "onboarding 产物版本守卫不可绕过",
+    "rule": "business-map.json 与 redlines-seed.json 记录的 scannerVersion 与当前 CLI VERSION 不一致时，读取侧默认必须拦截（除非显式 --force/--refresh 且打印放行告警），写入侧必须提示即将全量刷新；不得静默把旧版生成的 onboarding 产物当作当前事实读取",
+    "enforcement": "absolute",
+    "active": true,
+    "rationale": "CLI 升级后旧版扫描产物可能因深度/过滤规则差异而不完整，静默当作当前事实会驱动错误的决策。守卫被绕过或移除会让旧产物无警告地进入上下文。",
+    "scope": "packages/sovei-core/src/config/artifact-version-guard.ts, harness/project/codegraph/business-map.json, harness/project/governance/redlines-seed.json",
+    "examples": [
+      "升级后直接读取 v2.4 生成的 business-map.json 而不触发拦截"
+    ],
+    "origin": "agent-generated",
+    "createdAt": "2026-08-07T09:14:00.248Z",
+    "updatedAt": "2026-08-07T09:14:00.248Z"
+  },
+  {
+    "id": "REDLINE_ASSESSMENT_REQUIRED",
+    "title": "每一条生效红线在重大变更前必须显式评估",
+    "rule": "applyChange 前 validateForApply 必须为每一条 active 红线得出明确 disposition：compliant 需附 evidence、approved-exception 需有批准人/时间/参考且 absolute 红线不可豁免、violation 直接阻断；不得缺失评估或留 review-required 通过",
+    "enforcement": "absolute",
+    "active": true,
+    "rationale": "redlineAssessments 是红线从'声明'落到'执行'的唯一闸门（repository.ts:262-289）。若允许未评估或虚假 compliant 通过，任何 material change 都能绕过全部业务红线治理。",
+    "scope": "packages/sovei-core/src/change-control/repository.ts validateForApply, 变更请求 redlineAssessments",
+    "examples": [
+      "删掉某条 active 红线的 assessment 后仍应用变更"
+    ],
+    "origin": "agent-generated",
+    "createdAt": "2026-08-07T09:14:01.747Z",
+    "updatedAt": "2026-08-07T09:14:01.747Z"
+  },
+  {
+    "id": "STORAGE_WRITE_DISCIPLINE",
+    "title": "harness/project 与 specs 的写操作必须走 storage 层",
+    "rule": "对 harness/project/ 与 specs/ 下文件的写入应通过 StorageBackend（原子写 + withLock + 路径包含校验），不得直接用 node:fs 覆盖写或绕过锁做读-改-写并发",
+    "enforcement": "approval-required",
+    "active": true,
+    "rationale": "FilesystemStorage.write 用临时文件+rename 原子写防崩溃半截文件，withLock 防并发竞态，resolve 做路径包含校验。直接 node:fs 会绕过这三层保护，可能导致项目数据损坏或并发覆盖。",
+    "scope": "packages/sovei-core/src/storage/filesystem.ts, 所有写 harness/project 或 specs 的代码",
+    "examples": [
+      "用 fs.writeFile 直接覆盖 redlines.json 而非走 storage.write"
+    ],
+    "origin": "agent-generated",
+    "createdAt": "2026-08-07T09:14:02.658Z",
+    "updatedAt": "2026-08-07T09:14:02.658Z"
   }
 ]

@@ -1,0 +1,16 @@
+{"timestamp":"2026-08-07T08:08:39.712Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"020-quick-context-governance"},"actor":"cli","sourceStage":null}
+{"timestamp":"2026-08-07T08:09:39.891Z","revision":1,"event":{"type":"STAGE_PREPARED","stage":"load"},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-07T08:10:16.446Z","revision":2,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-07T08:15:02.658Z","revision":3,"event":{"type":"STAGE_PREPARED","stage":"grill"},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-07T08:15:49.958Z","revision":4,"event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-07T08:16:05.889Z","revision":5,"event":{"type":"STAGE_PREPARED","stage":"wayfind"},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-07T08:38:23.926Z","revision":6,"event":{"type":"STAGE_COMPLETE","stage":"wayfind","artifacts":["wayfinder.md"]},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-07T08:39:23.350Z","revision":7,"event":{"type":"STAGE_PREPARED","stage":"spec"},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-07T08:41:26.526Z","revision":8,"event":{"type":"STAGE_COMPLETE","stage":"spec","artifacts":["spec.md","reconciliation.md"]},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-07T08:42:41.112Z","revision":9,"event":{"type":"STAGE_PREPARED","stage":"scope"},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-07T08:44:32.044Z","revision":10,"event":{"type":"STAGE_COMPLETE","stage":"scope","artifacts":["scope.md","coverage-matrix.md"]},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-07T08:45:32.541Z","revision":11,"event":{"type":"STAGE_PREPARED","stage":"plan"},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-07T08:46:58.154Z","revision":12,"event":{"type":"STAGE_COMPLETE","stage":"plan","artifacts":["plan.md"]},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-07T08:49:21.944Z","revision":13,"event":{"type":"STAGE_PREPARED","stage":"tasks"},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-07T08:51:06.876Z","revision":14,"event":{"type":"STAGE_COMPLETE","stage":"tasks","artifacts":["tasks.md"]},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-07T08:55:25.417Z","revision":15,"event":{"type":"STAGE_PREPARED","stage":"implement"},"actor":"cli","sourceStage":"implement"}

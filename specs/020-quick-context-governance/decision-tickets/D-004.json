@@ -1,0 +1,25 @@
+{
+  "id": "D-004",
+  "title": "context paths 语义范围",
+  "question": "确定 context build --paths 是否在本 Feature 内修正为同时过滤适用红线与 stable rules，及兼容/迁移边界。",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "纳入本 Feature 的统一 Context Policy 基础范围，但采用两阶段边界：第一阶段只新增可审计的候选计算/解释能力与兼容性报告，不改变现有 context build 实际发送的完整上下文；第二阶段再在受控实验中切换路径/结构化红线/稳定规则的 scoped 选择。--paths 的最终语义应覆盖目标路径相关的项目规范、结构化局部红线和稳定规则候选，但全局不变量始终保留；自由文本 scope 不能作为唯一匹配依据。迁移时保留旧调用可运行，报告明确旧行为与候选行为差异；若无法安全判定相关性，进入候选/升级而非静默过滤。",
+  "evidence": [
+    "specs/020-quick-context-governance/exploration.md#L94-L111",
+    "specs/020-quick-context-governance/exploration.md#L124-L157",
+    "packages/sovei-core/src/cli/commands/context.ts#L44-L54",
+    "packages/sovei-core/src/context/builder.ts#L120-L169",
+    "packages/sovei-core/src/change-control/schemas.ts#L2-L19"
+  ],
+  "contextPointers": [
+    "当前 CLI --paths 只影响 projectRules；builder 无条件加载 active redlines 与 stable rules；本 Feature 已确认先观测和影子计算、不立即改变行为。"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-07T08:17:12.598Z",
+  "updatedAt": "2026-08-07T08:34:26.501Z",
+  "resolvedAt": "2026-08-07T08:34:26.501Z"
+}

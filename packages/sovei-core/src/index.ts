@@ -79,9 +79,37 @@ export * from './wayfinder/index.js';
 // Context & Knowledge Runtime
 export * from './context/builder.js';
 export * from './context/snapshot.js';
+export * from './context/policy.js';
 export { adapterRegistry } from './adapters/registry.js';
 export type { IDEAdapter, AdapterCapabilities } from './adapters/registry.js';
 export type { EmbeddingProvider, LLMProvider, ScoredItem } from './providers/contracts.js';
+
+// Quick Channel
+export {
+  QUICK_SCHEMA_VERSION,
+  QuickPhaseSchema,
+  QuickStatusSchema,
+  QuickRiskLevelSchema,
+  QuickRunInputSchema,
+  QuickRunStateSchema,
+  createQuickRun,
+  transitionQuickRun,
+  finishQuickRun,
+  interruptQuickRun,
+} from './quick/types.js';
+export type {
+  QuickPhase,
+  QuickStatus,
+  QuickRiskLevel,
+  QuickRunInput,
+  QuickRunState,
+  QuickTransitionResult,
+} from './quick/types.js';
+
+export * from './quick/usage.js';
+export * from './quick/git-verifier.js';
+
+export * from './quick/run.js';
 
 // External Skill runtime contracts
 export * from './skills/index.js';

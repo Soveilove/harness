@@ -1,0 +1,25 @@
+{
+  "id": "D-005",
+  "title": "标准阶段预算观测",
+  "question": "确定在不改变现有行为的观测阶段记录哪些预算维度，以及何时允许从观测进入受控实验。",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [
+    "D-002"
+  ],
+  "claim": null,
+  "resolution": "本 Feature 的标准阶段预算只进入观测与影子计算，不预先设定放行阈值，也不改变当前完整上下文发送行为。每次入口/阶段至少记录：Context Policy 版本、baseline revision、required/indexed/expanded/unloaded 条目数与字符/字节大小、候选裁剪差异、已命中红线 ID、未加载候选项、超临时观测预算标记、模型/Skill 信息（若可得）、真实 input/output/cache tokens（若宿主提供，未知写 unknown/null）、调用次数、延迟、完成/失败/升级/中断状态。阶段只改变观测维度，不改变其职责或实际上下文。进入受控实验必须先有固定任务集和同 commit/model/config/Sovei/Skill/知识快照的可比性，且安全指标（红线召回、越界 diff）与质量指标（完成率、测试通过、返工）不劣化，再比较成本/延迟 Pareto 前沿；预算阈值和策略在评测数据后另行决策。",
+  "evidence": [
+    "specs/020-quick-context-governance/exploration.md#L143-L181",
+    "specs/020-quick-context-governance/exploration.md#L183-L187",
+    "specs/020-quick-context-governance/exploration.md#L205-L228"
+  ],
+  "contextPointers": [
+    "用户已确认三步走：只测量、影子计算、受控实验；评测前 over-budget 不改变行为。"
+  ],
+  "exclusionReason": null,
+  "createdAt": "2026-08-07T08:17:13.811Z",
+  "updatedAt": "2026-08-07T08:37:04.372Z",
+  "resolvedAt": "2026-08-07T08:37:04.372Z"
+}
