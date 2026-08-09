@@ -1,7 +1,7 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
-> 生成日期：2026-08-07
-> 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码（2.5.6）与 npm 发布状态。
+> 生成日期：2026-08-10（本次对齐至 2.5.7）
+> 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码（2.5.7）与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
 ---
@@ -10,12 +10,12 @@
 
 | 项 | 值 |
 |---|---|
-| 最新发布版本 | **2.5.6**（npm `latest` 渠道，已发布） |
-| 测试基线 | 109 / 109 通过（构建后） |
+| 最新发布版本 | **2.5.7**（npm `latest` 渠道，已发布，2026-08-10） |
+| 测试基线 | 124 / 124 通过（构建后） |
 | Node 兼容 | 发布产物 CommonJS，`engines >= 14.18.0`（Node 14 可用） |
 | 知识库 | 1 stable + 若干 candidate/pending |
 | Skills | 8 阶段绑定，7 个第三方 skill 锁定 |
-| 最新 Feature | 018-adapted-rule-dedup（completed，已发 2.5.6） |
+| 最新 Feature | 019-contract-single-source（completed）；2.5.7 另含 P0-1 红线 branch 作用域隔离 |
 
 ---
 
@@ -83,7 +83,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 | # | 项 | 现状 | 建议动作 |
 |---|---|---|---|
-| P1-1 | **两套 contract 数据源并存** | `src/stages/index.ts` 与 `workflow-engine.ts` 各自维护阶段契约，改一个产物声明要同步两处（016 已踩坑） | 合并为单一契约源 |
+| P1-1 | ~~**两套 contract 数据源并存**~~ | ✅ **已实现**（Feature 019-contract-single-source，completed）：契约单一源为 `stages/index.ts` 的 `stageRegistry`（`StageDefinition.contract`）；`WorkflowDefinition` 仅含编排字段（version/stageOrder/maxStagesPerInvocation/allowChaining），不再重复产物契约（见 `engine/types.ts:66-94`） | — |
 | P1-2 | **`mcp` 能力字段无消费方** | `adapters/registry.ts` 的 `mcp: true`（codex/claude/gemini/windsurf）无 MCP server 消费，仅预留边界 | 明确做不做 MCP server；不做则长期挂起 |
 
 ### 2.3 P2 — 观察项（低风险顺带）
@@ -112,7 +112,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 | 优先级 | 待开发 | 现状 | 价值 |
 |---|---|---|---|
-| **P0** | **红线 branch 作用域隔离** | ✅ **已实现**（2026-08-09）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤，只推送全局或匹配 branch 的红线；新增测试 `workspace sync filters redlines by branch scope`（122/122 通过） | 个人多工程：工程专属红线不互相污染 |
+| **P0** | **红线 branch 作用域隔离** | ✅ **已实现**（2026-08-09，已发 2.5.7）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤，只推送全局或匹配 branch 的红线；`governance redline add/update/import` 支持 `--branch`（update 另支持 `--clear-branches`）；新增测试（124/124 通过） | 个人多工程：工程专属红线不互相污染 |
 | **P0** | **merge preflight 语义冲突预检** | 未实现（2026-08-09 已核对源码：`syncToSatellite` 仅第 185-188 行有 knowledge entry `id` 冲突检查，无任何红线/语义冲突预检） | 规模化合并防线（设计核心） |
 | P2 | 联邦星型（multi-hub） | 未实现（当前单 hub） | 多主干/多团队对账，规模化后再做 |
 
@@ -121,7 +121,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 ## 5. 发布说明校对（大版本更新时必做）
 
 - **`packages/sovei-core/README.md` 是发布说明文件**，每次大版本更新需校对：
-  - 「版本与发布」章节版本号（当前 README 写 2.5.5，**实际已是 2.5.6**，下次发版前需同步）
+  - 「版本与发布」章节版本号（✅ 已同步至 2.5.7，2026-08-10）
   - 命令速查表是否覆盖全部新增命令
   - 能力概览表、外部 Skills 绑定表、安装/上手示例
   - 环境要求（Node >= 14.18）、发布产物 `sovei.cjs`、零运行时依赖描述
@@ -132,7 +132,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 ## 6. 建议开发顺序
 
 1. ~~**先清工作流自身债（P0）**：016 收尾闭合 → O1 晋级审查~~ ✅ 已完成（2026-08-07）。
-2. **场景二 P0**：红线分支隔离（个人多工程最急）→ merge preflight（规模化防线）。
+2. ~~**场景二 P0-1 红线分支隔离**~~ ✅ 已完成（2026-08-09，已发 2.5.7）。**剩余场景二 P0-2 merge preflight**（规模化防线）为当前最高优先级。
 3. **场景一 P1**：spec 分层 git 策略 + 主动归档 + 知识阈值。
 4. **本地使用优化（P2）**：`use-local.ps1` 一键本地链接脚本 + README 补本地使用说明。
 5. **最后 P2**：联邦星型、O2 晋升——等待规模化场景/自然复用点。
@@ -141,8 +141,9 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 ## 7. 待人工决策（已列在设计文档 §6）
 
-- 场景二先做 merge preflight 还是红线分支隔离？
+- 场景二 merge preflight：现在只剩它一个 P0，直接推进即可（红线隔离已完成，无需再比较次序）。
 - 联邦星型是否本轮做（单 hub 已满足个人 a/b/c 三工程）？
 - `mcp` 字段：做 MCP server 还是长期挂起？
 
 > ✅ 已决：013 O1「声明式适配器注册」已于 2026-08-07 人工审查放行晋级 stable。
+> ✅ 已决：P0-1 红线 branch 作用域隔离已实现并发布（2.5.7）。
