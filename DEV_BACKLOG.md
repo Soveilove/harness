@@ -113,7 +113,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | 优先级 | 待开发 | 现状 | 价值 |
 |---|---|---|---|
 | **P0** | **红线 branch 作用域隔离** | ✅ **已实现**（2026-08-09，已发 2.5.7）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤，只推送全局或匹配 branch 的红线；`governance redline add/update/import` 支持 `--branch`（update 另支持 `--clear-branches`）；新增测试（124/124 通过） | 个人多工程：工程专属红线不互相污染 |
-| **P0** | **merge preflight 语义冲突预检** | 未实现（2026-08-09 已核对源码：`syncToSatellite` 仅第 185-188 行有 knowledge entry `id` 冲突检查，无任何红线/语义冲突预检） | 规模化合并防线（设计核心） |
+| **P0** | **merge preflight 语义冲突预检** | **未实现**（唯一剩余 P0）。**功能定义**（设计文档 §3.4）：合并分支 X → 主干 Y 前，在 git 文本冲突检查之上，做业务语义冲突预检：① **红线冲突**——同一业务域是否被两分支定义了相反/矛盾的红线（`redlines.json`）；② **coverage 冲突**——同一代码表面是否被两分支 coverage-matrix 命中且改法矛盾；③ **知识/决策冲突**——两分支的 knowledge/decision 条目是否互相矛盾；④ **冲突裁决**——合并/隔离/覆盖/人工介入，每次裁决写理由进事件流；⑤ **输出 preflight 报告**，无冲突才允许 merge。**当前差距**（2026-08-09 核对源码）：`packages/sovei-core/src/config/workspace.ts` `syncToSatellite` 仅第 185-188 行有 knowledge entry `id` 级冲突检查，**无红线语义、coverage 改法、知识矛盾等语义级预检，也无 preflight 命令/报告** | 规模化合并防线（设计核心） |
 | P2 | 联邦星型（multi-hub） | 未实现（当前单 hub） | 多主干/多团队对账，规模化后再做 |
 
 ---
