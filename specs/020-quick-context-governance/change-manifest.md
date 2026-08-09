@@ -5,16 +5,31 @@
 
 ## Implemented
 
+### TASK-001 契约
 - Added QuickRun contracts for six ordered phases, terminal states, interruption, and explicit risk/unverified fields.
 - Added append-only usage events with unknown token semantics and interrupted-run detection.
-- Added read-only Git baseline/diff verification with scope and out-of-scope reporting.
+- Exported Quick/usage/Git contracts from `src/index.ts`.
+
+### TASK-002 记录与验证适配器
+- Added read-only Git baseline/diff verification with scope and out-of-scope reporting (`src/quick/git-verifier.ts`).
+- Usage recorder is append-only, preserves existing history, and identifies interrupted runs.
+
+### TASK-003 统一上下文治理
 - Added Context Policy full/scoped/index+on-demand shadow variants while preserving full actual context behavior.
 - Preserved global absolute redlines in scoped shadow context.
-- Added `sovei quick` CLI and exported Quick/usage/Git contracts.
-- Added `.claude/commands/sovei-quick.md` as a thin wrapper; the CLI remains authoritative.
+- Standard workflow `prepareStage` records a shadow context observation without changing the stage prompt or workflow state.
+
+### TASK-004 Quick 六步闭环
+- Added `sovei quick` CLI as the authoritative entry; wires Capture/Check/Confirm/Implement/Verify/Report.
 - Changed Quick verification so no observed implementation diff cannot be reported as completed.
+- Added `.claude/commands/sovei-quick.md` as a thin wrapper; the CLI remains authoritative.
+
+### TASK-005 项目兼容路径
 - Made project initialization read the current `DEFAULT_WORKFLOW.version` instead of hard-coding an old version.
 - Added usage initialization and `.gitignore` compatibility behavior without overwriting existing history.
+
+### TASK-006 回归与交付证据
+- Full regression below: `check` + `test` both pass with 121 tests, 0 failures.
 
 ## Verification evidence
 

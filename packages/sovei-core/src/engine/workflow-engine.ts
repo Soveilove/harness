@@ -515,6 +515,85 @@ export class WorkflowEngine {
     return stageRegistry.list();
   }
 
+  /**
+   * Record a shadow Context Policy observation for a standard workflow stage.
+   * Builds the current context pack, runs the shadow policy (full/scoped/
+   * index+on-demand variants), and persists a usage observation. This never
+   * changes the actual stage prompt or workflow state; failures are swallowed
+   * so observation cannot block ordinary stage preparation.
+   */
+  private async recordContextObservation(
+    featureId: string,
+    stageName: string,
+    state: WorkflowState,
+    artifacts: ArtifactRepository,
+  ): Promise<void> {
+    try {
+      const redlines = await this.changeControl.loadRedlines();
+      const rulesRepository = new ProjectRulesRepository(this.storage, this.config.rulesDir);
+      const projectRules = resolveProjectRules(await rulesRepository.load(), { stage: stageName });
+      const snapshot = await loadSnapshot(this.storage);
+      const knowledge = this.knowledgeStore.selectAll();
+      const artifactEntries: Array<{ name: string; content: string }> = [];
+      for (const name of await artifacts.list()) {
+        if (!name.endsWith('.md')) continue;
+        const content = await artifacts.read(name);
+        if (content) artifactEntries.push({ name, content });
+      }
+      const pack = buildContextPack({
+        feature: featureId,
+        stage: stageName,
+        redlines,
+        projectRules,
+        knowledge,
+        artifacts: artifactEntries,
+        snapshot,
+      });
+      const policy = buildContextPolicy(pack, redlines, projectRules, {
+        baselineRevision: null,
+      });
+      const recorder = new UsageRecorder(this.storage);
+      await recorder.append({
+        schemaVersion: 1,
+        event: 'context-selected',
+        runId: `workflow-${featureId}-${stageName}-${Date.now().toString(36)}`,
+        channel: 'workflow',
+        stage: stageName,
+        occurredAt: new Date().toISOString(),
+        policyVersion: policy.controlPlane.policyVersion,
+        baselineRevision: null,
+        tokenUsage: unknownTokenUsage(),
+        counts: {
+          required: policy.shadow.full.required.length,
+          indexed: policy.shadow.indexOnDemand.indexed.length,
+          expanded: policy.shadow.scoped.expanded.length,
+          unloaded: policy.shadow.scoped.unloaded.length,
+        },
+        sizes: {
+          requiredCharacters: policy.shadow.full.characters,
+          indexedCharacters: policy.shadow.indexOnDemand.characters,
+          expandedCharacters: policy.shadow.scoped.characters,
+        },
+        matchedRedlineIds: policy.controlPlane.matchedRedlineIds,
+        candidateIds: policy.controlPlane.unloadedCandidateIds,
+        decision: policy.controlPlane.selectionDecision,
+        overBudget: policy.controlPlane.status === 'over-budget',
+        shadow: {
+          actual: 'full',
+          compatibility: 'preserved',
+          variants: {
+            full: summarizeContextShadow(policy.shadow.full),
+            scoped: summarizeContextShadow(policy.shadow.scoped),
+            indexOnDemand: summarizeContextShadow(policy.shadow.indexOnDemand),
+          },
+        },
+      });
+    } catch {
+      // Shadow observation is best-effort; it must never block stage preparation.
+      this.logger.debug(`context observation skipped for ${featureId}/${stageName}`);
+    }
+  }
+
   private async createStageContext(featureId: string, stageName: string): Promise<{
     featurePath: string;
     state: WorkflowState;
@@ -538,7 +617,9 @@ export class WorkflowEngine {
   private async readTaskIds(artifacts: ArtifactRepository): Promise<string[]> {
     const content = await artifacts.read('tasks.md');
     if (!content) throw new Error('tasks.md not generated');
-    const ids = [...content.matchAll(/^\s*[-*]\s+\[[ xX]\]\s+([A-Za-z0-9][\w.-]*)\b/gm)].map((match) => match[1]);
+    // Only recognize the project's stable task ID prefix (TASK-xxx) so that
+    // skill-injected templates in the "提示契约" section are never treated as tasks.
+    const ids = [...content.matchAll(/^\s*[-*]\s+\[[ xX]\]\s+(TASK-[\w.-]+)\b/gm)].map((match) => match[1]);
     if (!ids.length) throw new Error('tasks.md must contain checklist tasks such as "- [ ] TASK-001: description"');
     return [...new Set(ids)];
   }

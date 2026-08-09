@@ -335,5 +335,55 @@
     "updatedAt": "2026-08-07T09:14:16.958Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-低风险局部修改走快速通道-高风险-不确定-越界升级完整-sovei-5bc390eb",
+    "type": "rule",
+    "title": "低风险局部修改走快速通道，高风险/不确定/越界升级完整 Sovei",
+    "content": "明确、低风险、局部单文件的修改默认走机器先审的快速闭环（capture→check→confirm→implement→verify→report）；当目标模糊、触及共享契约/数据/权限/异步/红线、或真实 diff 越界时，必须停止并升级完整 Sovei 流程，不得自动回退或静默扩大范围。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "020-quick-context-governance",
+        "date": "2026-08-09T15:33:03.179Z",
+        "description": "020 实现 `sovei quick` 六步闭环与升级/越界报告，CLI 只做基线/真实 diff/硬风险，语义与完整流程隔离，不写普通 workflow events。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "quick-channel",
+      "governance",
+      "risk-escalation"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T15:33:03.179Z",
+    "updatedAt": "2026-08-09T15:33:03.179Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-usage-只记录脱敏事实-缺失-token-记-unknown-而非-0-b711f370",
+    "type": "rule",
+    "title": "usage 只记录脱敏事实，缺失 token 记 unknown 而非 0",
+    "content": "使用观测记录应保持 append-only、只补缺不覆盖；token 缺失时记录 unknown/null 而不是当作零；记录不得含完整原话、源码、绝对路径或会话 ID，避免跨会话泄漏敏感信息。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "020-quick-context-governance",
+        "date": "2026-08-09T15:33:03.179Z",
+        "description": "020 实现 UsageRecorder（writeIfAbsent + withLock + unknownTokenUsage），项目 init/--force/onboard/rescan 均不清空历史。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "usage",
+      "privacy",
+      "data-integrity"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T15:33:03.179Z",
+    "updatedAt": "2026-08-09T15:33:03.179Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

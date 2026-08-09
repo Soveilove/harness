@@ -99,5 +99,30 @@
     "updatedAt": "2026-08-07T06:11:50.464Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-context-policy-用影子变体先测量-实际上下文保持-full-不预切-1f04dfe8",
+    "type": "architecture",
+    "title": "Context Policy 用影子变体先测量，实际上下文保持 full 不预切",
+    "content": "上下文治理抽成共用 policy 层（Quick 与标准 workflow 同一 version/baseline/候选字段），以 full/scoped/index+on-demand 影子变体观测裁剪效果，实际发送上下文保持 full 直到受控实验证明可裁剪；全局绝对红线在任何影子变体中都保留。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "020-quick-context-governance",
+        "date": "2026-08-09T15:33:03.179Z",
+        "description": "020 实现 `buildContextPolicy` shadow 三变体，actual=full、compatibility=preserved，standard workflow prepareStage 记录影子观测不改变 prompt。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "context-governance",
+      "shadow-policy",
+      "redline"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T15:33:03.179Z",
+    "updatedAt": "2026-08-09T15:33:03.179Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

@@ -1,7 +1,7 @@
 featureId: "020-quick-context-governance"
-status: in_progress
-currentStage: "implement"
-nextStage: "converge"
+status: completed
+currentStage: null
+nextStage: null
 completedStages:
   - "load"
   - "grill"
@@ -10,13 +10,23 @@ completedStages:
   - "scope"
   - "plan"
   - "tasks"
+  - "implement"
+  - "converge"
+  - "verify"
+  - "learn"
+  - "sync"
 reopenedStages:
   []
 completedTaskIds:
-  []
+  - "TASK-001"
+  - "TASK-002"
+  - "TASK-003"
+  - "TASK-004"
+  - "TASK-005"
+  - "TASK-006"
 activeChangeId: null
 revision: 0
 riskLevel: S1
 blockers:
   []
-updatedAt: "2026-08-07T08:51:06.878Z"
+updatedAt: "2026-08-09T15:33:17.475Z"

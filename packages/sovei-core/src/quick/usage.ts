@@ -39,6 +39,7 @@ const ContextShadowSummarySchema = z.object({
   characters: z.number().int().nonnegative(),
 }).strict();
 
+export const UsageBaseSchema = z.object({
   schemaVersion: z.literal(USAGE_SCHEMA_VERSION),
   event: z.enum(['run-start', 'context-selected', 'run-end']),
   runId: z.string().min(1),
