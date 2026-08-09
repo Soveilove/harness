@@ -385,5 +385,30 @@
     "updatedAt": "2026-08-09T15:33:03.179Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-内部评估类型与输出序列化类型应在边界分离-78d6d60f",
+    "type": "rule",
+    "title": "内部评估类型与输出序列化类型应在边界分离",
+    "content": "当函数返回包含大型内部数据结构的评估结果时，应在序列化边界提供精简摘要类型，而非直接序列化完整内部类型。内部类型服务于计算决策（如策略评估、状态判定），输出类型服务于通信（如 CLI --json、事件日志、API 响应）。两者的关注点不同：内部类型需要完整数据做精确决策，输出类型需要足够元数据做可读通信。在返回点做 summarize 转换，而非在每个消费者处做后处理过滤。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "021-quick-json-slim",
+        "date": "2026-08-09T16:36:02.789Z",
+        "description": "021-quick-json-slim: QuickEvaluationResult.policy 从完整 ContextPolicyResult 改为 QuickPolicySummary，输出从 117KB 降至 37KB",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "type-design",
+      "serialization",
+      "output-boundary"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T16:36:02.789Z",
+    "updatedAt": "2026-08-09T16:36:02.789Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

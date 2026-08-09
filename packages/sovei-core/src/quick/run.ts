@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto';
 import type { ContextPack } from '../context/builder.js';
-import { buildContextPolicy, CONTEXT_POLICY_VERSION } from '../context/policy.js';
+import {
+  buildContextPolicy,
+  CONTEXT_POLICY_VERSION,
+  summarizeContextShadow,
+  type ContextPolicyControlPlane,
+  type ContextPolicyResult,
+  type ContextIndexItem,
+  type ContextShadowSummary,
+} from '../context/policy.js';
 import type { Redline } from '../change-control/schemas.js';
 import type { LoadedProjectRule } from '../rules/schemas.js';
 import {
@@ -25,9 +33,42 @@ export interface QuickEvaluationInput {
   runId?: string;
 }
 
+/**
+ * 精简版策略摘要——仅保留元数据，不含完整 ContextItem 正文。
+ *
+ * `controlPlane` 提供策略决策元信息（匹配的红线 ID、候选列表、状态等），
+ * `shadowSummaries` 提供三个影子变体的统计度量（ID 列表 + 计数 + 字符数），
+ * `index` 提供每条上下文项的 240 字符摘要索引。
+ *
+ * 完整的 `ContextPolicyResult`（含 `shadow.*.required: ContextItem[]` 全文 content）
+ * 仅在 `evaluateQuickRun` 内部用于策略决策，不序列化到 `--json` 输出。
+ */
+export interface QuickPolicySummary {
+  controlPlane: ContextPolicyControlPlane;
+  shadowSummaries: {
+    full: ContextShadowSummary;
+    scoped: ContextShadowSummary;
+    indexOnDemand: ContextShadowSummary;
+  };
+  index: ContextIndexItem[];
+}
+
+/** 从完整 ContextPolicyResult 提取精简摘要，剥离所有 ContextItem.content */
+function summarizePolicy(policy: ContextPolicyResult): QuickPolicySummary {
+  return {
+    controlPlane: policy.controlPlane,
+    shadowSummaries: {
+      full: summarizeContextShadow(policy.shadow.full),
+      scoped: summarizeContextShadow(policy.shadow.scoped),
+      indexOnDemand: summarizeContextShadow(policy.shadow.indexOnDemand),
+    },
+    index: policy.index,
+  };
+}
+
 export interface QuickEvaluationResult {
   run: QuickRunState;
-  policy: ReturnType<typeof buildContextPolicy>;
+  policy: QuickPolicySummary;
   git: GitVerifyResult | null;
   confirmation: string;
   report: string[];
@@ -112,7 +153,7 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     }).state;
     const report = ['Quick stopped before implementation.', '人工介入：目标范围或上下文相关性仍不确定。'];
     await appendEnd(recorder, run);
-    return { run, policy, git: null, confirmation: '不会修改源码；请先确认范围或升级完整 Sovei。', report };
+    return { run, policy: summarizePolicy(policy), git: null, confirmation: '不会修改源码；请先确认范围或升级完整 Sovei。', report };
   }
 
   run = transitionQuickRun(run, 'confirm', {
@@ -166,7 +207,7 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     ]
     : ['Quick 检查完成，可交付候选。', '真实 Git diff 与声明范围一致；声明测试仍需由宿主执行并回报。'];
   await appendEnd(recorder, run, git);
-  return { run, policy, git, confirmation, report };
+  return { run, policy: summarizePolicy(policy), git, confirmation, report };
 }
 
 async function appendEnd(recorder: UsageRecorder, run: QuickRunState, _git?: GitVerifyResult): Promise<void> {

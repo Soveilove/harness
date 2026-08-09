@@ -12,6 +12,7 @@ import { WorkspaceManager } from '../../config/workspace.js';
 import { FilesystemStorage } from '../../storage/filesystem.js';
 import type { StorageBackend } from '../../storage/types.js';
 import type { Logger } from '../../providers/tokens.js';
+import { MergePreflightChecker, renderPreflightReport } from '../../preflight/index.js';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -21,6 +22,10 @@ function getLogger(): Logger {
 }
 function getWorkspaceManager(): WorkspaceManager {
   return new WorkspaceManager(getStorage());
+}
+
+function collectFeaturePath(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
 }
 
 export function registerWorkspaceCommands(program: Command): void {
@@ -139,6 +144,78 @@ export function registerWorkspaceCommands(program: Command): void {
       console.log('');
       console.log('  Review in hub with: sovei knowledge list --lifecycle candidate');
       console.log('  Promote to pending:  sovei knowledge promote <id>\n');
+    });
+
+  // ── preflight ──
+  ws
+    .command('preflight')
+    .argument('<source>', '源工作区 ID（即将被合并的分支）')
+    .argument('<target>', '目标工作区 ID（合并目标）')
+    .description('合并前语义冲突预检（红线/知识/coverage-matrix）')
+    .option('--feature <path>', '指定 Feature 路径检查 coverage-matrix（可重复）', collectFeaturePath, [] as string[])
+    .option('--report <file>', '将报告写入指定文件（默认仅输出到终端）')
+    .action(async (source: string, target: string, opts: { feature: string[]; report?: string }) => {
+      const mgr = getWorkspaceManager();
+      const workspaces = await mgr.list();
+      const sourceWs = workspaces.find((w) => w.id === source);
+      const targetWs = workspaces.find((w) => w.id === target);
+      if (!sourceWs) {
+        console.error('\n  ✗ 源工作区未找到: ' + source + '\n');
+        process.exitCode = 1;
+        return;
+      }
+      if (!targetWs) {
+        console.error('\n  ✗ 目标工作区未找到: ' + target + '\n');
+        process.exitCode = 1;
+        return;
+      }
+
+      const sourceStorage = new FilesystemStorage(sourceWs.path);
+      const targetStorage = new FilesystemStorage(targetWs.path);
+      const checker = new MergePreflightChecker();
+
+      const report = await checker.run(sourceStorage, targetStorage, {
+        sourceId: source,
+        targetId: target,
+        sourceBranch: sourceWs.branch,
+        targetBranch: targetWs.branch,
+        featurePaths: opts.feature.length ? opts.feature : undefined,
+      });
+
+      // 写入事件流（两侧都写，保证审计一致）
+      await checker.persistReport(report, sourceStorage, targetStorage);
+
+      // 渲染报告
+      const markdown = renderPreflightReport(report);
+
+      if (opts.report) {
+        const { resolve } = await import('node:path');
+        const reportPath = resolve(opts.report);
+        const { writeFile } = await import('node:fs/promises');
+        await writeFile(reportPath, markdown, 'utf8');
+        console.log('\n  ✓ Preflight 报告已写入: ' + reportPath);
+      }
+
+      // 终端摘要
+      console.log('\n  ' + (report.canMerge ? '✅' : '⛔') + ' Preflight 结果:');
+      console.log('    源: ' + source + (sourceWs.branch ? ' (' + sourceWs.branch + ')' : ''));
+      console.log('    目标: ' + target + (targetWs.branch ? ' (' + targetWs.branch + ')' : ''));
+      console.log('    红线冲突: ' + report.summary.redlineConflicts);
+      console.log('    知识冲突: ' + report.summary.knowledgeConflicts);
+      console.log('    Coverage 冲突: ' + report.summary.coverageConflicts);
+      console.log('    Blocking: ' + report.summary.blockingCount + '  Warning: ' + report.summary.warningCount);
+      if (!report.canMerge) {
+        console.log('\n  ⛔ 存在阻塞性冲突，不可合并。');
+        for (const c of report.conflicts.filter((c) => c.severity === 'blocking')) {
+          console.log('    - [' + c.category + '] ' + c.description);
+        }
+        process.exitCode = 1;
+      } else if (report.conflicts.length > 0) {
+        console.log('\n  ⚠️ 无阻塞冲突，但有 ' + report.summary.warningCount + ' 条警告。');
+      } else {
+        console.log('\n  ✅ 无语义冲突，可以安全合并。');
+      }
+      console.log('');
     });
 
   // ── unregister ──

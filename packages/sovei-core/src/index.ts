@@ -111,5 +111,8 @@ export * from './quick/git-verifier.js';
 
 export * from './quick/run.js';
 
+// Merge Preflight — 合并前语义冲突预检
+export * from './preflight/index.js';
+
 // External Skill runtime contracts
 export * from './skills/index.js';

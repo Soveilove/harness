@@ -9,6 +9,8 @@
 - **CLI 代码规范规则 CODE_COMMENT_BEST_PRACTICE**（2026-08-09）：`harness/project/rules/project.rules.json` 新增 active 规则，要求写 packages/sovei-core 代码时①加合适中文注释（解释意图/原因而非复述，公共符号用中文 JSDoc）②最优解实现（用标准库与既有抽象，如 zod/commander/StorageBackend/append-only，禁止裸 node:fs 覆盖项目数据）③CLI 专属规范（registerXxxCommands 模式 + 中文用户输出 + 统一错误处理）。`sovei rules validate` 通过，active=2。
 - **P0-1 红线 branch 隔离快速通道补齐**（2026-08-09）：核查发现原始修复缺 CLI 入口（`governance redline add/update` 不支持 `--branch`），已补齐：`governance.ts` add 加可重复 `--branch`、update 加 `--branch`（覆盖）+ `--clear-branches`（清空为全局）、import 支持 branches；`redline-view.ts` 渲染详情展示「分支作用域」；`repository.ts` add/update 把空 `branches` 数组归一为 `undefined`（避免残留空数组，全局语义）。测试 123/123 通过。**发布前待办**：README 第 210 行版本号仍写 2.5.5，实际 2.5.6，发 2.5.7 前需同步。
 - **发布脚本脏工作区检查放宽**（2026-08-09）：`release-sovei.ps1` 原来默认禁止从脏工作区发布（需 `-AllowDirty`）。用户要求"只有正式发布才需要"，已改为：脏工作区**不再阻断**，只在 npm publish 前打黄色警告提示未提交变更（`-AllowDirty` 参数保留仅向后兼容，不再参与判断）。理由：本地构建、快速通道、工作流都不应被此检查阻塞。
+- **v2.5.7 已发布**（2026-08-10）：含 P0-1 红线 branch 作用域隔离（branches 字段 + sync 过滤 + CLI --branch/--clear-branches）+ 代码规范规则。测试 124/124 通过，npm latest 渠道发布成功。提交：`807fa39`（功能）+ `5613493`（版本 bump）。
+- **P1-1 两套 contract 数据源已修复**（纠正 2026-08-10）：由 **Feature 019-contract-single-source**（completed）完成。契约单一源为 `stages/index.ts` 的 `stageRegistry`（`StageDefinition.contract`）；`WorkflowDefinition` 仅含编排字段（version/stageOrder/maxStagesPerInvocation/allowChaining），不再重复产物契约（`engine/types.ts:66-94`）。DEV_BACKLOG 曾误标"未做"，已对齐。~~剩余唯一 P0：merge preflight 语义冲突预检（P0-2）。~~ **P0-2 已实现（2026-08-10），场景二两项 P0 均已落地。**
 - release-sovei.ps1 版本排序 bug 已修复（2026-08-06）：`$remoteVersions` 可能包含嵌套数组导致 `[version]$_` 转换失败，已增加 `ForEach-Object` 展平和 `[string]` 类型过滤。
 - workflow.version 语义（Feature 015，2026-08-06）：追踪 WorkflowDefinition 结构变更（stages/stageOrder/maxStagesPerInvocation/allowChaining），不追踪确认门/Skills/CLI/prompt。不持久化到 Feature 事件，不需要 migration。loadConfig 在 mismatch 时 warn 到 stderr。三个版本号区分：workflow.version（工作流结构）vs schemaVersion（持久化数据）vs npm package version（CLI 工具）。
 - Learn 阶段知识自动对账（2026-08-06）：`knowledge/reconcile.ts` 在 learn postExecute 中自动解析 learning-report.md 的 `yaml:knowledge-delta` 块，将观察回流到知识库。新观察→candidate，2 证据→pending，3 证据→自动 stable（trust-but-verify，事后可 deprecate 回退）。匹配靠标题相似度+标签重叠+relatedEntryId。CLI 新增 `sovei knowledge review`。learn 产出物新增 `knowledge-delta.md`。
@@ -39,13 +41,13 @@
 
 - DEV_BACKLOG.md 中「P0」分两个范畴，易混淆：
   1. **工作流自身 P0**（第 2.1 节）：Feature 016 闭合 + 013 O1 晋级 stable —— ✅ 已全部处理（2026-08-07）。
-  2. **场景二 P0**（第 4 节）：红线 branch 作用域隔离 + merge preflight 语义冲突预检。**P0-1 红线 branch 作用域隔离已于 2026-08-09 修复**（`Redline` schema 新增可选 `branches: string[]`，缺省=全局；`syncToSatellite` 按 satellite.branch 过滤；测试 122/122 通过）。**P0-2 merge preflight 仍未实现**。
-- 已处理 ≠ 全部 P0；场景二 P0-2（merge preflight）才是真正未修的。
+  2. **场景二 P0**（第 4 节）：红线 branch 作用域隔离 + merge preflight 语义冲突预检。**P0-1 红线 branch 作用域隔离已于 2026-08-09 修复**（`Redline` schema 新增可选 `branches: string[]`，缺省=全局；`syncToSatellite` 按 satellite.branch 过滤；测试 122/122 通过）。**P0-2 merge preflight 已于 2026-08-10 实现**（新增 `src/preflight/` 模块，三类语义冲突检测 + 裁决 + 事件流 + CLI `workspace preflight` 命令；测试 135/135 通过）。
+- ~~已处理 ≠ 全部 P0；场景二 P0-2（merge preflight）才是真正未修的。~~ **场景二两项 P0 均已完成。**
 
-## 待解决问题（2026-08-06 讨论确定）
+## 待解决问题（2026-08-06 讨论确定，2026-08-10 更新状态）
 
 1. ~~问题一：skills 空壳~~ → 已通过 Feature 014 解决
-2. 问题二：小需求触发完整流程 → 需要 S0 快速通道，依赖 drift detection 提供风险分级数据
-3. 问题三：普通 AI 会话变更代码后业务红线/地图不可信 → 需要代码变更检测 + 统一关系模型
-4. 问题四：Graph Coding → 统一关系模型是 keystone，需区分 structural-fact（可自动覆盖）和 semantic-annotation（不可自动覆盖）
+2. ~~问题二：小需求触发完整流程~~ → 已由 Feature 020（S0 快速通道）部分解决：六步闭环 + usage 观测已实现。**剩余依赖**：上下文包膨胀治理（P1-3）和 drift detection（问题三）仍未解决
+3. 问题三：普通 AI 会话变更代码后业务红线/地图不可信 → 需要代码变更检测 + 统一关系模型。**完全未实现**，DEV_BACKLOG §2.5 已详细记录
+4. 问题四：Graph Coding → 统一关系模型是 keystone，需区分 structural-fact（可自动覆盖）和 semantic-annotation（不可自动覆盖）。**完全未实现**，距最终 Graph Coding 还差 4 层（统一关系模型/正向影响分析/反向同步/图查询上下文），DEV_BACKLOG §2.5 已详细记录
 

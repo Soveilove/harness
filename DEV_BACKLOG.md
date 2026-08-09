@@ -1,6 +1,6 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
-> 生成日期：2026-08-10（本次对齐至 2.5.7）
+> 生成日期：2026-08-10（本次对齐至 2.5.7，含 Feature 021 更新）
 > 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码（2.5.7）与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
@@ -11,19 +11,68 @@
 | 项 | 值 |
 |---|---|
 | 最新发布版本 | **2.5.7**（npm `latest` 渠道，已发布，2026-08-10） |
-| 测试基线 | 124 / 124 通过（构建后） |
+| 测试基线 | 137 / 137 通过（构建后） |
 | Node 兼容 | 发布产物 CommonJS，`engines >= 14.18.0`（Node 14 可用） |
 | 知识库 | 1 stable + 若干 candidate/pending |
 | Skills | 8 阶段绑定，7 个第三方 skill 锁定 |
-| 最新 Feature | 019-contract-single-source（completed）；2.5.7 另含 P0-1 红线 branch 作用域隔离 |
+| 最新 Feature | 021-quick-json-slim（completed）；020-quick-context-governance（completed）；019-contract-single-source（completed） |
+| 快速通道（S0） | ✅ 已实现（Feature 020 + 021）：`sovei quick <target>` 六步闭环 + usage 事件记录 + Git diff 验证 + `--json` 输出精简（117KB→37KB） |
+| Merge Preflight | ✅ 已实现（未发布）：`sovei workspace preflight <source> <target>`，三类语义冲突检测 + 四种裁决动作 |
+| 战略级缺口 | 问题三（Drift Detection）+ 问题四（统一关系模型 / Graph Coding）均未实现 |
 
 ---
 
-## 1. 本地使用方式（已支持，勿混淆"必须发版"）
+## 1. 全局总览：已完成 vs 未完成
+
+### ✅ 已完成项
+
+| # | 项 | 完成时间 | 来源 |
+|---|---|---|---|
+| ✅ | **工作流自身 P0-1**：Feature 016-skill-verify 闭合 | 2026-08-07 | §2.1 |
+| ✅ | **工作流自身 P0-2**：013 O1「声明式适配器注册」晋级 stable | 2026-08-07 | §2.1 |
+| ✅ | **问题一**：skills 空壳 → Feature 014 解决 | 2026-08-06 | §2.5 |
+| ✅ | **场景二 P0-1**：红线 branch 作用域隔离（已发 2.5.7） | 2026-08-09 | §4 |
+| ✅ | **场景二 P0-2**：merge preflight 语义冲突预检 | 2026-08-10 | §4 / §2.5 |
+| ✅ | **P1-1**：两套 contract 数据源 → Feature 019 统一 | 2026-08-09 | §2.2 |
+| ✅ | **问题二**：S0 快速通道 → Feature 020 六步闭环 + Feature 021 JSON 精简 | 2026-08-09 | §2.5 / §2.7 |
+| ✅ | **quick --json 输出膨胀**：Feature 021 修复（117KB→37KB） | 2026-08-10 | §2.7 |
+| ✅ | **Graph Coding 第 4 层**：语义合并预检 → preflight 模块 | 2026-08-10 | §2.5 |
+
+### ❌ 未完成项（按优先级排列）
+
+| 优先级 | # | 项 | 简述 | 详见 |
+|---|---|---|---|---|
+| **P1** | P1-3 | **上下文包膨胀** | required 无预算上限、cross-feature 全量加载、shadow policy 未激活 | §2.3 |
+| **P1** | — | **Drift Detection MVP**（问题三） | 代码变更后红线/地图/知识不可信，需变更检测+影响面评估+可信度标记 | §2.5 |
+| **P1** | — | **场景一 P1** | spec 分层 git 策略 + 主动归档 + 知识阈值 | §3 |
+| **P1** | SA-1 | **子 Agent：cross-feature 并行过滤** | 子 Agent 并行读 decision-log → Top-N 摘要，解决 P1-3 核心痛 | §2.9 |
+| **P2** | P1-2 | **`mcp` 能力字段无消费方** | 预留边界，需决定做不做 MCP server | §2.2 |
+| **P2** | P2-1 | **013 O2 sentinel upsert 晋升** | 已覆盖 3 Feature，第 4 个复用则晋升 stable | §2.4 |
+| **P2** | P2-2 | **外部 Skills 多 binding** | 一个阶段注入多个 skill | §2.6 |
+| **P2** | P2-3 | **Skill 附加文件解析** | vendor skill 的 CONTEXT-FORMAT.md 等被忽略 | §2.6 |
+| **P2** | P2-4 | **usage export --redacted** | usage.jsonl 脱敏共享 | §2.7 |
+| **P2** | P2-5 | **`context build --paths` 语义修正** | --paths 应过滤 required 红线/stable rules | §2.7 |
+| **P2** | P2-6 | **阶段上下文预算值** | 等评测数据再定阈值 | §2.7 |
+| **P2** | — | **Feature 流程遗留清理** | 4 个 Feature 卡 in_progress，需确认归档 | §2.8 |
+| **P2** | SA-2 | **子 Agent：context build 组装** | 分组并行加载 required 项 | §2.9 |
+| **P2** | SA-3 | **子 Agent：converge/verify 代码审查** | 分维度并行审查 | §2.9 |
+| **P2** | SA-5 | **子 Agent：preflight 并行检测** | 三类冲突检测并行 | §2.9 |
+| **P2** | SA-6 | **子 Agent：learn 知识提取** | 并行提取/搜索/评估，写入串行 | §2.9 |
+| **P2** | — | **统一关系模型**（问题四，Graph Coding 核心） | 定义关系 schema + 适配器，还差 4 层 | §2.5 |
+| **P2** | — | **联邦星型（multi-hub）** | 多主干/多团队对账 | §4 |
+| **P2** | — | **Cursor Adapter** | Phase 3 剩余项 | §6 |
+| **P2** | — | **Phase 4：vendor lock + 上游 diff + 安装器评估** | 外部 Skills 生命周期 | §6 |
+| **P2** | — | **Phase 2 回放验证** | 真实 Feature 回放完整工作流 | §6 |
+| 低 | — | **一键本地安装脚本** `use-local.ps1` | build + npm link 一条命令 | §1.3 |
+| 低 | — | **README 补充本地使用章节** | npm link 说明 | §1.3 |
+
+---
+
+## 2. 本地使用方式（已支持，勿混淆"必须发版"）
 
 **结论：本地同一台电脑使用，根本不需要发布到 npm。** 发布 npm 只对**跨电脑**（把工具带到别的机器）有必要。
 
-### 1.1 本地直接用（推荐，改源码即刻生效）
+### 2.1 本地直接用（推荐，改源码即刻生效）
 
 仓库根目录 `package.json` 已把包声明为本地依赖：
 
@@ -51,11 +100,11 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 > 关键点：**本地改代码 → `pnpm run sovei:build` → 直接用 `dist/release/sovei.cjs` 或 `npm link` 即可**，无需走 npm publish、无需 OTP、无需版本号递增。每次发版前的 `verify` 门禁在本地 build + test 就能完成。
 
-### 1.2 什么时候必须发布 npm
+### 2.2 什么时候必须发布 npm
 
 只有**要在这台电脑之外的机器**（公司电脑、其他环境）用新版时，才走 `pnpm run release:sovei` 发布。发布流程、OTP、`latest`/`next` 标签见根目录 `release-sovei.ps1` 与 README「发布 Sovei CLI」。
 
-### 1.3 建议（可后续做，非必须）
+### 2.3 建议（可后续做，非必须）
 
 | 需求 | 说明 | 状态 |
 |---|---|---|
@@ -64,11 +113,11 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 ---
 
-## 2. 工作流自身待解决问题（独立于两场景）
+## 3. 工作流自身待解决问题（独立于两场景）
 
-### 2.1 P0 — 已处理（影响工作流一致性 / 高价值知识固化）
+### 3.1 ✅ P0 — 已全部处理
 
-> ✅ 两项 P0 已于 **2026-08-07** 全部处理完成。
+> 两项 P0 已于 **2026-08-07** 全部处理完成。
 
 | # | 项 | 处理结果 |
 |---|---|---|
@@ -79,46 +128,179 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 >
 > 使用约定：harness 自我迭代用仓库本地产物（复刻开发者 `pnpm install` 后 `pnpm exec sovei`），业务项目用全局发布版。
 
-### 2.2 P1 — 架构债务（消重复维护）
+### 3.2 P1 — 架构债务
 
 | # | 项 | 现状 | 建议动作 |
 |---|---|---|---|
-| P1-1 | ~~**两套 contract 数据源并存**~~ | ✅ **已实现**（Feature 019-contract-single-source，completed）：契约单一源为 `stages/index.ts` 的 `stageRegistry`（`StageDefinition.contract`）；`WorkflowDefinition` 仅含编排字段（version/stageOrder/maxStagesPerInvocation/allowChaining），不再重复产物契约（见 `engine/types.ts:66-94`） | — |
+| ~~P1-1~~ | ~~两套 contract 数据源并存~~ | ✅ **已实现**（Feature 019-contract-single-source，completed）：契约单一源为 `stages/index.ts` 的 `stageRegistry`（`StageDefinition.contract`）；`WorkflowDefinition` 仅含编排字段（version/stageOrder/maxStagesPerInvocation/allowChaining），不再重复产物契约（见 `engine/types.ts:66-94`） | — |
 | P1-2 | **`mcp` 能力字段无消费方** | `adapters/registry.ts` 的 `mcp: true`（codex/claude/gemini/windsurf）无 MCP server 消费，仅预留边界 | 明确做不做 MCP server；不做则长期挂起 |
+| **P1-3** | **上下文包膨胀（Context Pack Bloat）** | `context/builder.ts` 的 required 项无整体预算上限；`--cross-feature` 全量加载所有 Feature decision-log；`context/policy.ts` 的 scoped/index+on-demand shadow 变体已实现但 `actual: 'full'` 未激活 | 详见下方 §3.3 |
 
-### 2.3 P2 — 观察项（低风险顺带）
+### 3.3 P1 — 上下文包膨胀（Context Pack Bloat）详解
+
+> 快速通道（S0/Quick）开发过程中发现：随着 Feature 积累，`sovei context build` 产出的上下文包只会越来越大，最终撑爆 Agent 上下文窗口。
+
+**问题根因**（核对源码 `context/builder.ts` + `cli/commands/context.ts`）：
+
+| 维度 | 现状 | 增长趋势 |
+|---|---|---|
+| **required 项无上限** | 所有 active 红线 + 所有 stable 知识规则 + 所有 required 项目规范 + 当前 Feature 全部 `.md` 产物（每个截断 4000 字符）全部塞入 required，无整体字符/token 预算 | 红线/知识/规则只增不减，required 单调增长 |
+| **cross-feature 全量加载** | `--cross-feature` 遍历 `specs/` 下**所有**其他 Feature 目录，每个读 `decision-log.md` 截断 4000 字符塞入 suggested | Feature 从 10→50→100，cross-feature 块从 ~36KB→180KB→360KB |
+| **shadow policy 未激活** | `context/policy.ts` 已实现 `scoped`（按 path/symbol 匹配筛选）和 `index+on-demand`（只给摘要索引，按需展开）两个削减变体，但 `actual: 'full'` 硬编码——基础设施就位但从未用于实际削减 | 削减能力已有，只差激活开关 |
+| **suggested 仅条数限制** | candidate/pending 知识最多 20 条（`slice(0, 20)`），但每条无字符上限；advisory 项目规范无限制 | 知识库膨胀后 suggested 也在涨 |
+| **Feature 产物无聚合上限** | 每个 Feature 可有多个 `.md` 产物（reconciliation / spec / tasks 等），每个独立截断 4000 字符，无聚合 cap | 单 Feature 产物块可达 20-30KB |
+
+**影响**：
+- Agent 上下文窗口被上下文包占满，留给实际代码推理的空间不足
+- 快速通道（S0）本应轻量，但上下文包和完整工作流一样重，失去"快速"意义
+- 长期项目（50+ Feature）上下文包可能超出 Agent 窗口上限，直接不可用
+
+**建议方案**（分阶段）：
+
+1. **激活 shadow policy 的 scoped 变体作为实际交付模式**（P1，核心）：
+   - `buildContextPack` 输出时根据 `--paths`/`--symbols` 匹配结果，将 required 拆为「确定命中」+「全局不变量」两部分，未命中的降级为 suggested
+   - `actual` 从 `'full'` 改为可选 `'full' | 'scoped' | 'index+on-demand'`，默认 `scoped`
+   - 向后兼容：无 `--paths` 时回退 `full`
+
+2. **引入字符预算 + 优先级截断**（P1）：
+   - 定义上下文包总字符预算（如 32KB / 64KB，可配置）
+   - 优先级：全局不变量红线 > 命中路径的红线/规范 > 当前 Feature 产物 > stable 知识 > cross-feature > candidate 知识
+   - 超预算时按优先级从低到高截断/降级为索引摘要
+
+3. **cross-feature 相关性过滤**（P2）：
+   - 不再全量加载所有 Feature 的 decision-log，按 domain/tags/path 重叠度筛选 Top-N（如 5 个最相关）
+   - 或改为 index+on-demand：只给 Feature ID + 标题摘要，Agent 按需 `sovei context expand <feature>`
+
+4. **Feature 产物聚合上限**（P2）：
+   - 单 Feature 产物块设定聚合上限（如 12KB），超限时按 stage 相关性优先保留
+
+### 3.4 P2 — 观察项（低风险顺带）
 
 | # | 项 | 现状 |
 |---|---|---|
 | P2-1 | **013 O2 sentinel upsert 晋升** | 已覆盖 011/012/013，保持 candidate；**再被第 4 个 Feature 复用则晋升 stable** |
 
+### 3.5 战略级能力缺口（Drift Detection + 统一关系模型）
+
+> 源自 2026-08-06 讨论确定的四大战略问题。问题一已解决，问题二已部分解决（S0 快速通道已实现），问题三和问题四完全未实现。详见 `technical-sharing/TECH_SHARING_MATERIAL_POLISHED.md` §15。
+
+#### 问题三：Drift Detection（代码变更检测）
+
+**问题**：普通 AI 会话（不经 Sovei 工作流）直接变更代码后，业务红线、代码地图、知识库等治理资产不可信——代码已经改了，但红线/地图/知识还停留在旧版本。
+
+**现状**：❌ 完全未实现。无 spec Feature、无源码模块。仅在 `specs/014-skills-runtime-completion/learning-report.md` 中作为"后续观察 skills 效果的场景"被提及。
+
+**需要实现的能力**：
+1. **代码变更检测**：对比 baseline revision 与当前工作区，识别哪些文件/符号发生了变更
+2. **影响面评估**：变更是否触及已有红线 scope、coverage-matrix 命中的代码表面、knowledge 条目的 codeEvidence
+3. **可信度标记**：被 drift 的红线/地图/知识自动标记为 `stale`，提示需要重新验证
+4. **CLI 入口**：`sovei drift check` 或类似命令，输出 drift 报告
+
+**依赖**：统一关系模型（问题四）是理想基础——有关系图才能精确计算影响面。但 MVP 可先做基于 path/scope 的粗粒度检测。
+
+**与 S0 快速通道的关系**：S0 的 `evaluateQuickRun` 已有 `verifyGitChanges` 做 Git diff 范围验证（验证声明范围 vs 实际 diff），但**不做语义级 drift 检测**——不检查变更是否使红线/知识失效。
+
+#### 问题四：统一关系模型（Unified Relationship Model / Graph Coding）
+
+**问题**：业务地图、代码地图、业务红线、Context Pack、Scope、Coverage Matrix、Wayfinder、Spec/Task/Evidence 等关系分散在不同 JSON、文档和模块中，没有统一的关系模型来驱动自动推理。
+
+**现状**：❌ 完全未实现。`technical-sharing/TECH_SHARING_MATERIAL_POLISHED.md` §15 明确指出"Graph-aware Coding 的基础设施已经开始形成，但关系图还没有完全变成可自动推理、可自动影响执行的统一系统"。
+
+**距离最终 Graph Coding 还差 5 层**：
+
+| # | 缺失能力 | 状态 | 说明 |
+|---|---|---|---|
+| 1 | **统一关系模型** | ❌ 未实现 | 定义业务能力、代码入口、模块、规则、Spec、Task、Evidence 之间的关系，不再分散在各 JSON/文档/模块 |
+| 2 | **正向影响分析** | ❌ 未实现 | 业务需求变化后，自动重新计算受影响的代码、规则和验证面 |
+| 3 | **反向同步** | ❌ 未实现 | 代码修改后，反向更新代码地图和业务地图，形成双向同步 |
+| 4 | ~~语义合并预检~~ | ✅ **已实现** | 由 preflight 模块实现（2026-08-10） |
+| 5 | **图查询上下文** | ❌ 未实现 | AI 根据关系图自动生成最小且正确的上下文，而非依赖阶段规则和人工组织（与 P1-3 上下文包膨胀治理直接相关） |
+
+**设计原则**（来自 014 学习报告，尚未晋升 stable）：
+- `structural-fact`（可自动覆盖）vs `semantic-annotation`（不可自动覆盖）的区分应成为统一关系模型的核心设计原则
+- skill body 是 structural-fact，Sovei 阶段契约是 semantic-annotation
+
+**建议路径**：
+1. 先做 drift detection（问题三 MVP，基于 path/scope 粗粒度）
+2. 再做统一关系模型（定义关系 schema + 适配器接入现有 JSON）
+3. 最后做影响分析引擎 + 图查询上下文（依赖前两者）
+
+### 3.6 P2 — 外部 Skills 运行时后续
+
+> 来源：`specs/014-skills-runtime-completion/learning-report.md` §建议的后续行动。
+
+| # | 项 | 现状 | 说明 |
+|---|---|---|---|
+| P2-2 | **多 binding 支持** | ❌ 未实现 | 一个阶段注入多个 skill（如 grill 同时绑定 grilling + domain-modeling）。需扩展 `skill-map` schema 和 `MarkdownSkillAdapter` 逻辑。当前 `skill-map.json` 每阶段只允许一个 skill ID |
+| P2-3 | **Skill 附加文件解析** | ❌ 未实现 | `domain-modeling` 的 `CONTEXT-FORMAT.md` 和 `ADR-FORMAT.md` 目前被忽略。`MarkdownSkillAdapter` 已有 `skillDir` + `loadReferenceFiles()` 可内联 `references/*.md`，但 vendor skill 的附加文件不在 `references/` 约定路径下。需扩展 adapter 支持读取 skill 目录下指定文件列表 |
+
+### 3.7 P2 — Quick 通道后续项
+
+> 来源：`specs/020-quick-context-governance/exploration.md` §9 未决项。
+
+| # | 项 | 状态 | 说明 |
+|---|---|---|---|
+| — | ~~`quick --json` 输出膨胀~~ | ✅ **已由 Feature 021 解决**（2026-08-10）：`QuickEvaluationResult.policy` 从完整 `ContextPolicyResult` 改为 `QuickPolicySummary` 摘要类型（仅 controlPlane + shadowSummaries + index）。输出从 117KB 降至 37KB（68% 缩减）。剩余体积属 P1-3 范畴 | — |
+| P2-4 | **`usage export --redacted`** | ❌ 后续迭代 | `usage.jsonl` 默认 gitignore 后如何团队评测共享。需定义脱敏字段、时间桶聚合、导出命令 |
+| P2-5 | **`context build --paths` 语义修正** | ❌ 建议单独立项 | `--paths` 当前仅用于 project rules 匹配，不影响 required 红线/stable rules 的筛选。应修正为：`--paths` 同时过滤 required 中的红线和 stable rules。与 P1-3 直接相关 |
+| P2-6 | **标准流程各阶段上下文预算值** | ❌ 等评测数据 | shadow policy 已计算三变体字符数，但未设定阈值。需先观测真实使用数据再定预算 |
+
+### 3.8 P2 — Feature 流程状态遗留清理
+
+> 4 个 Feature 卡在 `in_progress`，部分可能已被后续 Feature 替代，需人工确认后归档或 reopen。
+
+| Feature | 卡在阶段 | 可能状态 | 建议 |
+|---|---|---|---|
+| `002-onboard-prompt` | grill | 可能已废弃（onboarding 已由后续 Feature 迭代多次） | 人工确认后 `reopen → sync --complete` 或标记 abandoned |
+| `009-artifact-contract-alignment` | wayfind | 可能已废弃（契约对齐已由 Feature 019 解决） | 人工确认后归档 |
+| `012-external-skills-runtime` | implement | 已被 `014-skills-runtime-completion` 替代 | 归档关闭 |
+| `015-learn-reconcile-verify` | sync | 可能已由 `015-workflow-version-semantics` 替代 | 人工确认后归档 |
+
+### 3.9 P2 — 子 Agent 强化方向（架构观察）
+
+> 2026-08-10 新增。思考：Sovei 工作流中部分查询/节点是串行 I/O 密集型操作，可用子 Agent（sub-agent）并行化以提升效率。当前 Sovei 是单进程 CLI，所有阶段串行执行；以下为候选强化点，需评估可行性和收益后再立项。
+
+| # | 候选节点 | 现状（串行瓶颈） | 子 Agent 强化设想 | 优先级 |
+|---|---|---|---|---|
+| **SA-1** | **cross-feature 相关性过滤** | `--cross-feature` 串行遍历所有 Feature 目录读 `decision-log.md`，Feature 50+ 时 I/O 瓶颈明显 | 子 Agent 并行读取 → 各自输出摘要 + 相关性评分 → 主 Agent 取 Top-N。直接解决 P1-3 和 P2-5 | **P1** |
+| SA-2 | **context build 组装** | required 项（红线 + 知识 + 规范 + 产物）串行加载 | 子 Agent 分组并行加载，主 Agent 合并 + 优先级截断。与 SA-1 协同 | P2 |
+| SA-3 | **converge/verify 代码审查** | 单一 Agent 会话做全部审查 | 子 Agent 分维度并行（类型安全/测试覆盖/规则合规/架构合规），主 Agent 汇总裁决 | P2 |
+| **SA-4** | **drift detection 影响面评估** | 未实现。MVP 需逐一检查红线 scope / coverage-matrix / knowledge codeEvidence | 子 Agent 按规则类别并行扫描，主 Agent 汇总 drift 报告 | **P1**（与 drift MVP 同期） |
+| SA-5 | **preflight 三类冲突检测** | `MergePreflightChecker` 串行执行红线→知识→coverage | 三类互相独立可并行。当前数据量小收益有限，规模化后可提升 | P2 |
+| SA-6 | **learn 知识提取** | learn postExecute 串行解析→匹配→创建/晋级 | 子 Agent 并行（提取/搜索/评估），知识库写入串行保一致性 | P2 |
+
+**设计约束**：
+- 子 Agent 强化是**宿主 AI 层面的并行编排**，不是 Sovei CLI 自身的并发改造。Sovei CLI 仍是单进程，通过输出结构化 JSON 让宿主 AI（如 CodeBuddy）决定是否分派子 Agent。
+- 需要定义**子 Agent 契约**：输入（path/参数 JSON）+ 输出（结构化结果 JSON），类似当前 `sovei quick --json` 的模式。
+- 优先实施 SA-1（cross-feature 并行过滤），因为它直接解决 P1-3 上下文包膨胀的核心痛点，且契约边界清晰。
+
 ---
 
-## 3. 场景一（通用用户项目）待开发
+## 4. 场景一（通用用户项目）待开发
 
 > 详见 `design-docs/SOVEI_SCENARIOS_DECISION.md §2.5`。
 
 | 优先级 | 待开发 | 现状 | 价值 |
 |---|---|---|---|
-| P1 | spec 四层 git 分层策略固化为命令/模板 | 未实现 | 解决"spec 快速迭代满、git 历史被刷" |
-| P1 | Feature 收敛后主动归档过程产物 | 部分（仅 change/reopen 时归档） | 解决"过程产物堆积" |
-| P1 | 知识提取复用价值阈值（最少证据） | 未实现 | 防 knowledge 膨胀 |
+| P1 | spec 四层 git 分层策略固化为命令/模板 | ❌ 未实现 | 解决"spec 快速迭代满、git 历史被刷" |
+| P1 | Feature 收敛后主动归档过程产物 | ⚠️ 部分（仅 change/reopen 时归档） | 解决"过程产物堆积" |
+| P1 | 知识提取复用价值阈值（最少证据） | ❌ 未实现 | 防 knowledge 膨胀 |
 
 ---
 
-## 4. 场景二（多分支/多工程协作）待开发
+## 5. 场景二（多分支/多工程协作）
 
 > 详见 `design-docs/SOVEI_SCENARIOS_DECISION.md §3.5`。
 
 | 优先级 | 待开发 | 现状 | 价值 |
 |---|---|---|---|
-| **P0** | **红线 branch 作用域隔离** | ✅ **已实现**（2026-08-09，已发 2.5.7）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤，只推送全局或匹配 branch 的红线；`governance redline add/update/import` 支持 `--branch`（update 另支持 `--clear-branches`）；新增测试（124/124 通过） | 个人多工程：工程专属红线不互相污染 |
-| **P0** | **merge preflight 语义冲突预检** | **未实现**（唯一剩余 P0）。**功能定义**（设计文档 §3.4）：合并分支 X → 主干 Y 前，在 git 文本冲突检查之上，做业务语义冲突预检：① **红线冲突**——同一业务域是否被两分支定义了相反/矛盾的红线（`redlines.json`）；② **coverage 冲突**——同一代码表面是否被两分支 coverage-matrix 命中且改法矛盾；③ **知识/决策冲突**——两分支的 knowledge/decision 条目是否互相矛盾；④ **冲突裁决**——合并/隔离/覆盖/人工介入，每次裁决写理由进事件流；⑤ **输出 preflight 报告**，无冲突才允许 merge。**当前差距**（2026-08-09 核对源码）：`packages/sovei-core/src/config/workspace.ts` `syncToSatellite` 仅第 185-188 行有 knowledge entry `id` 级冲突检查，**无红线语义、coverage 改法、知识矛盾等语义级预检，也无 preflight 命令/报告** | 规模化合并防线（设计核心） |
-| P2 | 联邦星型（multi-hub） | 未实现（当前单 hub） | 多主干/多团队对账，规模化后再做 |
+| ~~P0~~ | ~~红线 branch 作用域隔离~~ | ✅ **已实现**（2026-08-09，已发 2.5.7）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤；`governance redline add/update/import` 支持 `--branch`（update 另支持 `--clear-branches`） | 个人多工程：工程专属红线不互相污染 |
+| ~~P0~~ | ~~merge preflight 语义冲突预检~~ | ✅ **已实现**（2026-08-10）：新增 `src/preflight/` 模块，三类语义冲突检测（红线/知识/coverage）+ 四种裁决动作（merge/isolate/override/manual）+ 事件流 + CLI `sovei workspace preflight` | 规模化合并防线 |
+| P2 | 联邦星型（multi-hub） | ❌ 未实现（当前单 hub） | 多主干/多团队对账，规模化后再做 |
 
 ---
 
-## 5. 发布说明校对（大版本更新时必做）
+## 6. 发布说明校对（大版本更新时必做）
 
 - **`packages/sovei-core/README.md` 是发布说明文件**，每次大版本更新需校对：
   - 「版本与发布」章节版本号（✅ 已同步至 2.5.7，2026-08-10）
@@ -129,21 +311,53 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 ---
 
-## 6. 建议开发顺序
+## 7. IDE 适配器与发布生命周期
 
-1. ~~**先清工作流自身债（P0）**：016 收尾闭合 → O1 晋级审查~~ ✅ 已完成（2026-08-07）。
-2. ~~**场景二 P0-1 红线分支隔离**~~ ✅ 已完成（2026-08-09，已发 2.5.7）。**剩余场景二 P0-2 merge preflight**（规模化防线）为当前最高优先级。
-3. **场景一 P1**：spec 分层 git 策略 + 主动归档 + 知识阈值。
-4. **本地使用优化（P2）**：`use-local.ps1` 一键本地链接脚本 + README 补本地使用说明。
-5. **最后 P2**：联邦星型、O2 晋升——等待规模化场景/自然复用点。
+> 来源：`design-docs/SOVEI_HARNESS_WORKFLOW_DESIGN.md` Phase 3/4。
+
+| 优先级 | 待开发 | 现状 | 说明 |
+|---|---|---|---|
+| P2 | **Cursor Adapter** | ❌ 未实现（`adapters/registry.ts` 中 `cursor: pending`） | Phase 3 剩余项。Codex/Claude/CodeBuddy/Trae 已完成，Cursor 未做 |
+| P2 | **Phase 4：harness-release.yaml + vendor lock** | ❌ 未实现 | 建立 vendor skill 版本锁定文件，记录每个第三方 skill 的来源 commit/tag |
+| P2 | **Phase 4：上游 diff 追踪** | ❌ 未实现 | 追踪 vendor skill 上游变更，提供 diff 报告 + 人工批准流程 |
+| P2 | **Phase 4：安装器/缓存/离线分发评估** | ❌ 未实现 | 评估是否需要 skill 安装器、本地缓存和离线分发能力（当前网络约束：github.com 不通，需 raw 通道） |
+| P2 | **Phase 2 回放验证** | ❌ 未完成 | 用一个真实普通 Feature 和一个长周期 Feature 回放验证完整工作流 |
 
 ---
 
-## 7. 待人工决策（已列在设计文档 §6）
+## 8. 建议开发顺序
 
-- 场景二 merge preflight：现在只剩它一个 P0，直接推进即可（红线隔离已完成，无需再比较次序）。
-- 联邦星型是否本轮做（单 hub 已满足个人 a/b/c 三工程）？
-- `mcp` 字段：做 MCP server 还是长期挂起？
+| 步骤 | 项 | 状态 |
+|---|---|---|
+| 1 | ~~清工作流自身债（P0）：016 收尾 → O1 晋级~~ | ✅ 已完成（2026-08-07） |
+| 2 | ~~场景二 P0-1 红线分支隔离~~ | ✅ 已完成（2026-08-09，已发 2.5.7） |
+| 2 | ~~场景二 P0-2 merge preflight~~ | ✅ 已完成（2026-08-10） |
+| **3** | **上下文包膨胀（P1-3）**：激活 shadow policy scoped 变体 + 字符预算截断 | ❌ 待开发 |
+| **4** | **Drift Detection MVP**（§3.5 问题三）：基于 path/scope 粗粒度变更检测 + 可信度标记 | ❌ 待开发 |
+| **5** | **场景一 P1**：spec 分层 git 策略 + 主动归档 + 知识阈值 | ❌ 待开发 |
+| **6** | **统一关系模型**（§3.5 问题四）：关系 schema + 适配器接入现有 JSON | ❌ 待开发 |
+| 7 | 本地使用优化（P2）：`use-local.ps1` + README 补充 | ❌ 待开发 |
+| 8 | Feature 流程遗留清理（§3.8）：人工确认 4 个卡住的 Feature | ❌ 待处理 |
+| 9 | 最后 P2：联邦星型、Cursor Adapter、Phase 4、O2 晋升、多 binding/附加文件 | ❌ 待开发 |
+| 10 | **子 Agent 强化**（§3.9）：优先 SA-1（与 P1-3 协同），其次 SA-4（与 drift MVP 协同） | ❌ 待评估 |
 
-> ✅ 已决：013 O1「声明式适配器注册」已于 2026-08-07 人工审查放行晋级 stable。
-> ✅ 已决：P0-1 红线 branch 作用域隔离已实现并发布（2.5.7）。
+---
+
+## 9. 待人工决策
+
+| # | 决策项 | 当前状态 |
+|---|---|---|
+| ✅ | 013 O1「声明式适配器注册」晋级 stable | 已决（2026-08-07） |
+| ✅ | P0-1 红线 branch 作用域隔离 | 已决（2026-08-09，已发 2.5.7） |
+| ✅ | P0-2 merge preflight 语义冲突预检 | 已决（2026-08-10，已实现未发布） |
+| ✅ | 问题一（skills 空壳）| 已决（Feature 014） |
+| ✅ | 问题二（S0 快速通道）| 已部分决（Feature 020/021，上下文包膨胀和 drift detection 仍未解决） |
+| ❓ | **上下文包膨胀（P1-3）**：激活 scoped 变体的时机？S0 已完成但膨胀问题仍在 | 待决 |
+| ❓ | **Drift Detection（§3.5 问题三）**：先做 MVP（path/scope 粗粒度）还是等统一关系模型后做精确版？ | 待决 |
+| ❓ | **统一关系模型（§3.5 问题四）**：本轮是否启动？关系 schema 设计范围——一次性整合所有 JSON 还是分批接入？ | 待决 |
+| ❓ | **`context build --paths` 语义修正（P2-5）**：是否与 P1-3 合并为一个 Feature？ | 待决 |
+| ❓ | **联邦星型**：是否本轮做？（单 hub 已满足个人三工程） | 待决 |
+| ❓ | **`mcp` 字段**：做 MCP server 还是长期挂起？ | 待决 |
+| ❓ | **Cursor Adapter**：是否有实际使用需求驱动？ | 待决 |
+| ❓ | **子 Agent 强化（§3.9）**：是否本轮启动 SA-1？需先定义子 Agent 契约还是等 P1-3 定型？ | 待决 |
+| ❓ | **Phase 4 外部 Skills 生命周期**：是否启动？网络约束（github.com 不通）是否影响？ | 待决 |
