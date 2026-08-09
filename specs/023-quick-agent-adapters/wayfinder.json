@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "023-quick-agent-adapters",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "All decisions resolved in grill",
+  "revision": 0,
+  "updatedAt": "2026-08-09T17:09:46.120Z",
+  "ticketIndex": [],
+  "fog": []
+}

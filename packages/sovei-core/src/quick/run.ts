@@ -110,6 +110,10 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     symbols: input.request.declaredSymbols,
     baselineRevision: initial.baselineRevision,
   });
+  // 按 actual 模式过滤 required——scoped 时只交付命中项 + 全局不变量
+  if (policy.actualRequired && policy.actualRequired.length < input.contextPack.required.length) {
+    input.contextPack.required = policy.actualRequired;
+  }
   await recorder.append({
     schemaVersion: 1,
     event: 'context-selected',
@@ -121,13 +125,13 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     baselineRevision: initial.baselineRevision,
     tokenUsage: unknownTokenUsage(),
     counts: {
-      required: policy.shadow.full.required.length,
+      required: policy.actualRequired.length,
       indexed: policy.shadow.indexOnDemand.indexed.length,
       expanded: policy.shadow.scoped.expanded.length,
       unloaded: policy.shadow.scoped.unloaded.length,
     },
     sizes: {
-      requiredCharacters: policy.shadow.full.characters,
+      requiredCharacters: policy.shadow.actual === 'scoped' ? policy.shadow.scoped.characters : policy.shadow.full.characters,
       indexedCharacters: policy.shadow.indexOnDemand.characters,
       expandedCharacters: policy.shadow.scoped.characters,
     },

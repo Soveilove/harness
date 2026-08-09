@@ -80,8 +80,12 @@ export * from './wayfinder/index.js';
 export * from './context/builder.js';
 export * from './context/snapshot.js';
 export * from './context/policy.js';
+export * from './context/budget.js';
+export * from './context/cross-feature.js';
 export { adapterRegistry } from './adapters/registry.js';
 export type { IDEAdapter, AdapterCapabilities } from './adapters/registry.js';
+export { installAdapters, checkAdapterInstalled } from './adapters/installer.js';
+export type { InstallResult, AdapterInstallResult } from './adapters/installer.js';
 export type { EmbeddingProvider, LLMProvider, ScoredItem } from './providers/contracts.js';
 
 // Quick Channel

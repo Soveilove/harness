@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Command } from 'commander';
 import { container, TOKENS } from '../../providers/container.js';
 import type { StorageBackend } from '../../storage/types.js';
@@ -16,6 +18,27 @@ import type { QuickRunInput } from '../../quick/types.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
+
+/**
+ * 从 .gitignore 读取排除路径。
+ * 当用户未提供 --exclude 时，自动从工作区 .gitignore 提取排除模式，
+ * 这样 slash command 模板就不需要硬编码 --exclude dist/**。
+ */
+function loadGitignoreExclusions(rootPath: string): string[] {
+  try {
+    const gitignorePath = join(rootPath, '.gitignore');
+    const content = readFileSync(gitignorePath, 'utf8');
+    return content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .map((line) => line.replace(/^\/+/, '')) // 去掉前导斜杠
+      .filter((line) => line.length > 0);
+  } catch {
+    // 无 .gitignore 或读取失败——返回空数组
+    return [];
+  }
+}
 
 export function registerQuickCommands(program: Command): void {
   program
@@ -40,9 +63,14 @@ export function registerQuickCommands(program: Command): void {
     }) => {
       const storage = getStorage();
       const config = getConfig();
+      // 用户未提供 --exclude 时，自动从 .gitignore 读取排除路径
+      const userExclusions = split(opts.exclude);
+      const exclusions = userExclusions.length > 0
+        ? userExclusions
+        : loadGitignoreExclusions(config.rootPath);
       const input: QuickRunInput = {
         target,
-        exclusions: split(opts.exclude),
+        exclusions,
         declaredPaths: split(opts.paths),
         declaredSymbols: split(opts.symbols),
         declaredTests: split(opts.test),

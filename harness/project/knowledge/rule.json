@@ -410,5 +410,83 @@
     "updatedAt": "2026-08-09T16:36:02.789Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-基础设施已就位但开关未打开时-优先激活而非重建-9eb86cde",
+    "type": "rule",
+    "title": "基础设施已就位但开关未打开时，优先激活而非重建",
+    "content": "当削减/优化能力的基础设施已实现（如 shadow policy 三变体），但实际开关硬编码为默认值（如 actual='full'）时，应优先通过扩展类型 + 自动选择来激活已有基础设施，而非重新设计。最小改动原则：只扩展类型和赋值逻辑，不重构整个结构。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "022-context-budget-subagent",
+        "date": "2026-08-09T17:00:15.902Z",
+        "description": "Feature 022 发现 context/policy.ts 的 scoped/indexOnDemand 变体已完整实现，但 actual='full' 硬编码导致从未用于实际削减。仅通过扩展 actual 类型为联合类型 + 根据 paths 自动选择就激活了已有能力。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "context",
+      "policy",
+      "activation",
+      "infrastructure"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:00:15.902Z",
+    "updatedAt": "2026-08-09T17:00:15.902Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-预算截断应在策略层施加-不在构建层-b0729912",
+    "type": "rule",
+    "title": "预算截断应在策略层施加，不在构建层",
+    "content": "上下文/数据组装（收集所有项）和策略（决定哪些项实际交付）应分离。构建层负责完整收集，策略层负责截断/降级。这样截断逻辑可独立测试、可组合，且不影响构建逻辑的正确性。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "022-context-budget-subagent",
+        "date": "2026-08-09T17:00:15.902Z",
+        "description": "Feature 022 的 buildContextPack 负责组装所有 required/suggested 项，buildContextPolicy + applyBudget 负责按预算截断。两者分离使得截断逻辑有独立的 5 条测试覆盖。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "context",
+      "budget",
+      "separation",
+      "strategy"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:00:15.902Z",
+    "updatedAt": "2026-08-09T17:00:15.902Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-ide-适配器指令安装应幂等-用标记段检测已安装状态-43f68916",
+    "type": "rule",
+    "title": "IDE 适配器指令安装应幂等——用标记段检测已安装状态",
+    "content": "为 IDE 生成指令文件时，应使用不可见标记（如 HTML 注释）检测是否已安装，避免重复追加导致指令重复。安装器应幂等——多次安装同一适配器只生成一次。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "023-quick-agent-adapters",
+        "date": "2026-08-09T17:14:37.445Z",
+        "description": "Feature 023 的 installer.ts 使用 <!-- sovei-adapter-installed --> 标记检测，第二次安装自动跳过。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "adapter",
+      "installer",
+      "idempotent",
+      "ide"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:14:37.445Z",
+    "updatedAt": "2026-08-09T17:14:37.445Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

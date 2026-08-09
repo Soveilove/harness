@@ -124,5 +124,31 @@
     "updatedAt": "2026-08-09T15:33:03.179Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-cli-与宿主-ai-协作-索引-json-on-demand-expand-模式-95d9b8ef",
+    "type": "architecture",
+    "title": "CLI 与宿主 AI 协作：索引 JSON + on-demand expand 模式",
+    "content": "CLI 提供结构化 JSON 索引（不含完整内容）+ 按需展开命令，让宿主 AI 自行决定并行化策略。CLI 不需要内部实现并发，只需要提供'可被并行消费的契约'。这种模式适用于任何'CLI 单进程 + 宿主 AI 可分派子 Agent'的场景。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "022-context-budget-subagent",
+        "date": "2026-08-09T17:00:15.902Z",
+        "description": "Feature 022 的 cross-feature-index 输出 JSON 索引，expand 按需展开。宿主 AI（如 CodeBuddy Task）可据此分派 N 个子 Agent 各读一个 Feature 的 decision-log，并行化串行 I/O。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "cli",
+      "subagent",
+      "contract",
+      "parallel"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:00:15.902Z",
+    "updatedAt": "2026-08-09T17:00:15.902Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

@@ -176,5 +176,57 @@
     "updatedAt": "2026-08-06T17:21:49.927Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-存储抽象的-list-语义在不同实现间可能不一致-b252a801",
+    "type": "pitfall",
+    "title": "存储抽象的 list() 语义在不同实现间可能不一致",
+    "content": "FilesystemStorage.list() 用 readdir + filter(isFile) 只返回文件，而 MemoryStorage.list() 返回路径段（隐含目录）。这种语义差异导致用 MemoryStorage 写的单元测试无法发现 FilesystemStorage 的目录列表 bug。测试存储抽象时应同时验证两种实现的语义一致性，或用 FilesystemStorage 做集成测试。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "022-context-budget-subagent",
+        "date": "2026-08-09T17:00:15.902Z",
+        "description": "Feature 022 发现 context.ts 的 cross-feature 加载用 storage.list() 获取 Feature 目录，在 FilesystemStorage 下静默失败（只返回 .gitkeep 文件），但 MemoryStorage 下正常工作。已改用 listEntries() 修复。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "storage",
+      "testing",
+      "filesystem",
+      "memory"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:00:15.902Z",
+    "updatedAt": "2026-08-09T17:00:15.902Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-共享-contextfile-的适配器安装需考虑顺序-第一个写入标记后后续跳过-58e3dae7",
+    "type": "pitfall",
+    "title": "共享 contextFile 的适配器安装需考虑顺序——第一个写入标记后后续跳过",
+    "content": "多个适配器可能共享同一 contextFile（如 codex 和 codebuddy 都用 AGENTS.md）。第一个安装的适配器写入安装标记后，后续共享同一文件的适配器会检测到标记而跳过。这是正确行为——同一文件不需要重复追加指令段落。但应在文档中说明这一行为。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "023-quick-agent-adapters",
+        "date": "2026-08-09T17:14:37.445Z",
+        "description": "Feature 023 测试发现 codex 和 codebuddy 共享 AGENTS.md，安装 4 个适配器时只有 3 个成功（codex 被跳过）。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "adapter",
+      "shared-file",
+      "install-order",
+      "agents-md"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-09T17:14:37.445Z",
+    "updatedAt": "2026-08-09T17:14:37.445Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

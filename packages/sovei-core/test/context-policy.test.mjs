@@ -23,8 +23,9 @@ test('context policy preserves full context and reports scoped shadow candidates
     snapshot: null,
   });
   const policy = buildContextPolicy(pack, [], [], { paths: ['src/parser.ts'] });
-  assert.equal(policy.shadow.actual, 'full');
+  assert.equal(policy.shadow.actual, 'scoped');
   assert.equal(policy.shadow.compatibility, 'preserved');
+  assert.ok(policy.shadow.actualReason.length > 0);
   assert.equal(policy.shadow.full.required.length, pack.required.length);
   assert.equal(policy.controlPlane.policyVersion, '1');
   assert.ok(Array.isArray(policy.controlPlane.unloadedCandidateIds));

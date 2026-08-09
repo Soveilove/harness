@@ -1,7 +1,7 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
-> 生成日期：2026-08-10（本次对齐至 2.5.7，含 Feature 021 更新）
-> 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码（2.5.7）与 npm 发布状态。
+> 生成日期：2026-08-10（本次对齐至 Feature 023，含 022/023 更新）
+> 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
 ---
@@ -11,14 +11,14 @@
 | 项 | 值 |
 |---|---|
 | 最新发布版本 | **2.5.7**（npm `latest` 渠道，已发布，2026-08-10） |
-| 测试基线 | 137 / 137 通过（构建后） |
+| 测试基线 | 164 / 164 通过（构建后） |
 | Node 兼容 | 发布产物 CommonJS，`engines >= 14.18.0`（Node 14 可用） |
 | 知识库 | 1 stable + 若干 candidate/pending |
 | Skills | 8 阶段绑定，7 个第三方 skill 锁定 |
-| 最新 Feature | 021-quick-json-slim（completed）；020-quick-context-governance（completed）；019-contract-single-source（completed） |
-| 快速通道（S0） | ✅ 已实现（Feature 020 + 021）：`sovei quick <target>` 六步闭环 + usage 事件记录 + Git diff 验证 + `--json` 输出精简（117KB→37KB） |
+| 最新 Feature | 023-quick-agent-adapters（completed）；022-context-budget-subagent（completed）；021-quick-json-slim（completed）；020-quick-context-governance（completed）；019-contract-single-source（completed） |
+| 快速通道（S0） | ✅ 已实现（Feature 020 + 021 + 023）：`sovei quick <target>` 六步闭环 + usage 事件记录 + Git diff 验证 + `--json` 输出精简（117KB→37KB）+ 自动 .gitignore 排除 + IDE 适配器 slash command |
 | Merge Preflight | ✅ 已实现（未发布）：`sovei workspace preflight <source> <target>`，三类语义冲突检测 + 四种裁决动作 |
-| 战略级缺口 | 问题三（Drift Detection）+ 问题四（统一关系模型 / Graph Coding）均未实现 |
+| 战略级缺口 | 问题四（统一关系模型 / Graph Coding）未实现；问题三（Drift Detection）第一期不做——没有门禁 drift 一定发生（做检测也没用），有门禁不需要检测 |
 
 ---
 
@@ -37,15 +37,23 @@
 | ✅ | **问题二**：S0 快速通道 → Feature 020 六步闭环 + Feature 021 JSON 精简 | 2026-08-09 | §2.5 / §2.7 |
 | ✅ | **quick --json 输出膨胀**：Feature 021 修复（117KB→37KB） | 2026-08-10 | §2.7 |
 | ✅ | **Graph Coding 第 4 层**：语义合并预检 → preflight 模块 | 2026-08-10 | §2.5 |
+| ✅ | **P1-3 上下文包膨胀**：shadow policy 激活 + 字符预算截断 + cross-feature Top-N 过滤 | 2026-08-10 | Feature 022 |
+| ✅ | **SA-1 子 Agent 契约**：cross-feature-index + expand CLI 命令 | 2026-08-10 | Feature 022 |
+| ✅ | **IDE 适配器快速通道指令**：用户交互式选择安装 4 个 IDE（Trae/CodeBuddy/CC/Codex）的快速通道指令文件 | 2026-08-10 | Feature 023 |
+| ✅ | **quick --exclude 自动 .gitignore**：sovei quick 无 --exclude 时自动从 .gitignore 读取排除路径 | 2026-08-10 | Feature 023 后修 |
+| ✅ | **_subagentContract 契约提示**：cross-feature-index 输出包装 _subagentContract 对象，告知宿主 AI 分派子 Agent | 2026-08-10 | Feature 022 后修 |
 
 ### ❌ 未完成项（按优先级排列）
 
 | 优先级 | # | 项 | 简述 | 详见 |
 |---|---|---|---|---|
-| **P1** | P1-3 | **上下文包膨胀** | required 无预算上限、cross-feature 全量加载、shadow policy 未激活 | §2.3 |
-| **P1** | — | **Drift Detection MVP**（问题三） | 代码变更后红线/地图/知识不可信，需变更检测+影响面评估+可信度标记 | §2.5 |
-| **P1** | — | **场景一 P1** | spec 分层 git 策略 + 主动归档 + 知识阈值 | §3 |
-| **P1** | SA-1 | **子 Agent：cross-feature 并行过滤** | 子 Agent 并行读 decision-log → Top-N 摘要，解决 P1-3 核心痛 | §2.9 |
+| **P1** | ~~P1-3~~ | ~~**上下文包膨胀**~~ | ✅ **已实现**（Feature 022，2026-08-10）：shadow policy actual 激活（scoped 变体）+ 字符预算截断（applyBudget）+ cross-feature Top-N 相关性过滤 + 子 Agent 契约（cross-feature-index / expand CLI 命令）+ _subagentContract 契约提示 + 修复 FilesystemStorage.list() 不返回目录的预存 bug。164/164 测试通过 | §2.3 |
+| **P1** | — | **load 阶段探索能力增强** | load 不产出文件/无 postExecute/无 skill/知识加载不全，与 grill 信息断层 | §3.5 |
+| **P0** | — | **过期感知（L1）** | context build / quick 时对比 HEAD vs baselineRevision，提示治理资产可能不可信。个人以当前分支为基线重新校准 | §3.6 |
+| **P1** | — | **load 阶段增强** | 补齐知识加载 + postExecute + 产出 load-summary.md | §3.5 |
+| **P2** | — | **CI/CD 集成模板** | GitHub Actions / GitLab CI 流水线模板（企业推广时用） | §3.6 |
+| **P2** | — | **`--json` 全覆盖** | workflow/knowledge/workspace 等命令无法被脚本/CI 消费 | §3.6 |
+| **P1** | ~~SA-1~~ | ~~**子 Agent：cross-feature 并行过滤**~~ | ✅ **已实现**（Feature 022，2026-08-10）：`context cross-feature-index` 输出 JSON 索引 + `context expand` 按需展开，供宿主 AI 分派子 Agent 并行读取 | §2.9 |
 | **P2** | P1-2 | **`mcp` 能力字段无消费方** | 预留边界，需决定做不做 MCP server | §2.2 |
 | **P2** | P2-1 | **013 O2 sentinel upsert 晋升** | 已覆盖 3 Feature，第 4 个复用则晋升 stable | §2.4 |
 | **P2** | P2-2 | **外部 Skills 多 binding** | 一个阶段注入多个 skill | §2.6 |
@@ -58,7 +66,7 @@
 | **P2** | SA-3 | **子 Agent：converge/verify 代码审查** | 分维度并行审查 | §2.9 |
 | **P2** | SA-5 | **子 Agent：preflight 并行检测** | 三类冲突检测并行 | §2.9 |
 | **P2** | SA-6 | **子 Agent：learn 知识提取** | 并行提取/搜索/评估，写入串行 | §2.9 |
-| **P2** | — | **统一关系模型**（问题四，Graph Coding 核心） | 定义关系 schema + 适配器，还差 4 层 | §2.5 |
+| **P2** | — | **统一关系模型**（问题四，Graph Coding 核心） | 定义关系 schema + 适配器，还差 4 层 | §3.6 |
 | **P2** | — | **联邦星型（multi-hub）** | 多主干/多团队对账 | §4 |
 | **P2** | — | **Cursor Adapter** | Phase 3 剩余项 | §6 |
 | **P2** | — | **Phase 4：vendor lock + 上游 diff + 安装器评估** | 外部 Skills 生命周期 | §6 |
@@ -179,8 +187,40 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | # | 项 | 现状 |
 |---|---|---|
 | P2-1 | **013 O2 sentinel upsert 晋升** | 已覆盖 011/012/013，保持 candidate；**再被第 4 个 Feature 复用则晋升 stable** |
+| 低 | **adapted.rules.json confidence 字段校验** | `adapted.rules.json` 中 20 条 deprecated 规则含 `"confidence": "medium"`。该字段是 schema 合法可选字段（`z.enum(['high','medium','low']).optional()`），当前 `rules validate` + `context build` 均通过无报错。若曾出现校验告警属历史遗留（可能 schema 更新前的产物），不影响工作流推进——全部规则已 deprecated，confidence 仅辅助人工审查 |
 
-### 3.5 战略级能力缺口（Drift Detection + 统一关系模型）
+### 3.5 P1 — load 阶段探索能力增强
+
+> 2026-08-10 分析新增。用户观察到 load 阶段"没啥用"，对比 OpenSpec explore 后确认存在实质性能力缺口。
+
+**问题**：load 阶段是 12 阶段链中最薄的一环，仅做状态校验 + `workflow-state.yaml` 初始化，对后续阶段的信息增益几乎为零。
+
+**现状分析**（核对源码 `stages/index.ts` 第 19-58 行 + `knowledge/store.ts` TASK_TYPE_MAP）：
+
+| 维度 | 现状 | 问题 |
+|---|---|---|
+| **产物** | `producesArtifacts: []`（全工作流唯一不产出文件） | grill 无法引用 load 的任何实质性输出 |
+| **postExecute** | 不存在（全工作流唯一） | 零校验，做了什么全靠 prompt 自然语言约束 |
+| **Skill 绑定** | 无（纯原生 prompt） | 无方法论注入，与 grill/wayfind 等 8 个有 skill 的阶段不对齐 |
+| **知识加载** | `general` → constitution + preference + architecture | **设计文档（`design-docs/SOVEI_HARNESS_WORKFLOW_DESIGN.md` §6.1）要求加载 Code Map + 规则 + Baseline，实现未覆盖** |
+| **Prompt** | 6 节通用描述（输入/操作/输出/初始化/停止条件/写入） | 纯指令性，无方法论指导，agent 不知道"做到什么程度算好" |
+| **与 grill 的信息断层** | grill prompt 写 `## 输入：有效的 load 结果`，但 load 不产出任何文件 | grill 启动时对代码库现状/已有架构/潜在风险的认知完全取决于 context build 通用组装，而非 load 的主动探索成果 |
+
+**对比 OpenSpec explore**：OpenSpec 的 explore 阶段定位为"无风险思考伙伴"——主动读代码、权衡选项、形成计划。Sovei 的 load 只做状态恢复，不做主动探索，导致 grill 阶段从零开始理解现状。
+
+**建议方案**（分三个方向，按优先级排列）：
+
+| 优先级 | 方向 | 内容 | 理由 |
+|---|---|---|---|
+| **P1** | **补齐设计文档承诺** | ① `TASK_TYPE_MAP['general']` 增加 `code-map` 和 `rule`；② 增加 postExecute 校验（至少校验 workflow-state.yaml 存在且 currentStage 正确） | 设计文档已承诺，实现未覆盖，属于 bug 级差距 |
+| **P2** | **增加主动探索能力** | ① load 阶段产出 `load-summary.md`（记录当前代码库状态/涉及模块/已有相关实现/潜在风险点）；② grill 的 `requiredArtifacts` 增加 `load-summary.md`；③ load prompt 增加探索方法论指导（不只是"校验状态"，而是"理解现状+识别风险"） | 价值最大——解决 load→grill 信息断层，吸收 OpenSpec explore 长处。需 spec 级设计 |
+| **P3** | **绑定外部 Skill** | 为 load 绑定一个探索类 skill（与 grill/wayfind 等 8 个有 skill 的阶段对齐） | 依赖方向二落地，且需找到或编写合适的探索 skill |
+
+**关联**：
+- 与 P1-3（上下文包膨胀）互补：P1-3 解决"上下文包太大"，本项解决"load 阶段上下文太薄"
+- 与 drift detection（问题三）正相关：load 若产出 `load-summary.md` 记录代码库快照，drift detection 可以此为 baseline 对比
+
+### 3.6 战略级能力缺口（Drift Detection + 统一关系模型）
 
 > 源自 2026-08-06 讨论确定的四大战略问题。问题一已解决，问题二已部分解决（S0 快速通道已实现），问题三和问题四完全未实现。详见 `technical-sharing/TECH_SHARING_MATERIAL_POLISHED.md` §15。
 
@@ -332,14 +372,18 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | 1 | ~~清工作流自身债（P0）：016 收尾 → O1 晋级~~ | ✅ 已完成（2026-08-07） |
 | 2 | ~~场景二 P0-1 红线分支隔离~~ | ✅ 已完成（2026-08-09，已发 2.5.7） |
 | 2 | ~~场景二 P0-2 merge preflight~~ | ✅ 已完成（2026-08-10） |
-| **3** | **上下文包膨胀（P1-3）**：激活 shadow policy scoped 变体 + 字符预算截断 | ❌ 待开发 |
-| **4** | **Drift Detection MVP**（§3.5 问题三）：基于 path/scope 粗粒度变更检测 + 可信度标记 | ❌ 待开发 |
+| **3** | ~~**上下文包膨胀（P1-3）**~~：激活 shadow policy scoped 变体 + 字符预算截断 | ✅ 已完成（2026-08-10，Feature 022） |
+| **4** | ~~**Drift Detection MVP**~~ → 第一期不做。改为 **过期感知 L1**（个人级 P0） | ❌ 待开发 |
+| **5** | **load 阶段增强**（补齐知识加载 + postExecute） | ❌ 待开发 |
+| **6** | **README 版本同步 + Feature 遗留清理** | ❌ 待开发 |
 | **5** | **场景一 P1**：spec 分层 git 策略 + 主动归档 + 知识阈值 | ❌ 待开发 |
-| **6** | **统一关系模型**（§3.5 问题四）：关系 schema + 适配器接入现有 JSON | ❌ 待开发 |
+| **6** | **统一关系模型**（§3.6 问题四）：关系 schema + 适配器接入现有 JSON | ❌ 待开发 |
+| **6.5** | **load 阶段探索能力增强**（§3.5）：补齐知识加载 + postExecute + 主动探索产出 | ❌ 待开发 |
 | 7 | 本地使用优化（P2）：`use-local.ps1` + README 补充 | ❌ 待开发 |
 | 8 | Feature 流程遗留清理（§3.8）：人工确认 4 个卡住的 Feature | ❌ 待处理 |
 | 9 | 最后 P2：联邦星型、Cursor Adapter、Phase 4、O2 晋升、多 binding/附加文件 | ❌ 待开发 |
-| 10 | **子 Agent 强化**（§3.9）：优先 SA-1（与 P1-3 协同），其次 SA-4（与 drift MVP 协同） | ❌ 待评估 |
+| 10 | ~~**子 Agent 强化**（§3.9）~~：SA-1 已实现（cross-feature-index + expand CLI 契约 + _subagentContract 提示）；SA-2~6 待评估 | ✅ SA-1 已完成（2026-08-10） |
+| 10.5 | ~~**IDE 适配器快速通道指令**~~：sovei adapters install/list + project init --adapters + slash command 生成 + .gitignore 自动排除 | ✅ 已完成（2026-08-10，Feature 023） |
 
 ---
 
@@ -351,13 +395,17 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | ✅ | P0-1 红线 branch 作用域隔离 | 已决（2026-08-09，已发 2.5.7） |
 | ✅ | P0-2 merge preflight 语义冲突预检 | 已决（2026-08-10，已实现未发布） |
 | ✅ | 问题一（skills 空壳）| 已决（Feature 014） |
-| ✅ | 问题二（S0 快速通道）| 已部分决（Feature 020/021，上下文包膨胀和 drift detection 仍未解决） |
-| ❓ | **上下文包膨胀（P1-3）**：激活 scoped 变体的时机？S0 已完成但膨胀问题仍在 | 待决 |
-| ❓ | **Drift Detection（§3.5 问题三）**：先做 MVP（path/scope 粗粒度）还是等统一关系模型后做精确版？ | 待决 |
-| ❓ | **统一关系模型（§3.5 问题四）**：本轮是否启动？关系 schema 设计范围——一次性整合所有 JSON 还是分批接入？ | 待决 |
+| ✅ | 问题二（S0 快速通道）| 已部分决（Feature 020/021/022/023，~~上下文包膨胀~~已解决，~~过期感知 L1~~ 待做但优先级低） |
+| ✅ | **上下文包膨胀（P1-3）**：激活 scoped 变体 + 预算截断 + cross-feature 过滤 | 已决（2026-08-10，Feature 022） |
+| ✅ | **Drift Detection（§3.6 问题三）**：第一期不做。没有门禁 drift 一定发生（做检测也没用），有门禁不需要检测。个人用 L1 过期感知 + 基线重新校准，企业靠 CI 门禁强制 | 已决（2026-08-10） |
+| ❓ | **load 阶段探索能力增强（§3.5）**：是否启动？方向一（补齐知识加载+postExecute）vs 方向二（主动探索产出 load-summary.md）vs 方向三（绑定 skill），三者关系是递进还是独立？ | 待决 |
+| ✅ | **Drift Detection（§3.6 问题三）**：第一期不做。核心判断：没有门禁 drift 一定发生，有门禁不需要检测。个人用 L1 过期感知 + 基线重新校准，企业靠 CI 门禁强制 | 已决（2026-08-10） |
+| ❓ | **统一关系模型（§3.6 问题四）**：本轮是否启动？关系 schema 设计范围——一次性整合所有 JSON 还是分批接入？ | 待决 |
 | ❓ | **`context build --paths` 语义修正（P2-5）**：是否与 P1-3 合并为一个 Feature？ | 待决 |
 | ❓ | **联邦星型**：是否本轮做？（单 hub 已满足个人三工程） | 待决 |
 | ❓ | **`mcp` 字段**：做 MCP server 还是长期挂起？ | 待决 |
 | ❓ | **Cursor Adapter**：是否有实际使用需求驱动？ | 待决 |
-| ❓ | **子 Agent 强化（§3.9）**：是否本轮启动 SA-1？需先定义子 Agent 契约还是等 P1-3 定型？ | 待决 |
+| ✅ | **子 Agent 强化（§3.9）**：SA-1 已实现（Feature 022），提供 cross-feature-index + expand CLI 契约 + _subagentContract 提示 | 已决（2026-08-10） |
+| ✅ | **IDE 适配器快速通道指令**：sovei adapters install/list + project init --adapters，用户交互式选择安装 | 已决（2026-08-10，Feature 023） |
+| ✅ | **quick --exclude 自动 .gitignore**：无 --exclude 时自动从 .gitignore 读取排除路径，移除 dist/** 硬编码 | 已决（2026-08-10） |
 | ❓ | **Phase 4 外部 Skills 生命周期**：是否启动？网络约束（github.com 不通）是否影响？ | 待决 |

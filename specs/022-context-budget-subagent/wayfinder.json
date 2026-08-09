@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "022-context-budget-subagent",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "All decisions resolved in grill: 7 facts verified, 6 inferable decisions made, 1 scope decision confirmed. No unknown decision tickets remain.",
+  "revision": 0,
+  "updatedAt": "2026-08-09T16:51:01.825Z",
+  "ticketIndex": [],
+  "fog": []
+}

@@ -1,6 +1,7 @@
 import type { ContextItem, ContextPack } from './builder.js';
 import type { Redline } from '../change-control/schemas.js';
 import type { LoadedProjectRule } from '../rules/schemas.js';
+import { applyBudget } from './budget.js';
 
 export const CONTEXT_POLICY_VERSION = '1';
 
@@ -85,9 +86,20 @@ export interface ContextPolicyResult {
     full: ContextShadowVariant;
     scoped: ContextShadowVariant;
     indexOnDemand: ContextShadowVariant;
-    actual: 'full';
+    /** 实际交付模式——有 paths 时自动切换为 scoped，无 paths 时保持 full（向后兼容） */
+    actual: 'full' | 'scoped' | 'index+on-demand';
+    /** 选择 actual 的理由描述 */
+    actualReason: string;
     compatibility: 'preserved';
   };
+  /**
+   * 按 actual 模式实际应交付的 required 项。
+   * actual='full' 时等于 pack.required（全部）；
+   * actual='scoped' 时等于 scoped.required（仅命中项 + 全局不变量）；
+   * 有 budget 时施加了截断。
+   * CLI 应使用此字段替换 pack.required 输出。
+   */
+  actualRequired: ContextItem[];
 }
 
 export interface ContextPolicyOptions {
@@ -96,6 +108,8 @@ export interface ContextPolicyOptions {
   symbols?: string[];
   domains?: string[];
   stage?: string;
+  /** 字符预算上限——提供时对 actual 变体的 required 施加截断 */
+  budget?: number;
 }
 
 function normalize(value: string): string {
@@ -158,10 +172,49 @@ export function buildContextPolicy(pack: ContextPack, redlines: Redline[], proje
   const candidates = index.filter((item) => !targetedIds.has(item.id) && !scopedRequiredIds.has(item.id));
   const scopedExpanded = targeted.filter((item) => !scopedRequiredIds.has(item.id));
   const full = variant('full', pack.required, [], pack.required, pack.suggested.map(indexItem));
-  const scoped = variant('scoped', scopedRequired, candidates, scopedExpanded, candidates);
+  let scoped = variant('scoped', scopedRequired, candidates, scopedExpanded, candidates);
   const indexOnDemand = variant('index+on-demand', [], index, [], index);
   const uncertain = Boolean(options.paths?.length) && candidates.some((item) => item.type === 'redline' || item.type === 'project-rule');
-  const status = uncertain ? 'expanded' : 'stable';
+
+  // ── 选择 actual 模式 ──
+  // 有 paths 时使用 scoped（仅交付命中项 + 全局不变量），无 paths 时保持 full（向后兼容）
+  const hasPaths = Boolean(options.paths?.length);
+  const actualMode: ContextPolicyResult['shadow']['actual'] = hasPaths ? 'scoped' : 'full';
+  const matchedCount = scopedRequired.length;
+  const unloadedCount = candidates.length;
+  let actualReason = hasPaths
+    ? `scoped: paths provided, ${matchedCount} items matched, ${unloadedCount} candidates unloaded`
+    : `full: no paths provided, all ${pack.required.length} required items delivered (backward compatible)`;
+
+  // ── 字符预算截断 ──
+  // 有 budget 时对 actual 变体的 required 施加截断，超预算项降级为索引摘要
+  let budgetExceeded = false;
+  if (options.budget !== undefined && options.budget > 0) {
+    const actualItems = actualMode === 'scoped' ? scoped.required : full.required;
+    const budgetResult = applyBudget(actualItems, options.budget, {
+      untouchableIds: globalInvariantIds,
+    });
+    if (budgetResult.exceeded) {
+      budgetExceeded = true;
+      // 将截断结果反映到 scoped 变体（actual='scoped' 时）
+      if (actualMode === 'scoped') {
+        scoped = variant(
+          'scoped',
+          budgetResult.retained,
+          [...candidates, ...budgetResult.unloaded],
+          scopedExpanded,
+          [...candidates, ...budgetResult.unloaded],
+        );
+      }
+      actualReason += `; budget ${options.budget} exceeded, ${budgetResult.unloaded.length} items unloaded to index`;
+    }
+  }
+
+  const status: ContextPolicyControlPlane['status'] = budgetExceeded
+    ? 'over-budget'
+    : uncertain
+      ? 'expanded'
+      : 'stable';
 
   return {
     controlPlane: {
@@ -180,8 +233,10 @@ export function buildContextPolicy(pack: ContextPack, redlines: Redline[], proje
       full,
       scoped,
       indexOnDemand,
-      actual: 'full',
+      actual: actualMode,
+      actualReason,
       compatibility: 'preserved',
     },
+    actualRequired: actualMode === 'scoped' ? scoped.required : full.required,
   };
 }

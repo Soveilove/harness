@@ -1,0 +1,1 @@
+{"timestamp":"2026-08-09T16:51:01.825Z","revision":0,"actor":"agent","event":{"type":"MAP_SKIPPED","featureId":"022-context-budget-subagent","reason":"All decisions resolved in grill: 7 facts verified, 6 inferable decisions made, 1 scope decision confirmed. No unknown decision tickets remain."}}

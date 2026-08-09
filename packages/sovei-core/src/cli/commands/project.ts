@@ -144,8 +144,9 @@ export function registerProjectCommands(program: Command): void {
     .option('--state <state>', '状态管理（pinia/redux/zustand）')
     .option('--build <build>', '构建工具（vite/webpack）')
     .option('--force', '替换现有 Sovei 项目声明')
+    .option('--adapters <ids>', '安装 IDE 适配器快速通道指令（逗号分隔，如 trae,codebuddy；使用 --adapters all 安装全部）')
     .action(async (targetPath: string, opts: {
-      blank?: boolean; name?: string; framework?: string; language?: string; state?: string; build?: string; force?: boolean;
+      blank?: boolean; name?: string; framework?: string; language?: string; state?: string; build?: string; force?: boolean; adapters?: string;
     }) => {
       const logger = getLogger();
       const resolvedTarget = resolve(targetPath);
@@ -208,6 +209,9 @@ export function registerProjectCommands(program: Command): void {
         '### Key Commands',
         '- `sovei context build --stage <stage> --feature <feature>`: Get stage prompt + context pack',
         '- `sovei context build --stage spec --feature <feature> --cross-feature`: Include other features decision logs',
+        '- `sovei context build --budget <chars> --cross-feature-limit <n>`: Build context pack with character budget and Top-N cross-feature filtering',
+        '- `sovei context cross-feature-index <feature> --paths <paths>`: Output JSON index of other features\' decision-logs with relevance scores (for sub-agent parallelization)',
+        '- `sovei context expand <feature-id> <artifact-name>`: On-demand expand a single feature artifact (truncated to 4000 chars)',
         '- `sovei workflow <stage> <feature>`: Prepare a workflow stage',
         '- `sovei workflow <stage> <feature> --complete`: Complete a stage and advance',
         '- `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate',
@@ -245,15 +249,71 @@ export function registerProjectCommands(program: Command): void {
         '',
         'Run `sovei governance review-pack generate <feature>` to render tech-review.md and product-review.md from it.',
         '',
+        '### Sub-Agent Contract (IDE Integration)',
+        '',
+        'When `sovei context cross-feature-index` outputs a `_subagentContract` envelope, the host AI (CodeBuddy, Claude Code, Codex) **should** dispatch sub-agents to parallelize the reading:',
+        '',
+        '1. Run `sovei context cross-feature-index <feature> --paths <paths>` to get the scored index',
+        '2. Take the top N items by `relevanceScore` (e.g., 5)',
+        '3. **Dispatch one sub-agent per item** — each sub-agent runs `sovei context expand <featureId> decision-log.md` and returns the full output',
+        '4. Main agent collects all sub-agent results and uses them as cross-feature context',
+        '',
+        'This avoids serial I/O when 50+ features exist. The `_subagentContract` field tells the host AI:',
+        '- `hint`: How to consume the items',
+        '- `expandCommand`: The command each sub-agent should run',
+        '- `parallelizable`: Always `true` for this contract',
+        '- `hostAgents`: Which host AI agents support this pattern',
+        '',
+        '### Quick Channel (Every Code Change)',
+        '',
+        '**Every code change must go through the quick channel** (`sovei quick`) — even small post-completion fixes:',
+        '',
+        '1. Run `sovei quick "<description>" --paths <file>` **before** editing (exclusions auto-loaded from .gitignore)',
+        '2. Make the change',
+        '3. Run tests',
+        '4. The quick channel records usage and verifies git diff scope',
+        '',
       ].join('\n');
       if ((await storage.exists('AGENTS.md')) && !opts.force) {
         console.log('  · AGENTS.md 已存在，保留现有内容（未被覆盖）');
         console.log('    如需与最新 Sovei 工作流声明同步，请复制以下指令给你的 AI 助手，由它审查并决定如何更新：');
-        console.log('    「请审查本项目的 AGENTS.md，确认其 Sovei Workflow 部分（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
+        console.log('    「请审查本项目的 AGENTS.md，确认其 Sovei Workflow 部分（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation、Sub-Agent Contract、Quick Channel）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
         console.log('    （强制覆盖生成默认 AGENTS.md：sovei project init <path> --force）');
       } else {
         await storage.write('AGENTS.md', agentsMd);
         console.log('  · 已创建 AGENTS.md（Sovei 声明）');
+      }
+
+      // ── 安装 IDE 适配器快速通道指令 ──
+      if (opts.adapters) {
+        const { installAdapters } = await import('../../adapters/installer.js');
+        const { adapterRegistry } = await import('../../adapters/registry.js');
+        let adapterIds: string[];
+        if (opts.adapters === 'all') {
+          adapterIds = adapterRegistry.list().filter((a) => a.quickChannelDirective).map((a) => a.id);
+        } else {
+          adapterIds = opts.adapters.split(',').map((id) => id.trim()).filter(Boolean);
+        }
+        const installResult = await installAdapters(adapterIds, storage);
+        console.log('');
+        console.log('  ── IDE 适配器安装 ──');
+        for (const r of installResult.results) {
+          if (r.installed) {
+            console.log(`  ✓ ${r.adapterName} (${r.adapterId}) — 已安装`);
+            for (const f of r.files) {
+              console.log(`    · ${f}`);
+            }
+          } else {
+            console.log(`  → ${r.adapterName} (${r.adapterId}) — ${r.skipped}`);
+          }
+        }
+        console.log('');
+      } else {
+        console.log('');
+        console.log('  ── IDE 适配器 ──');
+        console.log('  运行 `sovei adapters install` 选择要安装的 IDE 快速通道指令。');
+        console.log('  或 `sovei project init <path> --adapters trae,codebuddy` 在初始化时安装。');
+        console.log('');
       }
 
       // Create knowledge files

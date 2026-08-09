@@ -1,0 +1,27 @@
+{"timestamp":"2026-08-09T16:48:12.810Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"022-context-budget-subagent"},"actor":"cli","sourceStage":null}
+{"timestamp":"2026-08-09T16:48:21.677Z","revision":1,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}
+{"timestamp":"2026-08-09T16:50:33.120Z","revision":2,"event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]},"actor":"cli","sourceStage":"grill"}
+{"timestamp":"2026-08-09T16:51:05.628Z","revision":3,"event":{"type":"STAGE_COMPLETE","stage":"wayfind","artifacts":["wayfinder.md"]},"actor":"cli","sourceStage":"wayfind"}
+{"timestamp":"2026-08-09T16:51:39.484Z","revision":4,"event":{"type":"STAGE_COMPLETE","stage":"spec","artifacts":["spec.md","reconciliation.md"]},"actor":"cli","sourceStage":"spec"}
+{"timestamp":"2026-08-09T16:52:04.833Z","revision":5,"event":{"type":"STAGE_COMPLETE","stage":"scope","artifacts":["scope.md","coverage-matrix.md"]},"actor":"cli","sourceStage":"scope"}
+{"timestamp":"2026-08-09T16:52:29.883Z","revision":6,"event":{"type":"STAGE_COMPLETE","stage":"plan","artifacts":["plan.md"]},"actor":"cli","sourceStage":"plan"}
+{"timestamp":"2026-08-09T16:52:51.818Z","revision":7,"event":{"type":"STAGE_COMPLETE","stage":"tasks","artifacts":["tasks.md"]},"actor":"cli","sourceStage":"tasks"}
+{"timestamp":"2026-08-09T16:57:54.642Z","revision":8,"event":{"type":"TASK_COMPLETE","taskId":"TASK-001","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:02.188Z","revision":9,"event":{"type":"TASK_COMPLETE","taskId":"TASK-002","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:02.910Z","revision":10,"event":{"type":"TASK_COMPLETE","taskId":"TASK-003","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:03.610Z","revision":11,"event":{"type":"TASK_COMPLETE","taskId":"TASK-004","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:04.289Z","revision":12,"event":{"type":"TASK_COMPLETE","taskId":"TASK-005","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:04.983Z","revision":13,"event":{"type":"TASK_COMPLETE","taskId":"TASK-006","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:05.659Z","revision":14,"event":{"type":"TASK_COMPLETE","taskId":"TASK-007","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:06.335Z","revision":15,"event":{"type":"TASK_COMPLETE","taskId":"TASK-008","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:07.003Z","revision":16,"event":{"type":"TASK_COMPLETE","taskId":"TASK-009","artifact":"change-manifest.md"},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:11.097Z","revision":17,"event":{"type":"STAGE_COMPLETE","stage":"implement","artifacts":["change-manifest.md"]},"actor":"cli","sourceStage":"implement"}
+{"timestamp":"2026-08-09T16:58:31.154Z","revision":18,"event":{"type":"STAGE_COMPLETE","stage":"converge","artifacts":["convergence-report.md"]},"actor":"cli","sourceStage":"converge"}
+{"timestamp":"2026-08-09T16:59:34.676Z","revision":19,"event":{"type":"STAGE_PREPARED","stage":"verify"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-09T16:59:43.198Z","revision":20,"event":{"type":"STAGE_COMPLETE","stage":"verify","artifacts":["evidence.md"]},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-09T16:59:47.738Z","revision":21,"event":{"type":"OVERRIDE_CONFIRM","stage":"verify","role":"product","overriddenBy":"user","reason":"Personal project, AI-driven development, user authorized full workflow"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-09T16:59:48.615Z","revision":22,"event":{"type":"OVERRIDE_CONFIRM","stage":"verify","role":"tech","overriddenBy":"ai-agent","reason":"All 156 tests pass, tsc clean, CLI verified, no regressions"},"actor":"cli","sourceStage":"verify"}
+{"timestamp":"2026-08-09T16:59:53.435Z","revision":23,"event":{"type":"STAGE_PREPARED","stage":"learn"},"actor":"cli","sourceStage":"learn"}
+{"timestamp":"2026-08-09T17:00:15.913Z","revision":24,"event":{"type":"STAGE_COMPLETE","stage":"learn","artifacts":["learning-report.md"]},"actor":"cli","sourceStage":"learn"}
+{"timestamp":"2026-08-09T17:00:20.860Z","revision":25,"event":{"type":"STAGE_PREPARED","stage":"sync"},"actor":"cli","sourceStage":"sync"}
+{"timestamp":"2026-08-09T17:00:32.222Z","revision":26,"event":{"type":"STAGE_COMPLETE","stage":"sync","artifacts":["sync-report.md"]},"actor":"cli","sourceStage":"sync"}

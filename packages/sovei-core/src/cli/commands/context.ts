@@ -2,6 +2,8 @@
  * Context Commands
  * sovei context build <feature> --stage <stage> [--adapter <id>] [--query <text>]
  * sovei context status
+ * sovei context cross-feature-index <feature>   — 子 Agent 契约：输出 cross-feature 索引 JSON
+ * sovei context expand <feature-id> <artifact>  — 子 Agent 契约：按需展开单个产物
  */
 
 import type { Command } from 'commander';
@@ -17,6 +19,7 @@ import { buildSnapshot, saveSnapshot, loadSnapshot, isStale, computeSourceHash }
 import { ProjectRulesRepository, resolveProjectRules } from '../../rules/repository.js';
 import { VERSION } from '../../config/version.js';
 import { buildContextPolicy } from '../../context/policy.js';
+import { extractFeatureMeta, scoreCrossFeature } from '../../context/cross-feature.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -31,9 +34,11 @@ export function registerContextCommands(program: Command): void {
     .option('--adapter <id>', '目标 IDE 适配器 ID')
     .option('--query <text>', '可选检索查询')
     .option('--paths <paths>', '按逗号分隔的项目相对路径，用于匹配项目规范')
-    .option('--cross-feature', 'load other features decision-log as suggested reference')
+    .option('--cross-feature', '加载其他 Feature 的 decision-log 作为建议参考（按相关性 Top-N 筛选）')
+    .option('--cross-feature-limit <n>', 'cross-feature Top-N 数量（默认 5）', '5')
+    .option('--budget <chars>', '上下文包字符预算上限（超预算项降级为索引摘要）')
     .option('--json', '输出 JSON 而非 Markdown')
-    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; crossFeature?: boolean; json?: boolean }) => {
+    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; crossFeature?: boolean; crossFeatureLimit?: string; budget?: string; json?: boolean }) => {
       const storage = getStorage();
       const config = getConfig();
       const featurePath = getFeaturePath(config, feature);
@@ -66,15 +71,44 @@ export function registerContextCommands(program: Command): void {
         }
       }
 
-      // Load cross-feature decision logs when requested
+      // Load cross-feature decision logs when requested — 按相关性 Top-N 筛选
       const crossFeatureArtifacts: Array<{ featureId: string; name: string; content: string }> = [];
       if (opts.crossFeature) {
-        const allSpecs = await storage.list(config.specsDir);
-        for (const specDir of allSpecs.filter((s) => s !== feature && s !== '.gitkeep')) {
+        const crossFeatureLimit = parseInt(opts.crossFeatureLimit ?? '5', 10) || 5;
+        const currentPaths = opts.paths?.split(',').map((p) => p.trim()).filter(Boolean) ?? [];
+
+        // 读取当前 Feature 的 decision-log 用于提取元数据
+        const currentDl = await storage.read(`${config.specsDir}/${feature}/decision-log.md`);
+        const currentMeta = currentDl
+          ? extractFeatureMeta(feature, currentDl, currentPaths)
+          : extractFeatureMeta(feature, '', currentPaths);
+
+        // 读取所有其他 Feature 的 decision-log（使用 listEntries 获取目录列表）
+        const allEntries = await storage.listEntries(config.specsDir);
+        const specDirs = allEntries.filter((e) => e.isDirectory && e.name !== feature && e.name !== '.gitkeep').map((e) => e.name);
+        const otherMetas: Array<{ featureId: string; content: string; meta: ReturnType<typeof extractFeatureMeta> }> = [];
+        for (const specDir of specDirs) {
           const dl = await storage.read(`${config.specsDir}/${specDir}/decision-log.md`);
           if (dl && !dl.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
-            crossFeatureArtifacts.push({ featureId: specDir, name: 'decision-log.md', content: dl });
+            otherMetas.push({
+              featureId: specDir,
+              content: dl,
+              meta: extractFeatureMeta(specDir, dl),
+            });
           }
+        }
+
+        // 按相关性评分取 Top-N
+        const scored = scoreCrossFeature(
+          currentMeta,
+          otherMetas.map((o) => o.meta),
+          crossFeatureLimit,
+        );
+        const topIds = new Set(scored.map((s) => s.featureId));
+
+        // 仅将 Top-N 的 decision-log 加入 crossFeatureArtifacts
+        for (const item of otherMetas.filter((o) => topIds.has(o.featureId))) {
+          crossFeatureArtifacts.push({ featureId: item.featureId, name: 'decision-log.md', content: item.content });
         }
       }
 
@@ -96,10 +130,19 @@ export function registerContextCommands(program: Command): void {
         crossFeatureArtifacts,
         snapshot: freshSnapshot,
       });
+
+      // 解析预算参数
+      const budget = opts.budget ? parseInt(opts.budget, 10) : undefined;
       pack.policy = buildContextPolicy(pack, redlines, projectRules, {
         paths: opts.paths?.split(',').map((path) => path.trim()).filter(Boolean),
         stage: opts.stage,
+        budget: budget && budget > 0 ? budget : undefined,
       });
+
+      // 按 actual 模式过滤 required——scoped 时只交付命中项 + 全局不变量
+      if (pack.policy.actualRequired && pack.policy.actualRequired.length < pack.required.length) {
+        pack.required = pack.policy.actualRequired;
+      }
 
       if (opts.json) {
         console.log(JSON.stringify(pack, null, 2));
@@ -137,5 +180,84 @@ export function registerContextCommands(program: Command): void {
       }
       console.log('  状态：        ' + (stale ? 'stale（需重建）' : 'current（最新）'));
       console.log('');
+    });
+
+  // ── cross-feature-index — 子 Agent 契约：输出 cross-feature 索引 JSON ──
+  // 供宿主 AI（如 CodeBuddy Task）分派子 Agent 并行读取各 Feature 的 decision-log
+  context
+    .command('cross-feature-index')
+    .description('输出其他 Feature 的相关性索引 JSON（供子 Agent 并行加载）')
+    .argument('<feature>', '当前 Feature ID')
+    .option('--paths <paths>', '按逗号分隔的项目相对路径，用于相关性评分')
+    .action(async (feature: string, opts: { paths?: string }) => {
+      const storage = getStorage();
+      const config = getConfig();
+      const currentPaths = opts.paths?.split(',').map((p) => p.trim()).filter(Boolean) ?? [];
+
+      // 读取当前 Feature 的 decision-log
+      const currentDl = await storage.read(`${config.specsDir}/${feature}/decision-log.md`);
+      const currentMeta = currentDl
+        ? extractFeatureMeta(feature, currentDl, currentPaths)
+        : extractFeatureMeta(feature, '', currentPaths);
+
+      // 读取所有其他 Feature 的 decision-log 元数据（不加载 content）
+      const allEntries = await storage.listEntries(config.specsDir);
+      const specDirs = allEntries.filter((e) => e.isDirectory && e.name !== feature && e.name !== '.gitkeep').map((e) => e.name);
+      const otherMetas: ReturnType<typeof extractFeatureMeta>[] = [];
+      for (const specDir of specDirs) {
+        const dl = await storage.read(`${config.specsDir}/${specDir}/decision-log.md`);
+        if (dl && !dl.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
+          otherMetas.push(extractFeatureMeta(specDir, dl));
+        }
+      }
+
+      // 评分并输出全部（不截断 Top-N，让宿主 AI 自行决定取多少）
+      const scored = scoreCrossFeature(currentMeta, otherMetas, otherMetas.length);
+
+      // 输出带子 Agent 契约提示的包装对象
+      // 宿主 AI（CodeBuddy Task / CC Task / Codex）据此分派子 Agent 并行读取
+      const output = {
+        _subagentContract: {
+          hint: '以下每个 item 可由一个子 Agent 并行读取。为每个 item 分派一个子 Agent，'
+            + 'prompt 指示其运行 `sovei context expand <featureId> decision-log.md` '
+            + '并返回完整输出。子 Agent 数量建议取 relevanceScore > 0 的前 N 项（如 5）。',
+          expandCommand: 'sovei context expand <featureId> decision-log.md',
+          parallelizable: true,
+          hostAgents: ['codebuddy:Task', 'claude-code:Task', 'codex:agent'],
+        },
+        items: scored,
+      };
+      console.log(JSON.stringify(output, null, 2));
+    });
+
+  // ── expand — 子 Agent 契约：按需展开单个 Feature 产物 ──
+  // 供宿主 AI 在 index+on-demand 模式下按需读取完整内容
+  context
+    .command('expand')
+    .description('按需展开指定 Feature 的指定产物（截断 4000 字符）')
+    .argument('<feature-id>', '要展开的 Feature ID')
+    .argument('<artifact>', '产物文件名（如 decision-log.md）')
+    .action(async (featureId: string, artifactName: string) => {
+      const storage = getStorage();
+      const config = getConfig();
+
+      const content = await storage.read(`${config.specsDir}/${featureId}/${artifactName}`);
+      if (!content) {
+        console.error(`\n  ✗ 未找到产物：${featureId}/${artifactName}\n`);
+        process.exitCode = 1;
+        return;
+      }
+      if (content.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
+        console.error(`\n  ✗ 产物仍是模板：${featureId}/${artifactName}\n`);
+        process.exitCode = 1;
+        return;
+      }
+
+      // 截断 4000 字符（与 buildContextPack 的 fromArtifact 一致）
+      const truncated = content.slice(0, 4000);
+      process.stdout.write(truncated);
+      if (content.length > 4000) {
+        process.stdout.write('\n\n<!-- truncated at 4000 chars -->\n');
+      }
     });
 }

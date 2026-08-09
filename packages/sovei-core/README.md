@@ -207,7 +207,7 @@ sovei skills sync
 
 ## 版本与发布
 
-- 当前稳定版：`2.5.7`，通过 npm `latest` 渠道发布。
+- 当前稳定版：`2.5.9`，通过 npm `latest` 渠道发布。
 - 环境要求：Node.js `>= 14.18`，发布产物为 CommonJS 单文件，零运行时依赖（dependencies 为空）。
 - 安装的是单一可执行文件 `dist/release/sovei.cjs`（已混淆），无需构建即可运行。
 - 发布渠道为公开包（`publishConfig.access: public`），全局安装后提供 `sovei` 命令。

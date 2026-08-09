@@ -42,6 +42,20 @@ export interface IDEAdapter {
    * which skill to invoke for which stage.
    */
   renderSkillDirectives: (bindings: SkillBindingRender[]) => string;
+  /**
+   * 快速通道指令文本——嵌入 contextFile，告诉 IDE Agent 每次代码变更必须走 sovei quick。
+   * installer 会将此文本追加到 contextFile 中。
+   */
+  quickChannelDirective: string;
+  /**
+   * 可选 slash command 文件——仅支持 slash command 机制的 IDE（如 Claude Code）。
+   * installer 会创建 dir/filename 文件，内容为 content。
+   */
+  slashCommand?: {
+    dir: string;
+    filename: string;
+    content: string;
+  };
 }
 
 const codexAdapter: IDEAdapter = {
@@ -60,6 +74,18 @@ const codexAdapter: IDEAdapter = {
   },
   contextFile: 'AGENTS.md',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: [
+    '',
+    '### Quick Channel (Codex)',
+    '',
+    '**每次代码变更必须走快速通道**——即使是小的 post-completion 修复也要走：',
+    '',
+    '1. 编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）',
+    '2. 完成编辑',
+    '3. 运行测试',
+    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '',
+  ].join('\n'),
 };
 
 const claudeAdapter: IDEAdapter = {
@@ -78,6 +104,42 @@ const claudeAdapter: IDEAdapter = {
   },
   contextFile: 'CLAUDE.md',
   renderSkillDirectives: (bindings) => renderClaudeSkillDirectives(bindings),
+  quickChannelDirective: [
+    '',
+    '### Quick Channel (Claude Code)',
+    '',
+    '**每次代码变更必须走快速通道**——使用 `/sovei-quick` slash command 或直接运行：',
+    '',
+    '1. 编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）',
+    '2. 完成编辑',
+    '3. 运行测试',
+    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '',
+  ].join('\n'),
+  slashCommand: {
+    dir: '.claude/commands',
+    filename: 'sovei-quick.md',
+    content: [
+      '---',
+      'description: 走 Sovei 快速通道验证代码变更',
+      '---',
+      '',
+      '运行以下命令走快速通道：',
+      '',
+      '```bash',
+      'sovei quick "$ARGUMENTS" --paths <变更文件>',
+      '```',
+      '',
+      '> 排除路径自动从 .gitignore 读取，无需手动指定 --exclude。',
+      '',
+      '然后：',
+      '1. 根据快速通道的 riskLevel 决定是否需要升级到完整工作流',
+      '2. 完成代码编辑',
+      '3. 运行测试验证',
+      '4. 再次运行快速通道验证 git diff 范围',
+      '',
+    ].join('\n'),
+  },
 };
 
 const codebuddyAdapter: IDEAdapter = {
@@ -96,6 +158,41 @@ const codebuddyAdapter: IDEAdapter = {
   },
   contextFile: 'AGENTS.md',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: [
+    '',
+    '### Quick Channel (CodeBuddy)',
+    '',
+    '**每次代码变更必须走快速通道**——CodeBuddy Agent 必须在编辑代码前先执行：',
+    '',
+    '1. 使用 execute_command 工具运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**`',
+    '2. 检查返回的 riskLevel——若 escalated 需人工确认',
+    '3. 完成代码编辑',
+    '4. 运行测试验证',
+    '5. 快速通道记录 usage 并验证 git diff 范围',
+    '',
+  ].join('\n'),
+  slashCommand: {
+    dir: '.codebuddy/commands',
+    filename: 'sovei-quick.md',
+    content: [
+      '# Sovei 快速通道',
+      '',
+      '在编辑代码前，必须先走快速通道：',
+      '',
+      '使用 execute_command 工具运行：',
+      '```bash',
+      'sovei quick "$ARGUMENTS" --paths <变更文件>',
+      '```',
+      '',
+      '> 排除路径自动从 .gitignore 读取，无需手动指定 --exclude。',
+      '',
+      '检查返回的 riskLevel：',
+      '- fast-track: 可直接编辑',
+      '- escalated: 需人工确认范围',
+      '',
+      '编辑完成后运行测试，快速通道会记录 usage 并验证 git diff 范围。',
+    ].join('\n'),
+  },
 };
 
 const traeAdapter: IDEAdapter = {
@@ -114,6 +211,18 @@ const traeAdapter: IDEAdapter = {
   },
   contextFile: '.cursorrules',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: [
+    '',
+    '### Quick Channel (Trae)',
+    '',
+    '**每次代码变更必须走快速通道**——在编辑代码前先运行：',
+    '',
+    '1. `sovei quick "<变更描述>" --paths <文件> --exclude dist/**`',
+    '2. 完成编辑',
+    '3. 运行测试',
+    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '',
+  ].join('\n'),
 };
 
 const geminiAdapter: IDEAdapter = {
@@ -132,6 +241,7 @@ const geminiAdapter: IDEAdapter = {
   },
   contextFile: 'GEMINI.md',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: '',
 };
 
 const aiderAdapter: IDEAdapter = {
@@ -150,6 +260,7 @@ const aiderAdapter: IDEAdapter = {
   },
   contextFile: '.aiderrules',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: '',
 };
 
 const windsurfAdapter: IDEAdapter = {
@@ -168,6 +279,7 @@ const windsurfAdapter: IDEAdapter = {
   },
   contextFile: '.windsurfrules',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
+  quickChannelDirective: '',
 };
 
 /**
