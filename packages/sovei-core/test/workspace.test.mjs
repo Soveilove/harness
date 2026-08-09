@@ -94,3 +94,44 @@ test('workspace sync stops before writing when a local candidate collides with h
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('workspace sync filters redlines by branch scope', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'sovei-workspace-scope-'));
+  try {
+    const hub = join(root, 'hub');
+    const satA = join(root, 'sat-a');
+    const satB = join(root, 'sat-b');
+    const satNone = join(root, 'sat-none');
+    const now = new Date().toISOString();
+    const redlines = [
+      { id: 'GLOBAL_RL', title: 'Global', rule: 'Applies everywhere', enforcement: 'absolute', active: true, createdAt: now, updatedAt: now },
+      { id: 'BRANCH_A_RL', title: 'A only', rule: 'Applies to branch a', enforcement: 'absolute', active: true, branches: ['a'], createdAt: now, updatedAt: now },
+      { id: 'BRANCH_B_RL', title: 'B only', rule: 'Applies to branch b', enforcement: 'absolute', active: true, branches: ['b'], createdAt: now, updatedAt: now },
+    ];
+    await makeProject(hub, 'same-project', [], redlines);
+    await makeProject(satA, 'same-project');
+    await makeProject(satB, 'same-project');
+    await makeProject(satNone, 'same-project');
+
+    const manager = new WorkspaceManager(new MemoryStorage());
+    await manager.register({ id: 'main', name: 'Main', path: hub, role: 'hub' });
+    await manager.register({ id: 'a', name: 'A', path: satA, role: 'satellite', branch: 'a' });
+    await manager.register({ id: 'b', name: 'B', path: satB, role: 'satellite', branch: 'b' });
+    await manager.register({ id: 'none', name: 'None', path: satNone, role: 'satellite' });
+
+    await manager.syncToSatellite('a', new FilesystemStorage(satA));
+    const syncedA = JSON.parse(await readFile(join(satA, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    assert.deepEqual(syncedA.map((rl) => rl.id).sort(), ['BRANCH_A_RL', 'GLOBAL_RL']);
+
+    await manager.syncToSatellite('b', new FilesystemStorage(satB));
+    const syncedB = JSON.parse(await readFile(join(satB, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    assert.deepEqual(syncedB.map((rl) => rl.id).sort(), ['BRANCH_B_RL', 'GLOBAL_RL']);
+
+    // Satellite without a known branch receives only global redlines.
+    await manager.syncToSatellite('none', new FilesystemStorage(satNone));
+    const syncedNone = JSON.parse(await readFile(join(satNone, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    assert.deepEqual(syncedNone.map((rl) => rl.id), ['GLOBAL_RL']);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

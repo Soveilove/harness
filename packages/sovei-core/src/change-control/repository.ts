@@ -57,7 +57,9 @@ export class ChangeControlRepository {
         throw new Error(`Redline already exists: ${input.id}`);
       }
       const now = new Date().toISOString();
-      const redline = RedlineSchema.parse({ ...input, active: true, createdAt: now, updatedAt: now });
+      // 空 branches 数组归一为 undefined（= 全局生效），避免在 redlines.json 里残留空数组。
+      const normalizedInput = input.branches?.length ? input : { ...input, branches: undefined };
+      const redline = RedlineSchema.parse({ ...normalizedInput, active: true, createdAt: now, updatedAt: now });
       await this.saveRedlines([...redlines, redline]);
       await this.storage.append(REDLINE_EVENTS_FILE, JSON.stringify({
         type: 'REDLINE_ADDED',
@@ -77,10 +79,13 @@ export class ChangeControlRepository {
       const fields = Object.entries(patch).filter(([key, value]) =>
         value !== undefined && (existing as Record<string, unknown>)[key] !== value);
       if (!fields.length) throw new Error(`Redline ${id} has no fields to update`);
+      // 空 branches 归一为 undefined（= 全局生效），避免残留空数组。
+      const merged = Object.fromEntries(fields) as Record<string, unknown>;
+      if (merged.branches && (merged.branches as unknown[]).length === 0) merged.branches = undefined;
       const now = new Date().toISOString();
       const updated = RedlineSchema.parse({
         ...existing,
-        ...Object.fromEntries(fields),
+        ...merged,
         updatedAt: now,
       });
       await this.saveRedlines(redlines.map((redline) => redline.id === id ? updated : redline));

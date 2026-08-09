@@ -37,3 +37,35 @@ test('CLI creates a baseline-bound material change with the active redline matri
     await rm(fixture, { recursive: true, force: true });
   }
 });
+
+test('CLI redline add/update supports --branch and --clear-branches branch scope', async () => {
+  const fixture = await mkdtemp(join(tmpdir(), 'sovei-change-branch-cli-'));
+  const project = join(fixture, 'project');
+  try {
+    await execFileAsync(process.execPath, [cli, 'project', 'init', project, '--blank']);
+    // add with a branch scope
+    await execFileAsync(process.execPath, [
+      cli, '--root', project, 'governance', 'redline', 'add', 'EXP_ONLY',
+      '--title', 'Experiment', '--rule', 'Only on exp branch', '--enforcement', 'absolute',
+      '--branch', 'exp',
+    ]);
+    const added = JSON.parse(await readFile(join(project, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    const expRedline = added.find((rl) => rl.id === 'EXP_ONLY');
+    assert.deepEqual(expRedline.branches, ['exp']);
+    // update: override branch scope
+    await execFileAsync(process.execPath, [
+      cli, '--root', project, 'governance', 'redline', 'update', 'EXP_ONLY',
+      '--branch', 'beta', '--branch', 'gamma',
+    ]);
+    const updated = JSON.parse(await readFile(join(project, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    assert.deepEqual(updated.find((rl) => rl.id === 'EXP_ONLY').branches, ['beta', 'gamma']);
+    // update: clear branch scope back to global
+    await execFileAsync(process.execPath, [
+      cli, '--root', project, 'governance', 'redline', 'update', 'EXP_ONLY', '--clear-branches',
+    ]);
+    const cleared = JSON.parse(await readFile(join(project, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    assert.equal(cleared.find((rl) => rl.id === 'EXP_ONLY').branches, undefined);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});

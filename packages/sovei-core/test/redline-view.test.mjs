@@ -20,7 +20,7 @@ test('redline view renders active, inactive, seed candidates and events', async 
   await repo.addRedline({
     id: 'AUTH_REQUIRED', title: 'Auth required', rule: 'All routes need auth',
     enforcement: 'absolute', rationale: 'Regulatory requirement', scope: 'all HTTP routes',
-    examples: ['Removing a guard to fix a redirect loop'], owner: 'security-team',
+    branches: ['main', 'release'], examples: ['Removing a guard to fix a redirect loop'], owner: 'security-team',
   });
   await repo.addRedline({
     id: 'BILLING_CONTRACT', title: 'Billing approval', rule: 'Billing needs approval',
@@ -48,6 +48,7 @@ test('redline view renders active, inactive, seed candidates and events', async 
 
   assert.match(content, /业务红线（人工审查视图）/);
   assert.match(content, /AUTH_REQUIRED.*绝对红线.*All routes need auth.*Regulatory requirement/s);
+  assert.match(content, /分支作用域.*main, release/s);
   assert.match(content, /典型违规示例/);
   assert.match(content, /Removing a guard to fix a redirect loop/);
   assert.match(content, /security-team/);

@@ -16,7 +16,7 @@ import { resolve } from 'node:path';
 import { FilesystemStorage } from '../storage/filesystem.js';
 import { parseJson } from '../storage/json.js';
 import { KnowledgeEntry as KnowledgeEntrySchema, type KnowledgeEntry } from '../knowledge/schemas.js';
-import { Redline as RedlineSchema } from '../change-control/schemas.js';
+import { Redline as RedlineSchema, type Redline } from '../change-control/schemas.js';
 
 export interface WorkspaceEntry {
   id: string;          // short identifier (e.g. "main", "exp", "ci")
@@ -162,9 +162,13 @@ export class WorkspaceManager {
     const hubRedlines = await hubStorage.read('harness/project/governance/redlines.json');
     if (hubRedlines) {
       const redlines = RedlineSchema.array().parse(parseJson(hubRedlines, 'hub redlines.json'));
+      // Scope filter: only push redlines that apply to the target branch.
+      // Global redlines (branches absent/empty) always apply; branch-scoped
+      // redlines apply only when the satellite's branch matches.
+      const scoped = redlines.filter((redline) => this.redlineAppliesToBranch(redline, satellite.branch));
       pendingWrites.push({
         path: 'harness/project/governance/redlines.json',
-        content: JSON.stringify(redlines, null, 2),
+        content: JSON.stringify(scoped, null, 2),
       });
     }
     for (const type of knowledgeTypes) {
@@ -280,6 +284,18 @@ export class WorkspaceManager {
       && left.title === right.title
       && left.content === right.content
       && left.lifecycle === right.lifecycle;
+  }
+
+  /**
+   * Decide whether a redline applies to a given branch for sync purposes.
+   * - No `branches` or empty array => global redline, always applies.
+   * - Otherwise applies only if `branches` includes the target branch.
+   * A satellite with no known branch still receives global redlines only.
+   */
+  private redlineAppliesToBranch(redline: Redline, branch?: string): boolean {
+    if (!redline.branches || redline.branches.length === 0) return true;
+    if (!branch) return false;
+    return redline.branches.includes(branch);
   }
 
   private parseKnowledge(content: string, source: string): KnowledgeEntry[] {

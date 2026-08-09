@@ -112,8 +112,8 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 | 优先级 | 待开发 | 现状 | 价值 |
 |---|---|---|---|
-| **P0** | **红线 branch 作用域隔离** | 未实现（`redlines.json` 的 `scope` 仅是审计字段，`workspace sync` 会把 hub 全部红线推到 satellite） | 个人多工程：工程专属红线不互相污染 |
-| **P0** | **merge preflight 语义冲突预检** | 未实现（当前 `workspace sync` 只有知识 id 冲突检查） | 规模化合并防线（设计核心） |
+| **P0** | **红线 branch 作用域隔离** | ✅ **已实现**（2026-08-09）：`Redline` schema 新增可选 `branches: string[]`（缺省/空=全局）；`syncToSatellite` 按目标 satellite 的 `branch` 过滤，只推送全局或匹配 branch 的红线；新增测试 `workspace sync filters redlines by branch scope`（122/122 通过） | 个人多工程：工程专属红线不互相污染 |
+| **P0** | **merge preflight 语义冲突预检** | 未实现（2026-08-09 已核对源码：`syncToSatellite` 仅第 185-188 行有 knowledge entry `id` 冲突检查，无任何红线/语义冲突预检） | 规模化合并防线（设计核心） |
 | P2 | 联邦星型（multi-hub） | 未实现（当前单 hub） | 多主干/多团队对账，规模化后再做 |
 
 ---

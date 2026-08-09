@@ -3,6 +3,7 @@ param(
     [string]$ExpectedVersion,
     [ValidateSet('next', 'latest')]
     [string]$Tag = 'next',
+    # 保留向后兼容：脏工作区不再阻断发布，此参数已不参与判断，仅为兼容旧调用。
     [switch]$AllowDirty,
     [switch]$ValidateOnly,
     [switch]$MajorBump
@@ -49,17 +50,16 @@ Write-Host ""
 
 Push-Location $repoRoot
 try {
+    # 工作区状态只作提示，不阻断发布。本地构建、快速通道、工作流都不受此约束，
+    # 仅真正 npm publish 前提示未提交变更，由发布者自行判断是否属于本次版本。
     $dirty = @(git status --porcelain)
     if ($LASTEXITCODE -ne 0) {
         throw '无法读取 Git 工作区状态。'
     }
-    if ($dirty.Count -gt 0 -and -not $AllowDirty) {
-        Write-Host '当前存在未提交变更：' -ForegroundColor Yellow
-        $dirty | ForEach-Object { Write-Host "  $_" }
-        throw '默认禁止从脏工作区发布。确认这些改动属于本次版本后，提交它们；紧急情况下显式使用 -AllowDirty。'
-    }
     if ($dirty.Count -gt 0) {
-        Write-Host '警告：正在从脏工作区发布。' -ForegroundColor Yellow
+        Write-Host '提示：当前存在未提交变更，将随本次 npm publish 一并发布：' -ForegroundColor Yellow
+        $dirty | ForEach-Object { Write-Host "  $_" }
+        Write-Host '如这些改动不属于本次版本，请先提交/暂存后再发布。' -ForegroundColor DarkGray
     }
 
     # 同步 README.md 版本号到 package.json

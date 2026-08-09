@@ -21,6 +21,10 @@ function collectExample(value: string, previous: string[]): string[] {
   return previous.concat([value]);
 }
 
+function collectBranch(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 export function registerGovernanceCommands(program: Command): void {
   const governance = program.command('governance').description('业务红线治理');
   const redline = governance.command('redline').description('管理项目业务红线');
@@ -34,12 +38,13 @@ export function registerGovernanceCommands(program: Command): void {
     .option('--enforcement <level>', 'absolute | approval-required', 'absolute')
     .option('--rationale <text>', 'Why this redline exists (business context for human review)')
     .option('--scope <text>', 'Where this redline applies')
+    .option('--branch <name>', 'Branch this redline applies to (repeatable; absent => global)', collectBranch, [] as string[])
     .option('--example <text>', 'Typical violation example (repeatable)', collectExample, [] as string[])
     .option('--owner <name>', 'Person accountable for this redline')
     .option('--origin <origin>', 'Origin of this redline: manual | scanner-seed | pm-confirmed | agent-generated (default: manual)', 'manual')
     .action(async (id: string, options: {
       title: string; rule: string; enforcement: 'absolute' | 'approval-required';
-      rationale?: string; scope?: string; example: string[]; owner?: string; origin?: string;
+      rationale?: string; scope?: string; branch: string[]; example: string[]; owner?: string; origin?: string;
     }) => {
       const entry = await repository().addRedline({
         id: id.toUpperCase(),
@@ -48,6 +53,7 @@ export function registerGovernanceCommands(program: Command): void {
         enforcement: options.enforcement,
         rationale: options.rationale,
         scope: options.scope,
+        branches: options.branch.length ? options.branch : undefined,
         examples: options.example.length ? options.example : undefined,
         owner: options.owner,
         origin: (options.origin as 'manual' | 'scanner-seed' | 'pm-confirmed' | 'agent-generated') || 'manual',
@@ -102,12 +108,15 @@ export function registerGovernanceCommands(program: Command): void {
     .option('--enforcement <level>', 'absolute | approval-required')
     .option('--rationale <text>', 'Why this redline exists (business context for human review)')
     .option('--scope <text>', 'Where this redline applies')
+    .option('--branch <name>', 'Branch this redline applies to (repeatable; overrides existing branches)', collectBranch, [] as string[])
+    .option('--clear-branches', 'Clear branch scope => redline becomes global')
     .option('--example <text>', 'Typical violation example (repeatable)', collectExample, [] as string[])
     .option('--owner <name>', 'Person accountable for this redline')
     .option('--reviewer <name>', 'Record a human review by this person')
     .action(async (id: string, options: {
       title?: string; rule?: string; enforcement?: 'absolute' | 'approval-required';
-      rationale?: string; scope?: string; example: string[]; owner?: string; reviewer?: string;
+      rationale?: string; scope?: string; branch: string[]; clearBranches?: boolean;
+      example: string[]; owner?: string; reviewer?: string;
     }) => {
       const patch: RedlinePatch = {};
       if (options.title !== undefined) patch.title = options.title;
@@ -115,6 +124,12 @@ export function registerGovernanceCommands(program: Command): void {
       if (options.enforcement !== undefined) patch.enforcement = options.enforcement;
       if (options.rationale !== undefined) patch.rationale = options.rationale;
       if (options.scope !== undefined) patch.scope = options.scope;
+      // --branch 提供则整体覆盖分支作用域；--clear-branches 显式清空为全局。
+      if (options.clearBranches) {
+        patch.branches = [];
+      } else if (options.branch.length) {
+        patch.branches = options.branch;
+      }
       if (options.example.length) patch.examples = options.example;
       if (options.owner !== undefined) patch.owner = options.owner;
       if (options.reviewer !== undefined) {
@@ -149,7 +164,7 @@ export function registerGovernanceCommands(program: Command): void {
       const content = await import('node:fs/promises').then((m) => m.readFile(resolvedFile, 'utf8'));
       let items: Array<{
         id: string; title: string; rule: string; enforcement?: string;
-        rationale?: string; scope?: string; examples?: string[]; owner?: string;
+        rationale?: string; scope?: string; branches?: string[]; examples?: string[]; owner?: string;
       }>;
       let fromSeed = false;
       try {
@@ -176,6 +191,7 @@ export function registerGovernanceCommands(program: Command): void {
             enforcement: (item.enforcement as 'absolute' | 'approval-required') || 'absolute',
             rationale: item.rationale,
             scope: item.scope,
+            branches: item.branches,
             examples: item.examples,
             owner: item.owner,
             origin: fromSeed ? 'scanner-seed' : 'manual',

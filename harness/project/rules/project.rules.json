@@ -33,6 +33,46 @@
           "用户显式声明（2026-08-06）"
         ]
       }
+    },
+    {
+      "id": "CODE_COMMENT_BEST_PRACTICE",
+      "title": "开发 CLI 代码规范：合适的中文注释 + 最优解实现",
+      "instruction": "在 packages/sovei-core 下写代码时，必须同时做到：(1) 注释规范：为重要的业务逻辑、非显而易见的判断、跨模块协作点、设计决策（为什么这么做而不是别的方案）添加中文注释；注释要'合适'——解释意图与原因而非复述代码，避免给每个普通语句都加注释造成噪声；对公共导出符号（函数/类型/接口）用中文 JSDoc 说明用途、参数与返回值。(2) 最优解实现：优先使用 Node 标准库与项目已引入的可靠依赖，避免手写重复轮子；使用确定性的最佳实践（如 zod 校验、commander 命令定义、StorageBackend 统一读写、事件溯源 append-only、原子写 + 路径包含校验），禁止绕开既有抽象层用裸 node:fs 直接覆盖项目数据；优先选择更简洁、可读、可测试的实现，避免过度设计。(3) CLI 专属规范：新增命令遵循 registerXxxCommands 模式并在 cli/index.ts 注册；命令描述、帮助文本与面向用户的输出使用中文；合理使用 commander 的 argument/option 定义参数并校验；错误处理走统一错误输出（console.error + 非零退出码），不让异常静默吞掉。",
+      "rationale": "该项目是 Sovei CLI 开发仓库，代码可读性与可维护性直接影响治理链正确性。中文注释降低维护者与 AI agent 的理解成本；最优解避免重复造轮子和绕过既有抽象导致的偶发缺陷；CLI 规范保证命令契约一致、用户可预期。此规范适用于所有对 packages/sovei-core 源码的改动，含本仓库自身迭代。",
+      "lifecycle": "active",
+      "enforcement": "required",
+      "confidence": "high",
+      "appliesTo": {
+        "paths": [
+          "packages/sovei-core/src/**/*.ts",
+          "packages/sovei-core/test/**/*.mjs"
+        ],
+        "excludePaths": [],
+        "stages": [
+          "implement",
+          "converge",
+          "verify"
+        ]
+      },
+      "verification": [
+        {
+          "type": "review",
+          "description": "审查新增/修改的代码：关键逻辑是否有合适中文注释（意图/原因），是否采用最优解与既有抽象，CLI 命令是否遵循注册模式并中文输出"
+        }
+      ],
+      "tags": [
+        "code-style",
+        "commenting",
+        "best-practice",
+        "cli",
+        "maintainability"
+      ],
+      "provenance": {
+        "kind": "declared",
+        "sources": [
+          "用户显式声明（2026-08-09）"
+        ]
+      }
     }
   ]
 }

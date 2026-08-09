@@ -6,6 +6,9 @@
 - v2.5.0 已发布到 npm latest（2026-08-06），包含外部 skills 运行时协议和配置校验、外部 skills 渲染进开发 Agent 上下文两项 feat。
 - v2.5.3 已发布到 npm latest（2026-08-06），Feature 014：外部 Skills 运行时层 + 治理层完成。包含 MarkdownSkillAdapter（prompt 注入）、7 个 Matt Pocock skill 已 vendor、SkillInstaller（git/path 安装）、SkillUpgrader（check/diff/upgrade）、9 个新测试。
 - 版本递增策略（2026-08-06）：默认发布仅递增 patch 版本号。minor/major bump 需用户显式声明，脚本需加 `-MajorBump` 参数。规则定义在 `harness/project/rules/project.rules.json`（RELEASE_VERSION_POLICY），脚本强制在 `release-sovei.ps1` 步骤 2/6。
+- **CLI 代码规范规则 CODE_COMMENT_BEST_PRACTICE**（2026-08-09）：`harness/project/rules/project.rules.json` 新增 active 规则，要求写 packages/sovei-core 代码时①加合适中文注释（解释意图/原因而非复述，公共符号用中文 JSDoc）②最优解实现（用标准库与既有抽象，如 zod/commander/StorageBackend/append-only，禁止裸 node:fs 覆盖项目数据）③CLI 专属规范（registerXxxCommands 模式 + 中文用户输出 + 统一错误处理）。`sovei rules validate` 通过，active=2。
+- **P0-1 红线 branch 隔离快速通道补齐**（2026-08-09）：核查发现原始修复缺 CLI 入口（`governance redline add/update` 不支持 `--branch`），已补齐：`governance.ts` add 加可重复 `--branch`、update 加 `--branch`（覆盖）+ `--clear-branches`（清空为全局）、import 支持 branches；`redline-view.ts` 渲染详情展示「分支作用域」；`repository.ts` add/update 把空 `branches` 数组归一为 `undefined`（避免残留空数组，全局语义）。测试 123/123 通过。**发布前待办**：README 第 210 行版本号仍写 2.5.5，实际 2.5.6，发 2.5.7 前需同步。
+- **发布脚本脏工作区检查放宽**（2026-08-09）：`release-sovei.ps1` 原来默认禁止从脏工作区发布（需 `-AllowDirty`）。用户要求"只有正式发布才需要"，已改为：脏工作区**不再阻断**，只在 npm publish 前打黄色警告提示未提交变更（`-AllowDirty` 参数保留仅向后兼容，不再参与判断）。理由：本地构建、快速通道、工作流都不应被此检查阻塞。
 - release-sovei.ps1 版本排序 bug 已修复（2026-08-06）：`$remoteVersions` 可能包含嵌套数组导致 `[version]$_` 转换失败，已增加 `ForEach-Object` 展平和 `[string]` 类型过滤。
 - workflow.version 语义（Feature 015，2026-08-06）：追踪 WorkflowDefinition 结构变更（stages/stageOrder/maxStagesPerInvocation/allowChaining），不追踪确认门/Skills/CLI/prompt。不持久化到 Feature 事件，不需要 migration。loadConfig 在 mismatch 时 warn 到 stderr。三个版本号区分：workflow.version（工作流结构）vs schemaVersion（持久化数据）vs npm package version（CLI 工具）。
 - Learn 阶段知识自动对账（2026-08-06）：`knowledge/reconcile.ts` 在 learn postExecute 中自动解析 learning-report.md 的 `yaml:knowledge-delta` 块，将观察回流到知识库。新观察→candidate，2 证据→pending，3 证据→自动 stable（trust-but-verify，事后可 deprecate 回退）。匹配靠标题相似度+标签重叠+relatedEntryId。CLI 新增 `sovei knowledge review`。learn 产出物新增 `knowledge-delta.md`。
@@ -31,6 +34,13 @@
   - 或在 AI/手动执行时用 `cmd /c "sovei ..."` 透传，或把输出重定向到文件再读。
   - AGENTS.md 末尾有对应说明。
 - **Node 14 环境**：本机 nvm settings.txt 已配淘宝镜像（node_mirror/npm_mirror=npmmirror）。nvm install 14.x 时 npm zip 可能下载失败，可用手动解压 node-v14.x-win-x64.zip 验证 Node 本体。
+
+## P0/P1 缺陷状态澄清（2026-08-09）
+
+- DEV_BACKLOG.md 中「P0」分两个范畴，易混淆：
+  1. **工作流自身 P0**（第 2.1 节）：Feature 016 闭合 + 013 O1 晋级 stable —— ✅ 已全部处理（2026-08-07）。
+  2. **场景二 P0**（第 4 节）：红线 branch 作用域隔离 + merge preflight 语义冲突预检。**P0-1 红线 branch 作用域隔离已于 2026-08-09 修复**（`Redline` schema 新增可选 `branches: string[]`，缺省=全局；`syncToSatellite` 按 satellite.branch 过滤；测试 122/122 通过）。**P0-2 merge preflight 仍未实现**。
+- 已处理 ≠ 全部 P0；场景二 P0-2（merge preflight）才是真正未修的。
 
 ## 待解决问题（2026-08-06 讨论确定）
 

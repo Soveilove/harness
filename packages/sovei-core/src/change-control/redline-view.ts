@@ -86,6 +86,7 @@ function renderDetail(redline: Redline): string {
     lines.push(`- **为什么有这条红线**：未填写。请补充：\`sovei governance redline update ${redline.id} --rationale "..."\``);
   }
   if (redline.scope) lines.push(`- **适用范围**：${redline.scope}`);
+  if (redline.branches?.length) lines.push(`- **分支作用域**：${redline.branches.join(', ')}`);
   if (redline.examples?.length) {
     lines.push('- **典型违规示例**：');
     for (const example of redline.examples) {

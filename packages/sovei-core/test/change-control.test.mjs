@@ -175,3 +175,24 @@ test('pending material change freezes ordinary workflow until applied or cancell
   const prepared = await engine.prepareStage('006-freeze', 'load');
   assert.match(prepared.prompt, /仅当前顶层 Feature 产物具有权威性/);
 });
+
+test('redline branch scope: empty branches normalize to global and view renders scoped branches', async () => {
+  const storage = new MemoryStorage();
+  const repository = new ChangeControlRepository(storage);
+
+  // empty branches [] should normalize to undefined (global)
+  const global = await repository.addRedline({ id: 'GLOBAL_RL', title: 'Global', rule: 'Applies everywhere', enforcement: 'absolute', branches: [] });
+  assert.equal(global.branches, undefined);
+
+  // explicit branches are preserved
+  const scoped = await repository.addRedline({ id: 'EXP_RL', title: 'Exp', rule: 'Exp only', enforcement: 'absolute', branches: ['exp'] });
+  assert.deepEqual(scoped.branches, ['exp']);
+
+  // update --clear-branches equivalent (empty array) normalizes to undefined
+  const updated = await repository.updateRedline('EXP_RL', { branches: [] });
+  assert.equal(updated.branches, undefined);
+
+  // loading from storage persists the normalized shape (no empty array residue)
+  const loaded = await repository.loadRedlines();
+  assert.equal(loaded.find((rl) => rl.id === 'EXP_RL').branches, undefined);
+});
