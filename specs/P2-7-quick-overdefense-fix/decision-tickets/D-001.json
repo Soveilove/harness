@@ -1,0 +1,19 @@
+{
+  "id": "D-001",
+  "title": "expanded 不阻塞流程",
+  "question": "status='expanded' 是否应阻塞 quick 流程？",
+  "type": "task",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "status='expanded' 不应阻塞流程，应降级为警告。已记录在 decision-log.md D1。",
+  "evidence": [
+    "decision-log.md"
+  ],
+  "contextPointers": [],
+  "exclusionReason": null,
+  "createdAt": "2026-08-10T16:55:13.497Z",
+  "updatedAt": "2026-08-10T16:55:57.405Z",
+  "resolvedAt": "2026-08-10T16:55:57.405Z"
+}

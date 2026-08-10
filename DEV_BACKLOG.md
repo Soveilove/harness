@@ -1,6 +1,6 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
-> 生成日期：2026-08-11（本次对齐至 Feature 025，含 022/023/024/025 更新）
+> 生成日期：2026-08-11（本次对齐至 Feature P2-7-quick-overdefense-fix，含 022/023/024/025/P2-7 更新）
 > 依据：全面扫描 `specs/` 下全部 Feature 的 learning-report / decision-log / workflow-state.yaml、`design-docs/` 设计文档、源码与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
@@ -15,8 +15,8 @@
 | Node 兼容 | 发布产物 CommonJS，`engines >= 14.18.0`（Node 14 可用） |
 | 知识库 | 1 stable + 若干 candidate/pending |
 | Skills | 8 阶段绑定，7 个第三方 skill 锁定 |
-| 最新 Feature | 025-load-stage-enhancement（completed）；024-stale-aware-l1（completed）；023-quick-agent-adapters（completed）；022-context-budget-subagent（completed）；021-quick-json-slim（completed）；020-quick-context-governance（completed） |
-| 快速通道（S0） | ✅ 已实现（Feature 020 + 021 + 023）：`sovei quick <target>` 六步闭环 + usage 事件记录 + Git diff 验证 + `--json` 输出精简（117KB→37KB）+ 自动 .gitignore 排除 + IDE 适配器 slash command |
+| 最新 Feature | P2-7-quick-overdefense-fix（completed）；025-load-stage-enhancement（completed）；024-stale-aware-l1（completed）；023-quick-agent-adapters（completed）；022-context-budget-subagent（completed）；021-quick-json-slim（completed）；020-quick-context-governance（completed） |
+| 快速通道（S0） | ✅ 已实现（Feature 020 + 021 + 023 + P2-7）：`sovei quick <target>` 六步闭环 + usage 事件记录 + Git diff 验证 + `--json` 输出精简（117KB→37KB）+ 自动 .gitignore 排除 + IDE 适配器 slash command + expanded 降级警告 + 冷启动引导 |
 | Merge Preflight | ✅ 已实现（未发布）：`sovei workspace preflight <source> <target>`，三类语义冲突检测 + 四种裁决动作 |
 | 过期感知 L1 | ✅ 已实现（Feature 024）：sync 记录仓库级基线 + `context build` / `quick` 对比 HEAD 提示「治理资产可能已过期」（非阻断），`--json` 附加 `stale` 字段 |
 | load 阶段增强 | ✅ 已实现（Feature 025）：load 产出 `load-summary.md` + 知识加载补齐 code-map/rule + postExecute 校验 + grill 依赖 load-summary + prompt 增加探索方法论 |
@@ -46,6 +46,7 @@
 | ✅ | **_subagentContract 契约提示**：cross-feature-index 输出包装 _subagentContract 对象，告知宿主 AI 分派子 Agent | 2026-08-10 | Feature 022 后修 |
 | ✅ | **过期感知 L1（P0）**：sync 记录仓库级基线 + context build / quick 对比 HEAD 提示 | 2026-08-10 | Feature 024-stale-aware-l1 |
 | ✅ | **load 阶段增强（P1）**：补齐知识加载（code-map/rule）+ postExecute 校验 + load-summary.md 产出 + grill 依赖 + 探索方法论 prompt | 2026-08-10 | Feature 025-load-stage-enhancement |
+| ✅ | **quick 通道过度防御修复（P2-7）**：`status='expanded'` 降级为警告不再阻塞 + `declaredPaths` 放宽（`!== 1` → `=== 0`）+ 冷启动引导 + expanded 上下文警告 | 2026-08-11 | Feature P2-7-quick-overdefense-fix |
 
 ### ❌ 未完成项（按优先级排列）
 
@@ -64,7 +65,7 @@
 | **P2** | P2-4 | **usage export --redacted** | usage.jsonl 脱敏共享 | §2.7 |
 | **P2** | P2-5 | **`context build --paths` 语义修正** | --paths 应过滤 required 红线/stable rules | §2.7 |
 | **P2** | P2-6 | **阶段上下文预算值** | 等评测数据再定阈值 | §2.7 |
-| **P2** | P2-7 | **quick 通道「过度防御 + 冷启动」缺陷** | `needsEscalation` 任何不确定都 escalated，首次无 commit 仓库体验差 | §3.7.1 |
+| ~~P2~~ | ~~P2-7~~ | ~~**quick 通道「过度防御 + 冷启动」缺陷**~~ | ✅ **已实现**（Feature P2-7-quick-overdefense-fix，2026-08-11）：`status='expanded'` 从硬性 escalated 降级为警告（不阻塞流程，继续 git 验证）+ `declaredPaths` 放宽（`!== 1` → `=== 0`，支持多文件）+ 冷启动引导（无基线时提示创建 commit）+ expanded 上下文警告（report 附加 contextWarning）。179/179 测试通过 | §3.7.1 |
 | ~~P2~~ | ~~—~~ | ~~**Feature 流程遗留清理**~~ | ✅ **已完成**（2026-08-11）：4 个卡在 in_progress 的 Feature（002/009/012/015）全部归档 | §3.8 |
 | **P2** | SA-2 | **子 Agent：context build 组装** | 分组并行加载 required 项 | §2.9 |
 | **P2** | SA-3 | **子 Agent：converge/verify 代码审查** | 分维度并行审查 | §2.9 |
@@ -280,10 +281,12 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | P2-4 | **`usage export --redacted`** | ❌ 后续迭代 | `usage.jsonl` 默认 gitignore 后如何团队评测共享。需定义脱敏字段、时间桶聚合、导出命令 |
 | P2-5 | **`context build --paths` 语义修正** | ❌ 建议单独立项 | `--paths` 当前仅用于 project rules 匹配，不影响 required 红线/stable rules 的筛选。应修正为：`--paths` 同时过滤 required 中的红线和 stable rules。与 P1-3 直接相关 |
 | P2-6 | **标准流程各阶段上下文预算值** | ❌ 等评测数据 | shadow policy 已计算三变体字符数，但未设定阈值。需先观测真实使用数据再定预算 |
-| P2-7 | **quick 通道「过度防御 + 冷启动」缺陷** | ❌ 待评估 | `evaluateQuickRun` 的 `needsEscalation` 任何「不确定」都 escalated（详见 §3.7.1） | §3.7.1 |
+| P2-7 | ~~**quick 通道「过度防御 + 冷启动」缺陷**~~ | ✅ **已实现**（Feature P2-7-quick-overdefense-fix，2026-08-11） | `status='expanded'` 降级为警告 + `declaredPaths` 放宽 + 冷启动引导 + expanded 上下文警告。179/179 测试通过 | §3.7.1 |
 
-#### 3.7.1 P2-7 — quick 通道「过度防御 + 冷启动」缺陷（2026-08-10 分析新增）
+#### 3.7.1 ✅ P2-7 — quick 通道「过度防御 + 冷启动」缺陷（已完成）
 
+> ✅ **已于 2026-08-11 由 Feature P2-7-quick-overdefense-fix 完成**。以下为问题分析存档。
+>
 > 来源：实际使用 `sovei quick "..." --paths <file>` 时 escalated 分析。**不是「为了开发而开发」——有真实治理价值，但判定策略过保守、冷启动体验差。**
 
 **现象**：quick 返回 `git: null` + escalated + 「人工介入：目标范围或上下文相关性仍不确定」。用户易误判为「无 commit 导致」，实际根因更深。
@@ -406,7 +409,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | **6** | **README 版本同步 + Feature 遗留清理** | ❌ 待开发 |
 | **5** | **场景一 P1**：spec 分层 git 策略 + 主动归档 + 知识阈值 | ❌ 待开发 |
 | **6** | **统一关系模型**（§3.6 问题四）：关系 schema + 适配器接入现有 JSON | ❌ 待开发 |
-| 6.6 | **quick 通道「过度防御 + 冷启动」修复（P2-7）**：`status='expanded'` 降级为警告 + 冷启动引导 + 放宽 declaredPaths | ❌ 待开发 |
+| 6.6 | ~~**quick 通道「过度防御 + 冷启动」修复（P2-7）**~~：`status='expanded'` 降级为警告 + 冷启动引导 + 放宽 declaredPaths | ✅ 已完成（2026-08-11，Feature P2-7-quick-overdefense-fix） |
 | 7 | 本地使用优化（P2）：`use-local.ps1` + README 补充 | ❌ 待开发 |
 | 8 | ~~Feature 流程遗留清理（§3.8）：人工确认 4 个卡住的 Feature~~ | ✅ 已完成（2026-08-11） |
 | 9 | 最后 P2：联邦星型、Cursor Adapter、Phase 4、O2 晋升、多 binding/附加文件 | ❌ 待开发 |
@@ -428,7 +431,7 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | ✅ | **过期感知 L1（P0）**：sync 记录仓库基线 + context build/quick 对比 HEAD 提示 | 已决（2026-08-10，Feature 024） |
 | ✅ | **Drift Detection（§3.6 问题三）**：第一期不做。没有门禁 drift 一定发生（做检测也没用），有门禁不需要检测。个人用 L1 过期感知 + 基线重新校准，企业靠 CI 门禁强制 | 已决（2026-08-10） |
 | ✅ | **load 阶段探索能力增强（§3.5）**：方向一（补齐知识加载+postExecute）+ 方向二（主动探索产出 load-summary.md）已实现；方向三（绑定 skill）延后（D3 决策） | 已决（2026-08-10，Feature 025） |
-| ❓ | **quick 通道「过度防御 + 冷启动」修复（P2-7，§3.7.1）**：是否做？核心是 `status='expanded'` 从「硬性 escalated」降级为「警告 + 先做 git 验证」；冷启动引导 + 放宽 declaredPaths 为可选增强。**判断依据**：quick 通道使用频率——若个人日常主要走完整工作流，quick 仅锦上添花，可延后；若依赖 quick 做小需求快速通道，则值得优先 | 待决（2026-08-10 分析） |
+| ✅ | **quick 通道「过度防御 + 冷启动」修复（P2-7，§3.7.1）**：`status='expanded'` 从「硬性 escalated」降级为「警告 + 先做 git 验证」；冷启动引导 + 放宽 declaredPaths 已实现 | 已决（2026-08-11，Feature P2-7-quick-overdefense-fix） |
 | ❓ | **统一关系模型（§3.6 问题四）**：本轮是否启动？关系 schema 设计范围——一次性整合所有 JSON 还是分批接入？ | 待决 |
 | ❓ | **`context build --paths` 语义修正（P2-5）**：是否与 P1-3 合并为一个 Feature？ | 待决 |
 | ❓ | **联邦星型**：是否本轮做？（单 hub 已满足个人三工程） | 待决 |
@@ -438,3 +441,76 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | ✅ | **IDE 适配器快速通道指令**：sovei adapters install/list + project init --adapters，用户交互式选择安装 | 已决（2026-08-10，Feature 023） |
 | ✅ | **quick --exclude 自动 .gitignore**：无 --exclude 时自动从 .gitignore 读取排除路径，移除 dist/** 硬编码 | 已决（2026-08-10） |
 | ❓ | **Phase 4 外部 Skills 生命周期**：是否启动？网络约束（github.com 不通）是否影响？ | 待决 |
+
+---
+
+## 10. Feature 命名约定（2026-08-11 记录）
+
+> 讨论：Feature 名用日期编号还是递增数字编号？
+
+**结论：继续用递增数字编号（`NNN-描述`）。**
+
+| 格式 | 示例 | 优点 | 缺点 |
+|---|---|---|---|
+| 数字递增 | `001-discipline-gate` | 唯一、排序直观、追溯方便、无冲突 | 需人工查最大编号 |
+| 日期前缀 | `2026-08-11-fasttrade` | 自带时间戳、不需查编号 | 同一天多个 feature 需后缀区分、排序不如纯数字紧凑 |
+| 纯描述 | `fasttrade-engineering` | 语义直读 | 排序无保证、同名冲突风险、与项目既有风格不一致 |
+
+**项目既有约定**：`001-discipline-gate`、`002-replenish-close-reason`、`003-fasttrade-engineering`（已修正——最初误用 `fasttrade-engineering`，后 `sovei workflow bootstrap 003-fasttrade-engineering` 重建）。
+
+**判断依据**：
+- 日期编号对小项目够用，但 feature 数量上去后不如数字紧凑（`2026-08-11-foo` vs `026-foo`）
+- 数字编号已是项目事实标准，改格式需要迁移现有 feature 目录名，无收益
+- `sovei workflow bootstrap <feature>` 接受任意名称，约定靠人遵守，不靠工具强制
+
+**规则**：新建 feature 时取 `specs/` 下最大数字编号 +1，格式 `NNN-描述`，三位数补零。
+
+---
+
+## 11. web-plugins 吸收清单（2026-08-11 新增）
+
+> 来源：扫描 `web-plugins/ec-web-ai-plugin/`（EC 前端团队 VS Code Copilot 插件，1.0.25）。该插件含 8 个 `.agent.md`、6 个 skill、1 个 MCP（ec-design）。本节记录值得吸收/不吸收的项与决策状态，供人工排期。**实际开发仍走 12 阶段工作流。**
+
+### 11.1 来源概述
+
+| 维度 | web-plugins 现状 | harness 对应 |
+|---|---|---|
+| 形态 | VS Code Copilot 插件（agents + skills + MCP） | 阶段化流程引擎 + skills 系统 |
+| 编排模型 | 编号 agent 线性流（1-业务扫描 → 3-方案设计 → 4-spec编码 → 5-落地审查），无状态机/事件流/门禁 | 12 阶段状态机 + 事件存储 + 确认门禁 + 产物契约 |
+| 技能加载 | 渐进式披露：主 SKILL.md + 按领域按需读 `references/*.md` | `MarkdownSkillAdapter` 全量内联 `references/*.md` |
+| 领域绑定 | 强绑 EC 前端（Rematch/Zustand/ec-design/服务-状态-视图三层） | 通用阶段 + 可绑任意 skill |
+
+### 11.2 待吸收项（按价值排序）
+
+| 优先级 | # | 项 | 来源 | 注入点 | 说明 |
+|---|---|---|---|---|---|
+| **P1** | WP-1 | **渐进式 reference 加载** | `coding-standards/SKILL.md` + `skill-authoring-standards` | 引擎层：改 [adapter.ts](file:///d:/project/harness/packages/sovei-core/src/skills/adapter.ts) `loadReferenceFiles` | 当前全量内联 references，对多 reference skill（vercel-react-best-practices 35+ 规则）会爆 prompt。支持 frontmatter `reference-loading: on-demand` 时不自动内联，保留清单让 agent 按需读。**所有 skill 受益，是基础改进** |
+| **P1** | WP-2 | **verify 结构化审查链路 skill** | `change-implementation-auditor.agent.md` | vendor 到 `harness/vendor/ec-web/skills/change-auditor/`，`sovei skills bind --stage verify --skill ec-web/change-auditor --enable` | 审查链路：需求映射→Scenario→代码→tasks→Impact→规范→lint/tsc，只报事实不评分。比当前 verify 绑定的 `mattpocock/code-review` 更结构化，与 [coverage-matrix.md](file:///d:/project/harness/specs/004-artifact-version-guard/coverage-matrix.md) 产物对齐 |
+| **P2** | WP-3 | **skill-authoring-standards 元技能** | `skill-authoring-standards/SKILL.md` | vendor 到 `harness/vendor/ec-web/skills/skill-authoring-standards/`（不绑阶段，按需调用） | agentskills.io 规范 + 元数据校验脚本 + 500 行上限 + 渐进式披露原则 + checklist。harness 有 skills 系统但缺"教用户写好 skill"的元技能 |
+| **P2** | WP-4 | **implement 分层顺序 + 引用同步验证模式** | `change-execution-orchestrator.agent.md` | 抽象成通用 implement 增强，开新 spec feature（参考 [016-prepare-stage-enforcement](file:///d:/project/harness/specs/016-prepare-stage-enforcement) 命名） | EC 强绑服务→状态→视图三层 + listCodeUsages 验证。**不能直接搬**，需抽象为"声明层序 + 每层后引用同步验证"通用模式，前端项目再实例化层名 |
+| **P2** | WP-5 | **前端编码规范 skill 集** | `coding-standards` + `vercel-react-best-practices` | vendor 到 `harness/vendor/ec-web/skills/`，按项目类型绑 implement/converge | TS/React/Less/命名/Git 规范 + Vercel 35+ 性能规则。EC 专属内容（Rematch/Zustand/ec-design）需剥离为可选 reference |
+| **P3** | WP-6 | **spec 防腐层设计模式** | `frontend-solution-designer.agent.md` | 抽象为 spec 阶段 skill 候选（前端项目用） | "前端主导接口设计 + 防腐层 + 实体关系优先"是前端 spec 的成熟模式。强绑 OpenSpec 流程，需改写为 harness spec 产物契约 |
+| **P3** | WP-7 | **load 业务视角扫描** | `business-coverage-reporter.agent.md` | 并入 [load-summary.md](file:///d:/project/harness/specs/015-workflow-version-semantics/load.md) 产出或 [business-map.json](file:///d:/project/harness/harness/project/codegraph/business-map.json) | 业务视角扫项目→给 PM/agent 的非技术摘要。Feature 025 已做 load 增强，此为补充视角 |
+
+### 11.3 不吸收项（含理由）
+
+| 来源 | 不吸收理由 |
+|---|---|
+| **编号 agent 线性流**（1→3→4→5） | harness 已有 12 阶段状态机 + 事件流 + 门禁 + 产物契约，是更优的编排模型。退回"agent-per-stage"是倒退 |
+| **"专家 agent" 模式**（web前端开发专家/TS专家/视图层专家） | ① 专家强绑 EC 前端栈（Rematch/Zustand/ec-design），不可复用；② harness 模型是"通用阶段 + 可绑 skill 注入领域专长"，比硬编码专家 agent 更灵活；③ 正确做法是把领域专长放进 SKILL（绑阶段），而非做成 AGENT |
+| **OpenSpec 5 个工作流 skill**（explore/propose/apply-change/archive/sync） | 与 harness 的 load/spec/implement/verify/sync 阶段功能重叠，引入会形成并行流程，破坏单一工作流原则 |
+| **grill-me skill** | harness grill 已是原生阶段（状态机+事件）且已绑 `mattpocock/grilling`，此 skill 更轻量但无必要替换 |
+| **编码总指挥 agent 的"单 change 自闭环"** | 该 agent 名为"总指挥"实为"单 change 全干"，不派发子 agent。harness 的 implement 阶段 + tasks 产物已覆盖此职责 |
+| **ec-design MCP 强制查询规则** | 强绑 EC 私有组件库。可抽象为"外部依赖类型强制核验"规则放进 [project/rules](file:///d:/project/harness/harness/project/rules)，但不直接吸收 |
+| **interaction-flow-mapper agent** | 接口调用时序梳理，价值有限，harness spec 阶段的 [wayfinder](file:///d:/project/harness/packages/sovei-core/src/wayfinder) 已做依赖分析 |
+| **change-archiver agent** | 归档动作，harness `sync` 阶段已覆盖 |
+
+### 11.4 待决策
+
+| # | 决策项 | 说明 |
+|---|---|---|
+| ❓ WP-D1 | **WP-1（渐进式 reference）是否优先做？** | 引擎层基础改进，所有 skill 受益。与现有 P2-3（Skill 附加文件解析）相关——P2-3 是"读更多文件"，WP-1 是"少读一点按需读"，方向相反需协同设计 |
+| ❓ WP-D2 | **WP-2（change-auditor）替换 verify 当前绑定的 `mattpocock/code-review` 还是并存？** | 替换：更结构化；并存：需 P2-2 多 binding 支持（当前未实现）。建议先替换为 candidate，人工评测后再 enable |
+| ❓ WP-D3 | **WP-4（implement 分层增强）本轮是否立项？** | 需抽象掉 EC 三层架构，工作量中等。与 [016-prepare-stage-enforcement](file:///d:/project/harness/specs/016-prepare-stage-enforcement) 模式类似，可参考 |
+| ❓ WP-D4 | **WP-5 前端 skill 集是否剥离 EC 专属内容后 vendor？** | 剥离 Rematch/Zustand/ec-design 后，TS/React/Less/命名/Git 规范通用部分对任何前端项目可用 |
+| ❓ WP-D5 | **是否引入"ad-hoc 专家咨询"模式（脱离工作流的专项任务）？** | web-plugins 的 fullstack-engineer 是用户按需 `@` 调用的非阶段专家。harness 目前所有工作走 12 阶段或 `sovei quick`，无"问专家"模式。这是较大架构新增，且多数用户直接用宿主 AI（CodeBuddy/Claude）做 ad-hoc，**暂不建议** |

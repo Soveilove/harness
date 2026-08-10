@@ -145,23 +145,34 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     riskLevel: policy.controlPlane.status === 'expanded' ? 'uncertain' : 'low',
     riskSignals: policy.controlPlane.status === 'expanded' ? ['context relevance requires expansion'] : [],
   }).state;
-  const needsEscalation = !input.request.target.trim()
-    || policy.controlPlane.status === 'escalated'
-    || policy.controlPlane.status === 'expanded'
-    || input.request.declaredPaths.length !== 1;
 
-  if (needsEscalation) {
+  // ── 硬性 escalation：只有真正无法继续的情况才阻塞 ──
+  // status='expanded'（相关性不确定）降级为警告，不再阻塞流程
+  const hardEscalation = !input.request.target.trim()
+    || policy.controlPlane.status === 'escalated'
+    || input.request.declaredPaths.length === 0;
+
+  if (hardEscalation) {
     run = finishQuickRun(run, 'escalated', {
       riskLevel: 'uncertain',
       riskSignals: [...run.riskSignals, 'manual confirmation required before implementation'],
     }).state;
     const report = ['Quick stopped before implementation.', '人工介入：目标范围或上下文相关性仍不确定。'];
+    if (!input.baselineRevision) {
+      report.push('冷启动提示：当前仓库无基线 commit，建议先创建初始 commit（git add && git commit）以启用 diff 范围验证。');
+    }
     await appendEnd(recorder, run);
     return { run, policy: summarizePolicy(policy), git: null, confirmation: '不会修改源码；请先确认范围或升级完整 Sovei。', report };
   }
 
+  // ── expanded 降级为警告，不影响流程 ──
+  const contextWarning = policy.controlPlane.status === 'expanded'
+    ? '⚠️ 上下文相关性不确定：部分红线和规则未命中声明路径，请人工确认上下文完整性。'
+    : null;
+
   run = transitionQuickRun(run, 'confirm', {
-    riskLevel: 'low',
+    riskLevel: contextWarning ? 'uncertain' : 'low',
+    riskSignals: contextWarning ? [...run.riskSignals, 'context relevance uncertain; some redlines/rules may not match'] : run.riskSignals,
     scopeDeclaration: `只修改：${input.request.declaredPaths.join(', ')}；不修改：${input.request.exclusions.join(', ') || '声明范围之外的任何文件'}`,
   }).state;
   const confirmation = `将修改：${input.request.target}。${run.scopeDeclaration}`;
@@ -202,14 +213,17 @@ export async function evaluateQuickRun(input: QuickEvaluationInput): Promise<Qui
     riskSignals: run.riskSignals,
     unverifiedItems: run.unverifiedItems,
   }).state;
-  const report = verifyRisk
-    ? [
-      'Quick 未完成交付。',
-      git.changedFiles.length === 0
-        ? '尚未观察到目标文件的真实修改，停止交付；请先由 Agent 实施后再验证。'
-        : '真实 Git diff 无法证明完全在声明范围内，需人工审查；未自动回退。',
-    ]
-    : ['Quick 检查完成，可交付候选。', '真实 Git diff 与声明范围一致；声明测试仍需由宿主执行并回报。'];
+  const report = [
+    ...(verifyRisk
+      ? [
+        'Quick 未完成交付。',
+        git.changedFiles.length === 0
+          ? '尚未观察到目标文件的真实修改，停止交付；请先由 Agent 实施后再验证。'
+          : '真实 Git diff 无法证明完全在声明范围内，需人工审查；未自动回退。',
+      ]
+      : ['Quick 检查完成，可交付候选。', '真实 Git diff 与声明范围一致；声明测试仍需由宿主执行并回报。']),
+    ...(contextWarning ? [contextWarning] : []),
+  ];
   await appendEnd(recorder, run, git);
   return { run, policy: summarizePolicy(policy), git, confirmation, report };
 }
