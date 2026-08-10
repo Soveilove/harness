@@ -49,5 +49,31 @@
     "updatedAt": "2026-08-06T17:21:49.927Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "decision-过期感知-l1-对比-head-与上次-sync-基线做仓库级粗粒度检测-64db103e",
+    "type": "decision",
+    "title": "过期感知 L1：对比 HEAD 与上次 sync 基线做仓库级粗粒度检测",
+    "content": "治理资产（红线/知识/代码地图）过期感知的正确粒度是仓库级粗粒度——对比当前 git HEAD 与上次通过 sovei sync 校准治理资产时的 HEAD，若 HEAD 前进则提示'治理资产可能不可信'。不做语义级 drift 检测（L3，行业未解，OpenSpec/SpecKit/Superpower 都没解决）。提示为非阻断 warning，由用户以当前分支为基线重新校准。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "024-stale-aware-l1",
+        "date": "2026-08-10T15:28:51.455Z",
+        "description": "Feature 024 实现 checkStale 检测 HEAD 变化并提示",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "stale",
+      "drift",
+      "governance",
+      "context"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-10T15:28:51.455Z",
+    "updatedAt": "2026-08-10T15:28:51.455Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "024-stale-aware-l1",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "S1 浣庨闄┿€佽寖鍥存竻鏅帮紝grill 闃舵鎵€鏈夊喅绛栧凡瀹氭锛屾棤闇€鍐崇瓥鍦板浘",
+  "revision": 0,
+  "updatedAt": "2026-08-10T15:11:50.273Z",
+  "ticketIndex": [],
+  "fog": []
+}

@@ -14,6 +14,7 @@ import { buildSnapshot } from '../../context/snapshot.js';
 import { VERSION } from '../../config/version.js';
 import { evaluateQuickRun } from '../../quick/run.js';
 import { getGitBaseline } from '../../quick/git-verifier.js';
+import { checkStale, formatStaleWarning } from '../../stale/stale-detector.js';
 import type { QuickRunInput } from '../../quick/types.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
@@ -110,8 +111,11 @@ export function registerQuickCommands(program: Command): void {
         projectRules,
         baselineRevision: await getGitBaseline(config.rootPath),
       });
+      // ── stale-aware L1：检测治理资产是否可能过期 ──
+      const stale = await checkStale(storage, config.rootPath);
+
       if (opts.json) {
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify({ ...result, stale }, null, 2));
         return;
       }
       console.log(`\n  QuickRun ${result.run.runId}`);
@@ -119,6 +123,10 @@ export function registerQuickCommands(program: Command): void {
       console.log(`  状态：${result.run.status}`);
       console.log(`  风险：${result.run.riskLevel}`);
       console.log(`  基线：${result.run.baselineRevision ?? '不可用'}`);
+      const warning = formatStaleWarning(stale);
+      if (warning) {
+        for (const line of warning.split('\n')) console.log(`  ${line}`);
+      }
       console.log(`  确认：${result.confirmation}`);
       for (const line of result.report) console.log(`  · ${line}`);
       console.log(`  usage：harness/project/usage.jsonl\n`);

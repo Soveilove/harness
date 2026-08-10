@@ -488,5 +488,30 @@
     "updatedAt": "2026-08-09T17:14:37.445Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-设计文档承诺的能力未实现应视为-bug-级差距-45d6806c",
+    "type": "rule",
+    "title": "设计文档承诺的能力未实现应视为 bug 级差距",
+    "content": "设计文档（如 §6.1）明确要求的能力但代码未覆盖时，应视为 bug 级差距而非新功能。修复方式是直接补齐实现，不需要复杂设计。设计文档是权威需求来源，实现应与其对齐。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "025-load-stage-enhancement",
+        "date": "2026-08-10T16:00:14.391Z",
+        "description": "Feature 025: TASK_TYPE_MAP['general'] 缺失 code-map 和 rule，设计文档 §6.1 明确要求加载 Code Map + 规则 + Baseline。修复只改了一行代码。",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "design-doc",
+      "implementation-gap",
+      "bugfix"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-10T16:00:14.391Z",
+    "updatedAt": "2026-08-10T16:00:14.391Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

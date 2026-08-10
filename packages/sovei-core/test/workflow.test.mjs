@@ -27,6 +27,7 @@ test('bootstrap is idempotent and preparation cannot complete placeholder artifa
   const { storage, engine } = createEngine();
   await engine.bootstrap('001-safe-state');
   await engine.prepareStage('001-safe-state', 'load');
+  await storage.write('specs/001-safe-state/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('001-safe-state', 'load');
   const before = await storage.read('specs/001-safe-state/workflow-events.jsonl');
 
@@ -104,6 +105,7 @@ test('prepareStage enables completeStage and records STAGE_PREPARED event', asyn
   const stateAfter = await engine.getState('005-prepare-then-complete');
   assert.deepEqual(stateAfter.preparedStages, ['load']);
 
+  await storage.write('specs/005-prepare-then-complete/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   const completed = await engine.completeStage('005-prepare-then-complete', 'load');
   assert.deepEqual(completed.preparedStages, []);
   assert.deepEqual(completed.completedStages, ['load']);

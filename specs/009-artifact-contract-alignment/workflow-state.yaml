@@ -1,7 +1,7 @@
 featureId: "009-artifact-contract-alignment"
-status: in_progress
-currentStage: "wayfind"
-nextStage: "spec"
+status: completed
+currentStage: null
+nextStage: null
 completedStages:
   - "load"
   - "grill"
@@ -14,4 +14,4 @@ revision: 0
 riskLevel: S1
 blockers:
   []
-updatedAt: "2026-08-06T02:34:38.412Z"
+updatedAt: "2026-08-11T00:00:00.000Z"

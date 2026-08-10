@@ -193,6 +193,7 @@ sovei skills sync
 | `sovei wayfinder chart/skip/status/frontier/ticket/fog/claim/release/resolve/exclude` | 跨会话决策地图 |
 | `sovei workspace register/list/sync/promote/unregister` | 多工作区管理 |
 | `sovei change list/apply` | 重大变更控制 |
+| `sovei context build` / `sovei quick` | 过期感知：sync 后若代码已绕过 Sovei 修改（HEAD 前进），输出「治理资产可能已过期」提示（`--json` 含 `stale` 字段） |
 
 ## 架构
 

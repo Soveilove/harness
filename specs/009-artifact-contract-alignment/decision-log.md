@@ -58,3 +58,12 @@
 
 ## 未决项清单
 - 无。D1-D6 均已核实，结论明确：本 Feature 应终止。
+
+---
+
+## D-归档：正式归档本 Feature
+
+- 类型：可推断决策
+- 决策：终止并归档本 Feature
+- 理由：本 Feature 的 decision-log 已明确结论"无实际可执行修复项，建议终止"。契约对齐工作已由 Feature 019-contract-single-source 完成（契约单一源为 stageRegistry）。本 Feature 无需继续。
+- 状态：已决（2026-08-11）

@@ -21,7 +21,7 @@ export const loadStage = defineStage({
   description: '根据实际文件校验状态并加载任务相关知识',
   contract: {
     requiredArtifacts: [],
-    producesArtifacts: [],
+    producesArtifacts: ['load-summary.md'],
   },
   async preExecute(ctx) {
     await ctx.knowledge.loadByTaskType('general');
@@ -29,7 +29,7 @@ export const loadStage = defineStage({
   async execute(ctx) {
     return {
       stage: 'load',
-      artifactsWritten: [],
+      artifactsWritten: ['load-summary.md'],
       nextStage: 'grill',
       blockers: [],
       knowledgeSourcesUsed: ctx.knowledge.getLoadedSources(),
@@ -37,12 +37,30 @@ export const loadStage = defineStage({
 
 ## 输入
 - Harness 索引、Memory 索引、工作流定义、Feature 状态和实际产物列表。
+- 已加载的知识：宪法、偏好、架构、代码地图、规则。
 
 ## 操作
-根据实际文件校验状态，只加载与当前任务相关的知识。
+
+### 1. 状态校验
+根据实际文件校验状态，确认 Feature 状态、版本匹配、产物无冲突。
+
+### 2. 现状探索
+主动读取代码库关键文件，理解当前架构、模块边界和入口点：
+- 项目结构概览（主要目录/包/模块）
+- 与当前 Feature 可能相关的已有实现
+- 依赖关系和技术栈
+
+### 3. 风险识别
+基于现状探索，识别与当前 Feature 可能相关的风险点：
+- 潜在的耦合或副作用
+- 需要特别注意的约束（红线、规范）
+- 已知的技术债务或踩坑
 
 ## 输出
-已使用的来源、风险等级、当前/已完成阶段、阻塞项和下一个合法阶段。
+load-summary.md，包含以下结构：
+- 代码库现状摘要（关键模块/入口/架构）
+- 与当前 Feature 相关的已有实现
+- 潜在风险点
 
 ## 初始化
 仅当用户明确提供一个尚无状态的 Feature 时创建 workflow-state.yaml，记录 load 已完成、grill 等待执行。
@@ -51,9 +69,15 @@ export const loadStage = defineStage({
 Feature 不明确、版本不匹配、产物冲突，或缺少状态且用户未明确授权初始化。
 
 ## 写入
-已有状态不写入；初始化时只写状态文件。
+已有状态不写入；初始化时只写状态文件。load-summary.md 是 AI agent 的探索产出。
 `,
     };
+  },
+  async postExecute(ctx) {
+    // 校验 workflow-state 一致性——load 是状态恢复阶段，状态文件是唯一可校验对象
+    const state = ctx.workflowState;
+    if (!state.featureId) throw new Error('workflow-state missing featureId');
+    if (state.revision < 0) throw new Error(`invalid revision: ${state.revision}`);
   },
 });
 
@@ -64,7 +88,7 @@ export const grillStage = defineStage({
   name: 'grill',
   description: '区分事实核实、可推断决策与范围性决策，逐项解决业务决策',
   contract: {
-    requiredArtifacts: [],
+    requiredArtifacts: ['load-summary.md'],
     producesArtifacts: ['decision-log.md'],
   },
   async preExecute(ctx) {

@@ -23,7 +23,7 @@ export type KnowledgeAction =
 
 /** Task type to knowledge type mapping */
 const TASK_TYPE_MAP: Record<string, KnowledgeType[]> = {
-  'general': ['constitution', 'preference', 'architecture'],
+  'general': ['constitution', 'preference', 'architecture', 'code-map', 'rule'],
   'decision-making': ['decision', 'constitution'],
   'specification': ['decision', 'architecture', 'code-map'],
   'impact-analysis': ['code-map', 'architecture'],

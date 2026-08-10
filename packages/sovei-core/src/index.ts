@@ -118,5 +118,8 @@ export * from './quick/run.js';
 // Merge Preflight — 合并前语义冲突预检
 export * from './preflight/index.js';
 
+// Stale-aware L1 — 过期感知（个人级粗粒度）
+export * from './stale/stale-detector.js';
+
 // External Skill runtime contracts
 export * from './skills/index.js';

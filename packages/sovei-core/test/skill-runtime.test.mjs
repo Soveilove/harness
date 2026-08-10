@@ -58,9 +58,10 @@ function createEngineWithoutSkill() {
 }
 
 test('prepareStage with external skill injects skill body into prompt', async () => {
-  const { engine } = createEngineWithSkill();
+  const { storage, engine } = createEngineWithSkill();
   await engine.bootstrap('test-skill');
   await engine.prepareStage('test-skill', 'load');
+  await storage.write('specs/test-skill/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-skill', 'load');
   const result = await engine.prepareStage('test-skill', 'grill');
 
@@ -78,9 +79,10 @@ test('prepareStage with external skill injects skill body into prompt', async ()
 });
 
 test('prepareStage without skill resolver uses native mode', async () => {
-  const { engine } = createEngineWithoutSkill();
+  const { storage, engine } = createEngineWithoutSkill();
   await engine.bootstrap('test-native');
   await engine.prepareStage('test-native', 'load');
+  await storage.write('specs/test-native/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-native', 'load');
   const result = await engine.prepareStage('test-native', 'grill');
 
@@ -104,6 +106,7 @@ test('prepareStage falls back when adapter not registered', async () => {
   const engine = new WorkflowEngine(storage, knowledgeStore, logger, config, registry);
   await engine.bootstrap('test-fallback');
   await engine.prepareStage('test-fallback', 'load');
+  await storage.write('specs/test-fallback/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-fallback', 'load');
   const result = await engine.prepareStage('test-fallback', 'grill');
 
@@ -117,9 +120,10 @@ test('prepareStage falls back when adapter not registered', async () => {
 });
 
 test('prompt structure: authority notice → skill body → stage contract', async () => {
-  const { engine } = createEngineWithSkill();
+  const { storage, engine } = createEngineWithSkill();
   await engine.bootstrap('test-order');
   await engine.prepareStage('test-order', 'load');
+  await storage.write('specs/test-order/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-order', 'load');
   const result = await engine.prepareStage('test-order', 'grill');
 

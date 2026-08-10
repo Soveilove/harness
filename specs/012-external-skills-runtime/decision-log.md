@@ -16,4 +16,11 @@
 
 状态：已决定
 
-原因：两者输出边界清晰、容易做契约测试，也能覆盖“外部建议如何进入 Sovei 产物”的核心链路。wayfind 当前已有 Sovei 原生实现，暂不重复接入。
+原因：两者输出边界清晰、容易做契约测试，也能覆盖"外部建议如何进入 Sovei 产物"的核心链路。wayfind 当前已有 Sovei 原生实现，暂不重复接入。
+
+## D-归档：正式归档本 Feature
+
+- 类型：可推断决策
+- 决策：终止并归档本 Feature
+- 理由：本 Feature 的外部 skills 运行时工作已由 Feature 014-skills-runtime-completion 完整替代并完成（014 已 completed，12 阶段全完成）。本 Feature 无需继续。
+- 状态：已决（2026-08-11）

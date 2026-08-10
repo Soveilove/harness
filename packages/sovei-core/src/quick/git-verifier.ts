@@ -59,6 +59,16 @@ export async function getGitBaseline(workspaceRoot: string): Promise<string | nu
   }
 }
 
+/** 返回当前分支名（`git rev-parse --abbrev-ref HEAD`），非 git 仓库或失败时返回 null。 */
+export async function getGitBranch(workspaceRoot: string): Promise<string | null> {
+  try {
+    const branch = (await git(['rev-parse', '--abbrev-ref', 'HEAD'], workspaceRoot)).trim();
+    return branch || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function verifyGitChanges(input: GitVerifyInput): Promise<GitVerifyResult> {
   try {
     const revision = input.baselineRevision ?? (await git(['rev-parse', 'HEAD'], input.workspaceRoot)).trim();

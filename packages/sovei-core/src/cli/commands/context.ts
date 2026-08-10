@@ -20,6 +20,7 @@ import { ProjectRulesRepository, resolveProjectRules } from '../../rules/reposit
 import { VERSION } from '../../config/version.js';
 import { buildContextPolicy } from '../../context/policy.js';
 import { extractFeatureMeta, scoreCrossFeature } from '../../context/cross-feature.js';
+import { checkStale, formatStaleWarning } from '../../stale/stale-detector.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -144,9 +145,16 @@ export function registerContextCommands(program: Command): void {
         pack.required = pack.policy.actualRequired;
       }
 
+      // ── stale-aware L1：检测治理资产是否可能过期 ──
+      const stale = await checkStale(storage, config.rootPath);
+
       if (opts.json) {
-        console.log(JSON.stringify(pack, null, 2));
+        console.log(JSON.stringify({ ...pack, stale }, null, 2));
       } else {
+        const warning = formatStaleWarning(stale);
+        if (warning) {
+          console.log('\n' + warning + '\n');
+        }
         console.log(renderContextPackMarkdown(pack));
       }
     });

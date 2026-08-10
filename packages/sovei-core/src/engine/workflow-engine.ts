@@ -36,6 +36,8 @@ import { buildContextPolicy, summarizeContextShadow, CONTEXT_POLICY_VERSION } fr
 import { loadSnapshot } from '../context/snapshot.js';
 import { ProjectRulesRepository, resolveProjectRules } from '../rules/repository.js';
 import { UsageRecorder, unknownTokenUsage } from '../quick/usage.js';
+import { getGitBaseline, getGitBranch } from '../quick/git-verifier.js';
+import { serializeSyncBaseline, SYNC_BASELINE_PATH, SYNC_BASELINE_SCHEMA_VERSION } from '../stale/stale-detector.js';
 
 /**
  * Default workflow definition.
@@ -318,6 +320,26 @@ export class WorkflowEngine {
       knowledgeSourcesUsed: [],
     };
     if (stageDef.postExecute) await stageDef.postExecute(ctx, result);
+
+    // ── stale-aware L1：sync 阶段完成时记录仓库级基线（当前分支 + HEAD + 时间）──
+    // 治理资产（红线/知识/地图）是仓库级概念，sync 作为校准点，把当时 HEAD 记为基线。
+    // 之后 context build / quick 对比当前 HEAD 与此基线，提示治理资产是否可能过期。
+    if (stageName === 'sync') {
+      const head = await getGitBaseline(this.config.rootPath);
+      if (head) {
+        const branch = await getGitBranch(this.config.rootPath);
+        const baseline = {
+          schemaVersion: SYNC_BASELINE_SCHEMA_VERSION,
+          branch,
+          head,
+          recordedAt: new Date().toISOString(),
+        };
+        await this.storage.write(SYNC_BASELINE_PATH, serializeSyncBaseline(baseline));
+        this.logger.info('已记录 sync 基线（stale-aware L1）: ' + branch + ' @ ' + head.slice(0, 7));
+      }
+      // HEAD 读取失败（非 git 仓库）时静默跳过，不写基线、不报错
+    }
+
     const event: WorkflowEvent = {
       type: 'STAGE_COMPLETE',
       stage: stageName,
@@ -690,6 +712,7 @@ export class WorkflowEngine {
   /** Generate a template for an artifact */
   private getArtifactTemplate(artifactName: string, stageName: string, prompt?: string): string {
     const titles: Record<string, string> = {
+      'load-summary.md': '加载摘要',
       'decision-log.md': '决策日志',
       'wayfinder.md': '决策地图',
       'spec.md': '功能规格',

@@ -66,6 +66,7 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
     assert.match(stdout, /Sovei 工作流状态/);
     assert.match(stdout, /下一步命令：\s+sovei workflow load 001-chinese-output/);
     await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output']);
+    await writeFile(join(root, 'specs', '001-chinese-output', 'load-summary.md'), '# 加载摘要\n\n代码库现状摘要。', 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output', '--complete']);
     const grill = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'grill', '001-chinese-output']);
     assert.match(grill.stdout, /grill 已触发：CLI 负责生成决策提示契约/);

@@ -228,5 +228,31 @@
     "updatedAt": "2026-08-09T17:14:37.445Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "pitfall-跨分支不做过期提示-分支不同视为未知而非过期-0a3d8435",
+    "type": "pitfall",
+    "title": "跨分支不做过期提示：分支不同视为未知而非过期",
+    "content": "过期感知按分支记录基线。读取时若当前分支与基线分支不同，视为'未知'而非'过期'——不提示。跨分支场景由红线 branch 作用域隔离（P0-1）处理，L1 粗粒度检测不覆盖跨分支合并判断，避免误报。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "024-stale-aware-l1",
+        "date": "2026-08-10T15:28:51.455Z",
+        "description": "Feature 024 checkStale 分支不同返回 isStale=false",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "stale",
+      "branch",
+      "cross-branch",
+      "pitfall"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-10T15:28:51.455Z",
+    "updatedAt": "2026-08-10T15:28:51.455Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]
