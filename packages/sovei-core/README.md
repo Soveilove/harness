@@ -183,6 +183,9 @@ sovei skills sync
 | `sovei workflow override-confirm <feature> --stage --role --by --reason` | 覆盖确认门 |
 | `sovei context build --stage <stage> <feature>` | 获取上下文包 |
 | `sovei context build --stage spec <feature> --cross-feature` | 包含其他 Feature 决策 |
+| `sovei context cross-feature-index <feature> --paths <paths>` | 输出其他 Feature 决策日志的相关性索引（JSON，供子 Agent 并行消费） |
+| `sovei context expand <feature-id> <artifact-name>` | 按需展开单个 Feature 产物（截断 4000 字符） |
+| `sovei quick <target> --paths <file>` | 快速通道：低风险局部修改的机器先审 + Git diff 验证 |
 | `sovei governance redline add/list/update/deactivate` | 管理业务红线 |
 | `sovei governance review-pack generate/import` | 需求对齐审查文件 |
 | `sovei knowledge add/list/promote/deprecate/query/review/stats` | 管理项目知识 |
@@ -192,6 +195,8 @@ sovei skills sync
 | `sovei agent list/show` | 查看宿主 Agent 能力画像 |
 | `sovei wayfinder chart/skip/status/frontier/ticket/fog/claim/release/resolve/exclude` | 跨会话决策地图 |
 | `sovei workspace register/list/sync/promote/unregister` | 多工作区管理 |
+| `sovei workspace preflight <source> <target>` | 合并前语义冲突预检（红线/知识/coverage 三类检测） |
+| `sovei adapters install/list` | 安装/查看 IDE 适配器（CodeBuddy/Claude Code/Codex/Trae） |
 | `sovei change list/apply` | 重大变更控制 |
 | `sovei context build` / `sovei quick` | 过期感知：sync 后若代码已绕过 Sovei 修改（HEAD 前进），输出「治理资产可能已过期」提示（`--json` 含 `stale` 字段） |
 

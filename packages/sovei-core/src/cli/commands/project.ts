@@ -264,14 +264,12 @@ export function registerProjectCommands(program: Command): void {
         '- `parallelizable`: Always `true` for this contract',
         '- `hostAgents`: Which host AI agents support this pattern',
         '',
-        '### Quick Channel (Every Code Change)',
+        '### Quick Channel (Ad-hoc Code Changes)',
         '',
-        '**Every code change must go through the quick channel** (`sovei quick`) — even small post-completion fixes:',
+        'The quick channel (`sovei quick`) and the full Sovei workflow are **mutually exclusive alternatives** — pick one, not both:',
         '',
-        '1. Run `sovei quick "<description>" --paths <file>` **before** editing (exclusions auto-loaded from .gitignore)',
-        '2. Make the change',
-        '3. Run tests',
-        '4. The quick channel records usage and verifies git diff scope',
+        '- **Quick channel**: for low-risk, well-scoped, ad-hoc changes that don\'t warrant a full Feature. Run `sovei quick "<description>" --paths <file>` **before** editing (exclusions auto-loaded from .gitignore) → make the change → run tests → quick records usage + verifies git diff scope.',
+        '- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 12 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.',
         '',
       ].join('\n');
       if ((await storage.exists('AGENTS.md')) && !opts.force) {

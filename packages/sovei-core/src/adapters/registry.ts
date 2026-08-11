@@ -43,7 +43,9 @@ export interface IDEAdapter {
    */
   renderSkillDirectives: (bindings: SkillBindingRender[]) => string;
   /**
-   * 快速通道指令文本——嵌入 contextFile，告诉 IDE Agent 每次代码变更必须走 sovei quick。
+   * 快速通道指令文本——嵌入 contextFile，告诉 IDE Agent 临时代码变更走 sovei quick。
+   * 快速通道与完整工作流（sovei workflow）是二选一关系，不叠加：
+   * 低风险局部改动走 quick；已注册 Feature 走 12 阶段流程，代码在 implement 阶段完成。
    * installer 会将此文本追加到 contextFile 中。
    */
   quickChannelDirective: string;
@@ -78,12 +80,10 @@ const codexAdapter: IDEAdapter = {
     '',
     '### Quick Channel (Codex)',
     '',
-    '**每次代码变更必须走快速通道**——即使是小的 post-completion 修复也要走：',
+    '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
-    '1. 编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）',
-    '2. 完成编辑',
-    '3. 运行测试',
-    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）→ 完成编辑 → 运行测试。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
 };
@@ -108,12 +108,10 @@ const claudeAdapter: IDEAdapter = {
     '',
     '### Quick Channel (Claude Code)',
     '',
-    '**每次代码变更必须走快速通道**——使用 `/sovei-quick` slash command 或直接运行：',
+    '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
-    '1. 编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）',
-    '2. 完成编辑',
-    '3. 运行测试',
-    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。使用 `/sovei-quick` slash command 或直接运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）→ 完成编辑 → 运行测试。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
   slashCommand: {
@@ -162,13 +160,10 @@ const codebuddyAdapter: IDEAdapter = {
     '',
     '### Quick Channel (CodeBuddy)',
     '',
-    '**每次代码变更必须走快速通道**——CodeBuddy Agent 必须在编辑代码前先执行：',
+    '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
-    '1. 使用 execute_command 工具运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**`',
-    '2. 检查返回的 riskLevel——若 escalated 需人工确认',
-    '3. 完成代码编辑',
-    '4. 运行测试验证',
-    '5. 快速通道记录 usage 并验证 git diff 范围',
+    '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。使用 execute_command 运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 检查 riskLevel（escalated 需人工确认）→ 完成编辑 → 测试验证。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
   slashCommand: {
@@ -215,12 +210,10 @@ const traeAdapter: IDEAdapter = {
     '',
     '### Quick Channel (Trae)',
     '',
-    '**每次代码变更必须走快速通道**——在编辑代码前先运行：',
+    '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
-    '1. `sovei quick "<变更描述>" --paths <文件> --exclude dist/**`',
-    '2. 完成编辑',
-    '3. 运行测试',
-    '4. 快速通道记录 usage 并验证 git diff 范围',
+    '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 完成编辑 → 运行测试。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
 };

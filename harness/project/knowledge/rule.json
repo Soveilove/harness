@@ -513,5 +513,55 @@
     "updatedAt": "2026-08-10T16:00:14.391Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-排除法归档优于包含法-07d1bb82",
+    "type": "rule",
+    "title": "排除法归档优于包含法",
+    "content": "按类型筛选文件时，用白名单排除持久文件、归档其余全部，优于列出要归档的文件清单。排除法天然兼容未来新增文件类型，包含法需同步更新清单。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "026-feature-archive",
+        "date": "2026-08-11T15:29:53.185Z",
+        "description": "026-feature-archive 用持久文件白名单排除，其余 .md 全归档到 _archive/，未来新增阶段产物无需改归档代码",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "cli",
+      "file-management",
+      "archive"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-11T15:29:53.185Z",
+    "updatedAt": "2026-08-11T15:29:53.185Z",
+    "promotedAt": null,
+    "deprecatedReason": null
+  },
+  {
+    "id": "rule-storage-list-非递归是子目录的天然隔离机制-330a20d9",
+    "type": "rule",
+    "title": "storage.list() 非递归是子目录的天然隔离机制",
+    "content": "StorageBackend.list() 只返回目录下文件不返回子目录文件。归档/隔离文件到子目录后，所有用 list() 的模块（context build、redline-scanner 等）天然扫不到它们，无需额外标记或过滤。",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "026-feature-archive",
+        "date": "2026-08-11T15:29:53.185Z",
+        "description": "026-feature-archive 归档到 _archive/ 的文件不被 context build 和 redline-scanner 扫描，正是因为 list() 非递归",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "storage",
+      "isolation",
+      "archive"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-11T15:29:53.185Z",
+    "updatedAt": "2026-08-11T15:29:53.185Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

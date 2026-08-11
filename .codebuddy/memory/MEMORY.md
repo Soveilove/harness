@@ -38,7 +38,7 @@
 
 ## 开发环境约定（Windows PowerShell）
 
-- **每次代码变更必须走快速通道**（`sovei quick`）——即使是小的 post-completion 修复也要走。用户多次提醒这一点，AI 经常忘记。流程：先 `sovei quick "<desc>" --paths <file> --exclude dist/**` → 改代码 → 跑测试 → 快速通道记录 usage + 验证 git diff 范围。已写入 AGENTS.md「Quick Channel」章节。
+- **快速通道与完整工作流是二选一关系**（`sovei quick` vs `sovei workflow`）：低风险、范围明确的临时改动走 quick 通道（`sovei quick "<desc>" --paths <file> --exclude dist/**` → 改代码 → 跑测试）；已注册为 Feature 并走 12 阶段流程的变更在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再叠加 quick 通道**。已写入 AGENTS.md「Quick Channel」章节（2026-08-11 修正：原文误写"每次代码变更必须走快速通道"，未区分两种场景）。
 - **子 Agent 契约需要显式声明**——CLI 输出 JSON 索引时，必须附带 `_subagentContract` 包装对象（含 hint/expandCommand/parallelizable/hostAgents），否则宿主 AI 不知道应分派子 Agent 并行消费。已写入 AGENTS.md「Sub-Agent Contract」章节。
 
 - **CLIXML 干扰**：在 PowerShell 运行 sovei/node 时，stdout 可能被 CLIXML 序列化包装（进度条 `<Objs...>`、编码乱码），影响可读性但**不影响命令执行与写文件**。
