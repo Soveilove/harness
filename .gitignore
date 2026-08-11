@@ -7,5 +7,8 @@ harness/project/usage.jsonl
 # Embedded separate repository (public scaffold), not part of the harness repo
 public-repo/
 
+# EC 前端团队插件市场（参考吸收，不纳入本仓库）
+web-plugins/
+
 # # IDE/agent internal memory (cross-session working notes, not part of the repo)
 # .codebuddy/

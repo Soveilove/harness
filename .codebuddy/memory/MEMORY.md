@@ -28,6 +28,14 @@
 - **prepareStage 强制检查**（Feature 016，2026-08-06）：`completeStage` 在调用前检查 `preparedStages` 中是否包含当前阶段，未 prepare 时 throw。`prepareStage` 追加 `STAGE_PREPARED` 事件到事件日志。确保外部 skill 注入不会被绕过。
 - 待解决：问题三（drift detection）、问题二（S0 fast-track）、问题四（统一关系模型）。
 
+## Feature 命名约定
+
+- **Feature 命名格式**：`NNN-描述`（三位数补零递增），如 `001-discipline-gate`、`002-replenish-close-reason`、`003-fasttrade-engineering`。
+- 不要用纯描述（`fasttrade-engineering`）或日期前缀（`2026-08-11-foo`）。
+- 新建时取 `specs/` 下最大数字编号 +1。
+- 工具（`sovei workflow bootstrap`）不强制此格式，靠人遵守。
+- 详细对比与判断依据见 `DEV_BACKLOG.md` §10。
+
 ## 开发环境约定（Windows PowerShell）
 
 - **每次代码变更必须走快速通道**（`sovei quick`）——即使是小的 post-completion 修复也要走。用户多次提醒这一点，AI 经常忘记。流程：先 `sovei quick "<desc>" --paths <file> --exclude dist/**` → 改代码 → 跑测试 → 快速通道记录 usage + 验证 git diff 范围。已写入 AGENTS.md「Quick Channel」章节。
