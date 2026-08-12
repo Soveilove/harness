@@ -16,6 +16,7 @@ import { registerQuickCommands } from './commands/quick.js';
 import { registerSkillsCommands } from './commands/skills.js';
 import { registerAdapterCommands } from './commands/adapters.js';
 import { registerFeatureCommands } from './commands/feature.js';
+import { checkVersionUpdate } from './version-check.js';
 import { bootstrap } from '../providers/bootstrap.js';
 
 const pkgRequire = createRequire(import.meta.url);
@@ -28,8 +29,37 @@ program
   .version(packageJson.version)
   .option('--root <path>', 'Workspace root path', process.cwd());
 
+// N6: 版本更新提示——在 preAction 启动检查（非阻塞），在 postAction 等待并输出到 stderr。
+// 跳过条件：--version / --help / 环境变量 SOVEI_NO_UPDATE_CHECK=1。
+let versionCheckPromise: Promise<void> | null = null;
+
+function shouldSkipVersionCheck(): boolean {
+  if (process.env.SOVEI_NO_UPDATE_CHECK === '1') return true;
+  const args = process.argv.slice(2);
+  return args.includes('--version') || args.includes('-V') ||
+    args.includes('--help') || args.includes('-h');
+}
+
 program.hook('preAction', (command) => {
   bootstrap(command.optsWithGlobals().root as string);
+  if (!shouldSkipVersionCheck()) {
+    versionCheckPromise = checkVersionUpdate(packageJson.version)
+      .then((notification) => {
+        if (notification) {
+          process.stderr.write(notification.message);
+        }
+      })
+      .catch(() => {
+        // 版本检查失败静默跳过，绝不阻断命令
+      });
+  }
+});
+
+program.hook('postAction', async () => {
+  // 等待版本检查完成（通常已被命令执行期间完成，await 瞬时返回）
+  if (versionCheckPromise) {
+    await versionCheckPromise;
+  }
 });
 
 registerWorkflowCommands(program);

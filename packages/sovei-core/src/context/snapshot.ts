@@ -25,7 +25,7 @@ export interface KnowledgeSnapshot {
   entryCount: number;
 }
 
-export const SNAPSHOT_FILE = 'harness/project/knowledge/.snapshot.json';
+export const SNAPSHOT_FILE = 'sovei-flow/project/knowledge/.snapshot.json';
 
 /** Compute a deterministic content hash from knowledge entries. */
 export function computeSourceHash(entries: KnowledgeEntry[]): string {

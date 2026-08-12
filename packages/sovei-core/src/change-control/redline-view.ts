@@ -41,7 +41,7 @@ export interface RedlineViewInput {
   generatedAt: string;
 }
 
-export const REDLINES_VIEW_FILE = 'harness/project/governance/redlines.md';
+export const REDLINES_VIEW_FILE = 'sovei-flow/project/governance/redlines.md';
 
 const ENFORCEMENT_LABEL: Record<Redline['enforcement'], string> = {
   absolute: '绝对红线',

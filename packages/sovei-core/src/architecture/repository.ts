@@ -10,7 +10,7 @@ import type {
   RefactoringStrategy,
 } from './types.js';
 
-const ARCHITECTURE_DIRECTORY = 'harness/project/architecture';
+const ARCHITECTURE_DIRECTORY = 'sovei-flow/project/architecture';
 const POLICY_FILE = `${ARCHITECTURE_DIRECTORY}/health-policy.json`;
 const SNAPSHOT_FILE = `${ARCHITECTURE_DIRECTORY}/module-metrics.json`;
 const HISTORY_FILE = `${ARCHITECTURE_DIRECTORY}/architecture-history.jsonl`;

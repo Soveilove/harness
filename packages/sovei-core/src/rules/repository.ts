@@ -8,7 +8,7 @@ import {
   type ProjectRulesDocument,
 } from './schemas.js';
 
-export const DEFAULT_RULES_DIR = 'harness/project/rules';
+export const DEFAULT_RULES_DIR = 'sovei-flow/project/rules';
 export const DEFAULT_RULES_FILE = `${DEFAULT_RULES_DIR}/project.rules.json`;
 export const ADAPTED_RULES_FILE = `${DEFAULT_RULES_DIR}/adapted.rules.json`;
 

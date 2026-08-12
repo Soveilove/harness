@@ -118,11 +118,29 @@ async function installSingleAdapter(
   await storage.write(adapter.contextFile, newContent);
   files.push(adapter.contextFile);
 
-  // 2. 若有 slashCommand 文件，创建它
+  // 2. 若有 slashCommand 文件，创建它（向后兼容单个文件）
   if (adapter.slashCommand) {
     const slashPath = `${adapter.slashCommand.dir}/${adapter.slashCommand.filename}`;
     await storage.write(slashPath, adapter.slashCommand.content);
     files.push(slashPath);
+  }
+
+  // 2b. 若有 slashCommands 列表（P0-B: 12 阶段 slash command），创建它们
+  if (adapter.slashCommands) {
+    for (const sc of adapter.slashCommands) {
+      const slashPath = `${sc.dir}/${sc.filename}`;
+      await storage.write(slashPath, sc.content);
+      files.push(slashPath);
+    }
+  }
+
+  // 3. 若有 skillPackage（如 Codex），生成技能文件
+  if (adapter.skillPackage) {
+    for (const skill of adapter.skillPackage.skills) {
+      const skillPath = `${adapter.skillPackage.dir}/${skill.filename}`;
+      await storage.write(skillPath, skill.content);
+      files.push(skillPath);
+    }
   }
 
   return {

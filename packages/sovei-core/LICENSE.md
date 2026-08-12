@@ -1,30 +1,21 @@
-# Sovei 专有软件许可协议
+MIT License
 
-版权所有 © 2026 Soveilove。保留所有权利。
+Copyright (c) 2026 Soveilove
 
-本软件（"Sovei"，含其命令行工具、源代码与编译产物）由版权持有人以专有方式授权。
-除本协议明确约定外，不得使用、复制、修改、合并、发布、分发、再许可或销售本软件。
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-## 授予的权利
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-在遵守本协议的前提下，版权持有人授予您一项有限的、非独占的、不可再许可的许可，仅用于：
-
-- 在您自己的项目中安装并运行 Sovei 命令行工具，用于开发工作流与知识管理。
-
-## 限制
-
-您不得：
-
-1. 对本软件进行再分发、转售或商业转授权；
-2. 移除、修改或遮挡本软件中的版权声明或许可标识；
-3. 对本软件进行逆向工程、反编译或反汇编（适用法律明文禁止此限制的除外）。
-
-## 免责
-
-本软件按"现状"提供，不提供任何明示或暗示的担保。在任何情况下，版权持有人不对因使用或不能使用本软件而产生的任何直接或间接损失承担责任。
-
-## 终止
-
-如您违反本协议，本许可自动终止，届时您应立即销毁本软件的所有副本。
-
-安装或使用本软件即表示您接受本协议的全部条款。
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

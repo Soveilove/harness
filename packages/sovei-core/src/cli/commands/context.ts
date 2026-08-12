@@ -21,6 +21,7 @@ import { VERSION } from '../../config/version.js';
 import { buildContextPolicy } from '../../context/policy.js';
 import { extractFeatureMeta, scoreCrossFeature } from '../../context/cross-feature.js';
 import { checkStale, formatStaleWarning } from '../../stale/stale-detector.js';
+import type { WorkflowEngine } from '../../engine/workflow-engine.js';
 
 function getStorage(): StorageBackend { return container.inject(TOKENS.Storage); }
 function getConfig(): SoveiConfig { return container.inject(TOKENS.Config); }
@@ -39,10 +40,13 @@ export function registerContextCommands(program: Command): void {
     .option('--cross-feature-limit <n>', 'cross-feature Top-N 数量（默认 5）', '5')
     .option('--budget <chars>', '上下文包字符预算上限（超预算项降级为索引摘要）')
     .option('--json', '输出 JSON 而非 Markdown')
-    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; crossFeature?: boolean; crossFeatureLimit?: string; budget?: string; json?: boolean }) => {
+    .option('--sub-change <id>', '聚焦子变更 ID（加载父 Feature 共享前段 + 子变更专属后段）')
+    .action(async (feature: string, opts: { stage: string; adapter?: string; query?: string; paths?: string; crossFeature?: boolean; crossFeatureLimit?: string; budget?: string; json?: boolean; subChange?: string }) => {
       const storage = getStorage();
       const config = getConfig();
       const featurePath = getFeaturePath(config, feature);
+      const subChangeId = opts.subChange;
+      const subChangePath = subChangeId ? `${featurePath}/sub-changes/${subChangeId}` : null;
 
       // Load knowledge
       const knowledgeStore = new KnowledgeStore(storage, config.knowledgeDir);
@@ -61,14 +65,53 @@ export function registerContextCommands(program: Command): void {
         paths: opts.paths?.split(',').map((path) => path.trim()).filter(Boolean),
       });
 
-      // Load Feature artifacts
+      // Load Feature artifacts.
+      // When --sub-change is set, load the parent Feature's shared front-stages
+      // (load→scope) PLUS the sub-change's plan→verify artifacts.
+      const SHARED_FRONT_ARTIFACTS = new Set([
+        'load-summary.md', 'decision-log.md', 'wayfinder.md',
+        'spec.md', 'reconciliation.md', 'scope.md', 'coverage-matrix.md',
+        'sub-change-map.md',
+      ]);
       const artifacts = new ArtifactRepository(storage, featurePath);
       const artifactNames = await artifacts.list();
       const artifactContents: Array<{ name: string; content: string }> = [];
       for (const name of artifactNames.filter((n) => n.endsWith('.md'))) {
+        // In sub-change mode, skip the parent's plan→verify artifacts
+        // (those belong to sub-changes, not the shared context).
+        if (subChangeId && !SHARED_FRONT_ARTIFACTS.has(name)) continue;
         const content = await artifacts.read(name);
         if (content && !content.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
           artifactContents.push({ name, content });
+        }
+      }
+
+      // Load sub-change-specific artifacts (plan→verify) when --sub-change is set.
+      if (subChangeId && subChangePath) {
+        const subArtifacts = new ArtifactRepository(storage, subChangePath);
+        const subNames = await subArtifacts.list();
+        for (const name of subNames.filter((n) => n.endsWith('.md'))) {
+          const content = await subArtifacts.read(name);
+          if (content && !content.includes('SOVEI_TEMPLATE_PLACEHOLDER')) {
+            // Prefix with sub-change id to distinguish from parent artifacts.
+            artifactContents.push({ name: `${subChangeId}/${name}`, content });
+          }
+        }
+        // Also load sibling sub-changes' id/name/goal/status as a summary.
+        const engine = container.inject<WorkflowEngine>(TOKENS.WorkflowEngine);
+        try {
+          const siblings = await engine.listSubChanges(feature);
+          const siblingSummary = siblings
+            .map((sc) => `- ${sc.id} (${sc.status}) — ${sc.goal}${sc.dependsOn.length ? ` [依赖: ${sc.dependsOn.join(',')}]` : ''}`)
+            .join('\n');
+          if (siblingSummary) {
+            artifactContents.push({
+              name: `${subChangeId}/sibling-sub-changes.md`,
+              content: `# Sibling Sub-Changes\n\n${siblingSummary}\n`,
+            });
+          }
+        } catch {
+          // Engine may not be available in all contexts; skip silently.
         }
       }
 

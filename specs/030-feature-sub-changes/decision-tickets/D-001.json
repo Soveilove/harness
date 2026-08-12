@@ -1,0 +1,20 @@
+{
+  "id": "D-001",
+  "title": "SubChange状态存储设计",
+  "question": "子变更状态存独立文件还是嵌入父WorkflowState",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "嵌入父WorkflowState的subChanges数组字段,每个子变更有自己的currentStage/completedStages/completedTaskIds/status。不存独立文件——保持单状态文件workflow-state.yaml作为单一事实来源。理由:独立文件导致状态分散+replay复杂+原子性难保证;嵌入父状态配合单事件流(I3决策)保持一致性",
+  "evidence": [
+    "types.ts:26-42",
+    "decision-log.md I3"
+  ],
+  "contextPointers": [],
+  "exclusionReason": null,
+  "createdAt": "2026-08-12T16:08:59.919Z",
+  "updatedAt": "2026-08-12T16:09:23.657Z",
+  "resolvedAt": "2026-08-12T16:09:23.657Z"
+}

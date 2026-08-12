@@ -201,5 +201,31 @@
     "updatedAt": "2026-08-10T16:00:14.391Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "architecture-嵌入式子状态模式-子实体状态嵌入父实体状态同文件存储-9f340c5e",
+    "type": "architecture",
+    "title": "嵌入式子状态模式：子实体状态嵌入父实体状态同文件存储",
+    "content": ">",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "030-feature-sub-changes",
+        "date": "2026-08-12T16:33:29.933Z",
+        "description": "Feature 030：WorkflowState.subChanges 嵌入式存储，4 个子变更事件类型携带 subChangeId 路由，192 个原测试零破坏",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "event-sourcing",
+      "state-management",
+      "backward-compatibility",
+      "sub-change"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-12T16:33:29.933Z",
+    "updatedAt": "2026-08-12T16:33:29.933Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

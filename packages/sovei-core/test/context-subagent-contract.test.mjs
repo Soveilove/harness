@@ -8,12 +8,12 @@ import { FilesystemStorage, extractFeatureMeta, scoreCrossFeature, buildContextP
 // ── 辅助：创建临时项目 ──
 
 async function makeProject(root) {
-  await mkdir(join(root, 'harness', 'project', 'knowledge'), { recursive: true });
-  await mkdir(join(root, 'harness', 'project', 'governance'), { recursive: true });
-  await mkdir(join(root, 'harness', 'project', 'rules'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'knowledge'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'governance'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'rules'), { recursive: true });
   await mkdir(join(root, 'specs'), { recursive: true });
   await writeFile(
-    join(root, 'harness', 'project', 'project.config.json'),
+    join(root, 'sovei-flow', 'project', 'project.config.json'),
     JSON.stringify({ project: { name: 'test-project' } }),
     'utf8',
   );

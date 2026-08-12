@@ -1,7 +1,7 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
 > 生成日期：2026-08-11（全面重整，含 spec 治理讨论结论 + web-plugins 吸收清单）
-> 最新追加：2026-08-11 —— 用户两大新诉求分析：① 自有 agent/skills 技能库；② IDE agent 直接调用工作流能力。
+> 最新追加：2026-08-13 —— Feature 030 拆分能力完成（12 阶段全闭合，205/205 测试通过），进入 Phase 2：用拆分能力承载 N1~N6。
 > 依据：全面扫描 `specs/` 下全部 Feature、`design-docs/` 设计文档、源码与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
@@ -399,3 +399,116 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 - 应用范围：`adapters install`、`project init --adapters/--agent`、`skills bind`、`feature archive` 等所有"多选/不指定参数"命令。
 
 > **排期结论**：方案 H 是方案 F 的操作前提——F 的四 agent 选择器（单选）和 `adapters install` 多选都需要 H 的交互面板。建议 **H 先于或并行于 F/G** 做。H 也是所有 CLI 多选命令的通用基础，收益面广。
+
+---
+
+## 11. 七大重大更新需求（2026-08-12）
+
+> 用户原话归纳：先解决适配 code agent 的问题（即"指令就是 12 个节点，使用 / 触发"），然后做 7 项重大更新。经确认，**第 7 项（引擎是否支持 Feature 拆分）优先**——引擎当前不支持，已立项 Feature 030 走完整 Sovei 12 阶段工作流开发。其余 6 项在第 7 项完成后用拆分能力承载。
+
+### 11.1 需求总览
+
+| # | 需求 | 简述 | 状态 | 承载方式 |
+|---|---|---|---|---|
+| **N1** | 12 节点 skills 分开存放 | 类似 web-plugin 的 agent 和 skills 分开存放；三方 skills 复制到我们的文件夹；后续新增/更新三方 skills 也走此模式 | ✅ **已完成**（2026-08-13） | init 命令新增 `sovei-flow/agents/` 目录，与 `skills/` 分开存放 |
+| **N2** | 添加 skills 基座 | 可注入 vue2/vue3/react/cli/py 等技能，以及量化系统等知识技能 | ✅ **已完成**（2026-08-13） | init 命令新增 `sovei-flow/skills/base/` 目录；预置 6 个技能模板（vue2/vue3/react/cli/python/quant） |
+| **N3** | codex 单独适配 | codex 适配只暴露节点按钮；产物 harness 补充 agent 文件夹和 skills 文件夹 | ✅ **已完成**（2026-08-13） | codex 适配器新增 12 节点按钮 + skillPackage（聚合技能文件 sovei-workflow.md）；installer 支持技能包生成 |
+| **N4** | init 产物改名 harness → sovei-flow | 需迁移脚本处理已初始化项目；改名影响面大（代码硬编码多处） | ✅ **已完成**（2026-08-13） | 24 源文件 + 19 测试文件路径替换；新增 `project migrate` 命令；当前仓库已迁移 |
+| **N5** | 开源 + npm 包路径调整 | init 产物变更大，README 调整；正式开源；npm 包路径调整（用户会开放仓库） | ✅ **已完成**（2026-08-13） | LICENSE 改为 MIT；README 全面重写（sovei-flow 目录/Feature 拆分/Skills 基座/版本提示）；CHANGELOG 补 2.6.0 条目 |
+| **N6** | 版本更新提示机制 | 两个提示：①提示更新；②建议更新有新能力支持 | ✅ **已完成**（2026-08-13） | 新增 version-check.ts（零依赖 npm registry 检查 + 24h 缓存 + 能力注册表）；集成 preAction/postAction 钩子；输出 stderr 不污染 JSON |
+| **N7** | Feature 拆分能力 | 引擎是否支持一个 Feature 拆出几个大 change 并行开发 | ✅ **已完成**（Feature 030，2026-08-13） | 走完整 Sovei 12 阶段工作流 |
+
+### 11.2 P0 追加要求（2026-08-12 用户补充）
+
+> 用户追加：任务全部完成后还需要**验证引擎是否能自主拆分 Feature**。不仅要有 CLI 命令，还要有 agent 提示/指令方式触发。同时需要考虑**工作流节点如何调用**——是 `/load` 自然描述完需求执行，还是其他方式。**此项非常关键，放在开发总览的 P0。**
+
+**P0 待解决的两个关键问题**：
+
+| # | 问题 | 说明 |
+|---|---|---|
+| **P0-A** | **引擎自主拆分能力** | 当前 Feature 030 的 `feature split` 是 CLI 显式命令。用户要求引擎还能以 **agent 提示/指令**方式自主触发拆分——即在 scope 阶段产物完成后，AI 能主动建议/执行拆分，而非只靠人敲命令。需补充：①scope 阶段的拆分提议提示契约（已有雏形）；②agent 可调用的拆分指令（slash command 或 skill 触发）；③拆分结果的结构化返回供 agent 消费。 |
+| **P0-B** | **工作流节点调用方式** | 12 个节点的调用入口需明确：是 IDE agent 用 `/load`、`/spec` 等 slash command 触发后**自然描述需求执行**，还是走其他路径（如 MCP 工具、skill 唤起）。这与 N1（skills 分开存放）、N3（codex 适配）强相关——不同 IDE 的触发机制不同（Claude/CodeBuddy 用 slash command，Codex 用 skill，Trae 用文本）。需在 Feature 030 完成后，结合 N1/N3 统一设计节点调用层。 |
+
+> **P0 结论**：
+> - ✅ **P0-A 已落地**（2026-08-13）：scope 阶段提示契约新增"拆分评估"段（[stages/index.ts:303-312](file:///d:/project/harness/packages/sovei-core/src/stages/index.ts#L303-L312)），AI 在 scope 完成后可主动建议运行 `feature split --json` 获取提议契约（[feature.ts:594-616](file:///d:/project/harness/packages/sovei-core/src/cli/commands/feature.ts#L594-L616)）。CLI + agent 提示双通道已就绪。
+> - ✅ **P0-B 已落地**（2026-08-13）：按 IDE 触发机制分三层设计节点调用层：
+>   - **Claude Code / CodeBuddy**（slash command）：`adapters install` 生成 12 个 `/sovei-<stage>` slash command 文件（[registry.ts slashCommands](file:///d:/project/harness/packages/sovei-core/src/adapters/registry.ts#L67-L71)），agent 用 `/sovei-load <feature>`、`/sovei-spec <feature>` 等触发，slash command 内封装"准备阶段→读提示契约→填产物→--complete"完整步骤。
+>   - **Codex 桌面版**（skill 包）：已通过 `skillPackage` 生成 `sovei-workflow.md` 技能文件（N3），agent 通过技能 description 主动唤起工作流。
+>   - **Trae / Gemini / Aider / Windsurf**（文本指令）：`quickChannelDirective` 追加 12 节点表格，agent 按表格运行 `sovei workflow <stage> <feature>` CLI 命令。
+>   - **调用方式回答用户问题**：不是 `/load` 自然描述完需求执行，而是**每个阶段一个 slash command**，agent 输入 `/sovei-load 001-my-feature` 触发该阶段的完整 SOP（准备→提示契约→产物→完成）。需求描述在 `sovei workflow bootstrap` 时或 load 阶段记录到 Feature 元数据，后续阶段只推进不重新描述。
+
+### 11.3 开发顺序
+
+```
+Phase 1（已完成 2026-08-13）：N7 — Feature 030 拆分能力（完整 12 阶段工作流）
+  └─ ✅ 含 P0-A：引擎自主拆分的 agent 提示（scope 阶段"拆分评估"段）
+Phase 2（当前）：用拆分能力承载 N1~N6
+  ├─ N4（改名 sovei-flow + 迁移脚本）——影响面最大，先做
+  ├─ N1（skills 分开存放）+ N2（skills 基座）——内容层
+  ├─ N3（codex 适配）+ N6（版本提示）——接口层
+  └─ N5（开源 + npm 路径）——收尾
+```
+
+---
+
+## 12. Feature 030 开发日志（2026-08-12 → 2026-08-13）
+
+> Feature：`030-feature-sub-changes`（Feature 拆分为多个子变更）
+> 走完整 Sovei 12 阶段工作流。本节记录各阶段进度与关键决策。
+> **2026-08-13 闭合**：12 阶段全部完成，状态 `completed`，205/205 测试通过。
+
+### 12.1 阶段进度
+
+| 阶段 | 状态 | 产物 | 关键决策 |
+|---|---|---|---|
+| load | ✅ | load-summary.md | 识别 8 个影响模块（types/state-machine/event-store/workflow-engine/artifacts/cli/context/builder） |
+| grill | ✅ | decision-log.md | 确定子变更粒度模型、状态独立性、并行性、与 change-control 的关系 |
+| wayfind | ✅ | wayfinder.md + 决策工单 | 多角度分析后选定"共享前段（load→scope）+ 分叉后段（plan→verify）+ 聚合（learn→sync）"方案 |
+| spec | ✅ | spec.md + reconciliation.md | 6 项验收标准（AC-1~AC-6）；嵌入式子变更状态；4 个新事件类型 |
+| scope | ✅ | scope.md + coverage-matrix.md | 8 个影响模块清单 + 架构压力评估 |
+| plan | ✅ | plan.md | 8 层改动顺序；状态/数据流；契约定义；迁移策略；验证方式 |
+| tasks | ✅ | tasks.md | 11 个 TASK（TASK-001~011），按依赖排序 |
+| implement | ✅ | change-manifest.md | 全部 11 个 TASK 完成（数据层/引擎层/接口层/验证层）+ P0-A 落地 |
+| converge | ✅ | convergence-report.md | 验收标准对照，功能完整性确认 |
+| verify | ✅ | evidence.md | 205/205 测试通过；AC 对照全绿；P0-A 提示契约验证 |
+| learn | ✅ | learning-report.md | 3 个 candidate 知识条目入库（嵌入式子状态 / 聚合门禁 / AI 自主评估提示） |
+| sync | ✅ | sync-report.md | 受保护路径审查；命令结果记录；工作流标记 completed |
+
+### 12.2 implement 阶段任务进度
+
+| TASK | 内容 | 层 | 状态 |
+|---|---|---|---|
+| TASK-001 | types.ts — SubChangeState 接口 + 4 事件类型 | 数据层 | ✅ 完成 |
+| TASK-002 | state-machine.ts — reducer 4 个子变更 case + canExecuteStage 重载 + aggregationGate | 数据层 | ✅ 完成 |
+| TASK-003 | event-store.ts — subChanges YAML 序列化/解析 | 数据层 | ✅ 完成 |
+| TASK-004 | workflow-engine.ts — 子变更路由 + 聚合门禁 + splitFeature/listSubChanges | 引擎层 | ✅ 完成 |
+| TASK-005 | artifacts/repository.ts — getSubChangePath helper | 引擎层 | ✅ 完成 |
+| TASK-006 | feature.ts — feature split + sub-change list | 接口层 | ✅ 完成 |
+| TASK-007 | workflow.ts — --sub-change 选项 | 接口层 | ✅ 完成 |
+| TASK-008 | context.ts — --sub-change 选项 | 接口层 | ✅ 完成 |
+| TASK-009 | builder.ts — 子变更聚焦上下文 | 接口层 | ✅ 完成 |
+| TASK-010 | sub-change.test.mjs — 单元测试 | 验证层 | ✅ 完成（13 个测试） |
+| TASK-011 | 回归测试 + archive 兼容 | 验证层 | ✅ 完成（205/205 零回归） |
+| P0-A | stages/index.ts — scope 阶段提示契约"拆分评估"段 | 接口层 | ✅ 完成 |
+
+### 12.3 关键设计决策摘要
+
+1. **子变更粒度**：共享前段（load→scope）+ 分叉后段（plan→verify）+ 聚合（learn→sync）。一层嵌套，子变更不能再拆子变更。
+2. **状态存储**：嵌入式——`WorkflowState.subChanges: SubChangeState[]`，与顶层状态同文件。不另起状态文件。
+3. **事件类型**：4 个新事件（SUBCHANGE_CREATED / SUBCHANGE_STAGE_PREPARE / SUBCHANGE_STAGE_COMPLETE / SUBCHANGE_MERGED），每个携带 `subChangeId` 字段路由。
+4. **向后兼容**：`subChanges` 默认 `[]`；旧事件无 `subChangeId` 走顶层分支；无 `sub-change-map.md` 的 Feature 走单管线。
+5. **聚合门禁**：父 Feature 进入 learn 前 `aggregationGate()` 检查全部 merged。
+6. **AI 拆分位置**：scope 阶段产物完成后，`feature split --json` 命令输出提议契约供 AI 消费。P0-A 已落地——scope 阶段提示契约末尾新增"拆分评估"段，AI 在完成 scope 产物后自然看到拆分信号并主动建议。
+
+### 12.4 知识库增量（learn 阶段对账入库）
+
+| 标题 | 类型 | 类别 | 证据 |
+|---|---|---|---|
+| 嵌入式子状态模式：子实体状态嵌入父实体状态同文件存储 | architecture | candidate | Feature 030：WorkflowState.subChanges 嵌入式存储，4 个子变更事件类型携带 subChangeId 路由，192 个原测试零破坏 |
+| 聚合门禁独立于状态转移：门禁在引擎层拦截，reducer 保持纯函数 | rule | candidate | Feature 030：aggregationGate() 独立导出纯函数，prepareStage('learn') 调用检查全部 merged |
+| AI 自主评估嵌入阶段提示契约，而非新增工作流阶段 | preference | candidate | Feature 030：scope 阶段 prompt 新增"拆分评估"段，feature split --json 输出提议契约 |
+
+### 12.5 后续衔接（P0-B + Phase 2）
+
+- **P0-B（工作流节点调用方式）**：在 N1/N3 开发时统一设计——不同 IDE 触发机制不同（Claude/CodeBuddy 用 slash command，Codex 用 skill，Trae 用文本）。N7 已提供 `feature split --json` 结构化输出和 scope 提示契约，P0-B 在此基础上补齐 IDE 侧触发入口。
+- **Phase 2 启动顺序**：N4（改名）→ N1+N2（skills）→ N3+N6（codex+版本提示）→ N5（开源）。每项作为一个 Feature 走完整 Sovei 12 阶段。

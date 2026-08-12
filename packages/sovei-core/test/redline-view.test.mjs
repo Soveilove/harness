@@ -28,7 +28,7 @@ test('redline view renders active, inactive, seed candidates and events', async 
   });
   await repo.deactivateRedline('BILLING_CONTRACT', 'Merged into billing module guard');
 
-  await storage.write('harness/project/governance/redlines-seed.json', JSON.stringify({
+  await storage.write('sovei-flow/project/governance/redlines-seed.json', JSON.stringify({
     schemaVersion: 1,
     generatedAt: '2026-08-04T00:00:00.000Z',
     scannerVersion: '2.1.0-dev.3',
@@ -44,7 +44,7 @@ test('redline view renders active, inactive, seed candidates and events', async 
   }));
 
   await repo.refreshRedlinesView();
-  const content = await storage.read('harness/project/governance/redlines.md');
+  const content = await storage.read('sovei-flow/project/governance/redlines.md');
 
   assert.match(content, /业务红线（人工审查视图）/);
   assert.match(content, /AUTH_REQUIRED.*绝对红线.*All routes need auth.*Regulatory requirement/s);
@@ -68,7 +68,7 @@ test('update redline fills rationale and reviewer fields then refreshes the view
   await repo.addRedline({ id: 'NO_SILENT_DATA_LOSS', title: 'No silent data loss', rule: 'Upgrades must not rewrite data', enforcement: 'absolute' });
 
   await repo.refreshRedlinesView();
-  let content = await storage.read('harness/project/governance/redlines.md');
+  let content = await storage.read('sovei-flow/project/governance/redlines.md');
   assert.match(content, /未填写。请补充/);
   assert.match(content, /未审查。确认后执行/);
 
@@ -80,7 +80,7 @@ test('update redline fills rationale and reviewer fields then refreshes the view
   assert.equal(updated.rationale, 'Prevents loss of hand-written project context on CLI upgrades');
   assert.equal(updated.reviewedBy, 'maintainer');
 
-  content = await storage.read('harness/project/governance/redlines.md');
+  content = await storage.read('sovei-flow/project/governance/redlines.md');
   assert.match(content, /Prevents loss of hand-written project context on CLI upgrades/);
   assert.match(content, /maintainer/);
   assert.match(content, /更新红线 NO_SILENT_DATA_LOSS/);
@@ -89,7 +89,7 @@ test('update redline fills rationale and reviewer fields then refreshes the view
 test('CLI render and update commands maintain the human-review view', async () => {
   const fixture = await mkdtemp(join(tmpdir(), 'sovei-redline-view-'));
   const project = join(fixture, 'project');
-  const viewPath = join(project, 'harness', 'project', 'governance', 'redlines.md');
+  const viewPath = join(project, 'sovei-flow', 'project', 'governance', 'redlines.md');
   try {
     await execFileAsync(process.execPath, [cli, 'project', 'init', project, '--blank']);
     await execFileAsync(process.execPath, [

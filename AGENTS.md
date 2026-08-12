@@ -44,12 +44,12 @@ This avoids serial I/O when 50+ features exist. The `_subagentContract` field te
 The quick channel (`sovei quick`) and the full Sovei workflow are **mutually exclusive alternatives** — pick one, not both:
 
 - **Quick channel**: for low-risk, well-scoped, ad-hoc changes that don't warrant a full Feature. Run `sovei quick "<description>" --paths <file>` **before** editing → make the change → run tests → quick records usage + verifies git diff scope.
-- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 12 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.
+- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 13 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.
 
 ### Workflow Stages
 
 ```
-load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
+explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
 ```
 
 ### Confirmation Gates
@@ -75,4 +75,4 @@ Run `sovei governance review-pack generate <feature>` to render tech-review.md a
 快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：
 
 - **快速通道**（`sovei quick`）：适用于低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。流程：`sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 检查 riskLevel（escalated 需人工确认）→ 编辑代码 → 测试验证。
-- **完整工作流**（`sovei workflow`）：当变更已注册为 Feature 并走 12 阶段流程时，代码改动在 `implement` 阶段完成，由 `converge → verify` 门禁治理。**此场景下不需要再跑 `sovei quick`**——工作流阶段本身已包含风险检查和验证。
+- **完整工作流**（`sovei workflow`）：当变更已注册为 Feature 并走 13 阶段流程时，代码改动在 `implement` 阶段完成，由 `converge → verify` 门禁治理。**此场景下不需要再跑 `sovei quick`**——工作流阶段本身已包含风险检查和验证。

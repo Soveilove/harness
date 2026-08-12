@@ -22,6 +22,36 @@ export interface PendingConfirmation {
   overrideReason: string | null;
 }
 
+/**
+ * Sub-change state — a single independently-developable unit within a Feature.
+ *
+ * Sub-changes share the parent Feature's load→scope stages (shared context)
+ * but fork from plan→verify with independent cursors. After all sub-changes
+ * are merged, the parent Feature advances learn→sync (aggregation).
+ *
+ * One level of nesting only — sub-changes cannot themselves be split.
+ */
+export interface SubChangeState {
+  /** Stable identifier, e.g. SC-030-01 */
+  id: string;
+  /** kebab-case human-readable name */
+  name: string;
+  /** One-sentence goal */
+  goal: string;
+  /** IDs of sub-changes that must be merged before this one can enter plan */
+  dependsOn: string[];
+  /** Current stage cursor (plan|tasks|implement|converge|verify) or null before first prepare */
+  currentStage: string | null;
+  /** Stages completed for this sub-change */
+  completedStages: string[];
+  /** TASK-xxx IDs completed within this sub-change's implement stage */
+  completedTaskIds: string[];
+  /** Lifecycle status */
+  status: 'pending' | 'planning' | 'implementing' | 'verifying' | 'merged';
+  /** ISO timestamp of creation */
+  createdAt: string;
+}
+
 /** Immutable workflow state - the single source of truth */
 export interface WorkflowState {
   featureId: string;
@@ -38,6 +68,11 @@ export interface WorkflowState {
   pendingConfirmations: PendingConfirmation[];
   /** Stages that have been prepared (via prepareStage) but not yet completed. */
   preparedStages: string[];
+  /**
+   * Sub-changes of this Feature. Empty for Features that were never split
+   * (the common case — full backward compatibility with the single-pipeline model).
+   */
+  subChanges: SubChangeState[];
   updatedAt: string;
 }
 
@@ -52,7 +87,13 @@ export type WorkflowEvent =
   | { type: 'BLOCK'; reason: string }
   | { type: 'RESUME' }
   | { type: 'CONFIRM'; stage: string; role: 'product' | 'tech'; confirmedBy: string; reference: string }
-  | { type: 'OVERRIDE_CONFIRM'; stage: string; role: 'product' | 'tech'; overriddenBy: string; reason: string };
+  | { type: 'OVERRIDE_CONFIRM'; stage: string; role: 'product' | 'tech'; overriddenBy: string; reason: string }
+  // ── Sub-change events (Feature splitting) ──
+  // Each carries subChangeId so the reducer routes to state.subChanges[i].
+  | { type: 'SUBCHANGE_CREATED'; subChangeId: string; name: string; goal: string; dependsOn: string[]; createdAt: string }
+  | { type: 'SUBCHANGE_STAGE_PREPARE'; subChangeId: string; stage: string }
+  | { type: 'SUBCHANGE_STAGE_COMPLETE'; subChangeId: string; stage: string; artifacts: string[] }
+  | { type: 'SUBCHANGE_MERGED'; subChangeId: string; mergedAt: string };
 
 /** Event store entry - append-only log */
 export interface WorkflowEventEntry {

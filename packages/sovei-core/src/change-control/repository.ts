@@ -18,10 +18,10 @@ import {
   type RedlineSeed,
 } from './redline-view.js';
 
-const REDLINES_FILE = 'harness/project/governance/redlines.json';
-const REDLINES_LOCK = 'harness/project/governance/redlines';
-const REDLINE_EVENTS_FILE = 'harness/project/governance/redline-events.jsonl';
-const REDLINE_SEED_FILE = 'harness/project/governance/redlines-seed.json';
+const REDLINES_FILE = 'sovei-flow/project/governance/redlines.json';
+const REDLINES_LOCK = 'sovei-flow/project/governance/redlines';
+const REDLINE_EVENTS_FILE = 'sovei-flow/project/governance/redline-events.jsonl';
+const REDLINE_SEED_FILE = 'sovei-flow/project/governance/redlines-seed.json';
 
 const DIMENSION_MINIMUM_STAGE: Record<ChangeDimension, string> = {
   'business-direction': 'grill',

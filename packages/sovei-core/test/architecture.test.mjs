@@ -138,7 +138,7 @@ test('architecture check scans current source without requiring a saved snapshot
   };
   await withFixture({
     'src/current.ts': 'export function current(input) {\n  if (input) { return 1; }\n  return 0;\n}\n',
-    'harness/project/architecture/health-policy.json': JSON.stringify(policy),
+    'sovei-flow/project/architecture/health-policy.json': JSON.stringify(policy),
   }, async (root) => {
     await assert.rejects(
       execFileAsync(process.execPath, [cli, '--root', root, 'architecture', 'check', '--paths', 'src']),

@@ -1,12 +1,15 @@
 # Sovei — 便携式开发 SOP 引擎
 
-Sovei 是一个本地知识管理工作流引擎。它定义"怎么沉淀知识"（工作流 + 知识生命周期），不定义"知识是什么"（那是项目专属内容）。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](packages/sovei-core/LICENSE.md)
+[![npm version](https://img.shields.io/npm/v/@soveilove/sovei.svg)](https://www.npmjs.com/package/@soveilove/sovei)
 
-> **当前状态**：项目处于高速完善阶段，工作流能力和外部 Skills 集成正在快速迭代，版本更新频率较高。建议关注 [CHANGELOG](specs/) 或 `npm view @soveilove/sovei version` 跟踪最新版本。
+Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、决策地图、重大变更控制和演进式架构治理。它定义"怎么沉淀知识"（工作流 + 知识生命周期），不定义"知识是什么"（那是项目专属内容）。
+
+> **当前状态**：开源项目（MIT License）。13 阶段完整工作流（含 explore 需求入口）、Feature 拆分、Skills 基座、Codex 技能包适配、版本更新提示等能力已就绪。CLI 启动时自动检测新版本并提示。
 
 ## 设计思想
 
-Sovei 2.5+ 借鉴五个主流框架的核心思想，并增加演进式架构治理和外部 Skills 运行时集成：
+Sovei 2.6+ 借鉴五个主流框架的核心思想，并增加演进式架构治理和外部 Skills 运行时集成：
 
 | 借鉴来源 | 核心思想 | 应用层 |
 |---|---|---|
@@ -23,7 +26,7 @@ Sovei 2.5+ 借鉴五个主流框架的核心思想，并增加演进式架构治
 | 壳（工具层） | 工作流引擎、模板、CLI、阶段定义 | 原样保留 |
 | 料（项目层） | 踩坑库、代码地图、架构文档、ADR、实现规则 | 清空重填 |
 
-当前项目声明见 [harness/project/project.config.json](harness/project/project.config.json)。
+当前项目声明见 [sovei-flow/project/project.config.json](sovei-flow/project/project.config.json)。
 
 ## 快速开始
 
@@ -40,8 +43,14 @@ node packages/sovei-core/dist/cli/index.js --help
 # 初始化新项目
 node packages/sovei-core/dist/cli/index.js project init ./my-project --name "My Project"
 
-# 创建新 Feature
-node packages/sovei-core/dist/cli/index.js workflow bootstrap 001-my-feature
+# 创建新 Feature（带 PRD 的完整入口）
+node packages/sovei-core/dist/cli/index.js workflow explore 001-my-feature --prd ./docs/prd.md
+
+# 或：内联需求描述（无 PRD 文件时）
+node packages/sovei-core/dist/cli/index.js workflow explore 001-my-feature --brief "实现用户登录的 OAuth2 支持"
+
+# 填写 exploration.md + sub-change-map.md 后完成 explore 阶段
+node packages/sovei-core/dist/cli/index.js workflow explore 001-my-feature --complete
 
 # 准备阶段（生成提示契约和缺失模板，不推进状态）
 node packages/sovei-core/dist/cli/index.js workflow load 001-my-feature
@@ -73,10 +82,10 @@ npx @soveilove/sovei --help
 
 ## 工作流阶段
 
-Sovei 2.0 共 12 个阶段，每次调用只执行一个：
+Sovei 2.6+ 共 13 个阶段，每次调用只执行一个：
 
 ```
-load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
+explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
 ```
 
 查看所有阶段及其契约：
@@ -91,7 +100,7 @@ node packages/sovei-core/dist/cli/index.js workflow list-stages
 
 ### Wayfinder 决策地图
 
-`wayfind` 仍是原有 12 阶段中的一个阶段。S2、大型或高不确定工作使用类型化决策地图；
+`wayfind` 仍是原有 13 阶段中的一个阶段。S2、大型或高不确定工作使用类型化决策地图；
 S0/S1 且一个会话能说清的工作必须显式 `skip`，不能用空地图假装完成。
 
 ```bash
@@ -144,6 +153,210 @@ sovei workflow implement 001-my-feature --complete
 ```
 
 重复执行 `bootstrap` 是幂等的，不会重置已有 Feature 状态。返工仍使用 `reopen`。
+
+## 完整开发流程指引
+
+以下是从零到一的完整开发流程，覆盖 13 个阶段的标准操作。
+
+### 前置准备
+
+```bash
+# 1. 初始化项目（仅首次）
+sovei project init ./my-project --name "My Project" --language typescript
+
+# 2. 扫描现有代码库，生成业务覆盖面报告和知识库
+sovei --root ./my-project project onboard
+# AI 将按指南生成：
+#   - sovei-flow/project/business-coverage.md（业务覆盖面报告）
+#   - sovei-flow/project/business-map.json（能力依赖图）
+#   - sovei-flow/project/knowledge/*.json（类型化知识）
+```
+
+### 阶段 1：explore — 需求探索与拆分提议
+
+**职责**：读 PRD + 业务覆盖面 → 需求理解 + 拆分提议。兼任 Feature 入口。
+
+```bash
+# 入口模式 A：带 PRD 文件（推荐）
+sovei workflow explore 001-user-auth --prd ./docs/prd-user-auth.md
+
+# 入口模式 B：内联需求描述（小需求、无正式 PRD 时）
+sovei workflow explore 001-quick-fix --brief "修复订单列表分页丢失问题"
+
+# AI 按提示契约生成 exploration.md + sub-change-map.md 后，完成阶段
+sovei workflow explore 001-user-auth --complete
+```
+
+**产出**：`exploration.md`（需求摘要 + 业务关联 + 拆分理由）、`sub-change-map.md`（拆分提议表或 "no-split"）
+
+### 阶段 2：load — 代码现状探索
+
+**职责**：读源码 → 理解当前架构、模块边界、已有实现、风险点。
+
+```bash
+sovei workflow load 001-user-auth
+# AI 读取代码库关键文件，生成 load-summary.md
+sovei workflow load 001-user-auth --complete
+```
+
+**产出**：`load-summary.md`（代码库现状摘要 + 相关已有实现 + 潜在风险点）
+
+### 阶段 3：grill — 决策拷问
+
+**职责**：区分事实核实、可推断决策与范围性决策，逐项解决业务决策。
+
+```bash
+sovei workflow grill 001-user-auth
+# AI 填写 decision-log.md（事实核实 / 可推断决策 / 范围性决策）
+sovei workflow grill 001-user-auth --complete
+```
+
+**产出**：`decision-log.md`（决策树，含 D1/D2/.../R1/R2/...）
+
+### 阶段 4：wayfind — 决策地图（S2+ 风险）
+
+**职责**：大型或高不确定工作使用类型化决策地图；小型工作可显式 skip。
+
+```bash
+# 小需求：直接跳过
+sovei wayfinder skip 001-user-auth --reason "需求明确，无跨会话未决问题"
+sovei workflow wayfind 001-user-auth --complete
+
+# 大型需求：创建决策地图
+sovei workflow wayfind 001-user-auth
+sovei wayfinder chart 001-user-auth --destination "所有跨模块契约已形成结论"
+# 逐票处理 frontier 中的决策...
+sovei workflow wayfind 001-user-auth --complete
+```
+
+### 阶段 5：spec — 需求规格
+
+**职责**：编写验收标准，产出版本对齐文档。
+
+```bash
+sovei workflow spec 001-user-auth
+# AI 生成 spec.md + reconciliation.md
+sovei workflow spec 001-user-auth --complete
+```
+
+**产出**：`spec.md`（验收标准）、`reconciliation.md`（PM 需求与技术的对齐文档）
+
+> **确认门**：S2/S3 风险 Feature 在 spec 完成后需产品 + 技术确认。
+
+### 阶段 6：scope — 范围界定与拆分修正
+
+**职责**：基于代码影响面确定范围，修正 explore 阶段的拆分提议。
+
+```bash
+sovei workflow scope 001-user-auth
+# AI 生成 scope.md + 修正 sub-change-map.md（如有必要）
+sovei workflow scope 001-user-auth --complete
+```
+
+**产出**：`scope.md`（范围界定 + 影响面分析）
+
+### 拆分 Feature（可选）
+
+explore 或 scope 完成后，如果需求涉及多个可独立验证的功能域，可拆分为子变更并行开发：
+
+```bash
+# 获取拆分提议契约
+sovei feature split 001-user-auth --json
+
+# 查看子变更状态
+sovei feature sub-change list 001-user-auth
+
+# 在子变更上执行阶段（plan→verify 阶段可用 --sub-change）
+sovei workflow plan 001-user-auth --sub-change SC-001
+```
+
+### 阶段 7-8：plan + tasks — 计划与任务拆解
+
+```bash
+sovei workflow plan 001-user-auth
+# AI 生成 plan.md
+sovei workflow plan 001-user-auth --complete
+
+sovei workflow tasks 001-user-auth
+# AI 生成 tasks.md（checklist 格式：- [ ] TASK-001: ...）
+sovei workflow tasks 001-user-auth --complete
+```
+
+### 阶段 9：implement — 逐任务实施
+
+```bash
+# 逐个任务执行
+sovei workflow implement 001-user-auth --task TASK-001
+# 完成代码 + 更新 change-manifest.md 后
+sovei workflow implement 001-user-auth --task TASK-001 --complete
+
+# 所有任务完成后关闭 implement 阶段
+sovei workflow implement 001-user-auth --complete
+```
+
+**产出**：`change-manifest.md`（变更清单：目标 + 任务文件 + 行为变更 + 测试）
+
+### 阶段 10-11：converge + verify — 收敛与验证
+
+```bash
+# 收敛：检查实现与 Spec 一致性
+sovei workflow converge 001-user-auth
+# AI 填写 convergence-report.md（差距分类 + 架构健康）
+sovei workflow converge 001-user-auth --complete
+
+# 验证：运行测试，产出证据
+sovei workflow verify 001-user-auth
+# AI 填写 evidence.md（测试结果 + 功能验证 + 兼容性验证）
+sovei workflow verify 001-user-auth --complete
+```
+
+> **确认门**：verify 完成后需产品 + 技术确认。可 override：
+> ```bash
+> sovei workflow override-confirm 001-user-auth --stage verify --role tech --by <name> --reason "全量测试通过"
+> sovei workflow override-confirm 001-user-auth --stage verify --role product --by <name> --reason "验收标准全部满足"
+> ```
+
+### 阶段 12-13：learn + sync — 学习与同步
+
+```bash
+# 学习：提取可复用模式、教训
+sovei workflow learn 001-user-auth
+# AI 填写 learning-report.md
+sovei workflow learn 001-user-auth --complete
+
+# 同步：确认所有变更已同步到源码/测试/文档/配置
+sovei workflow sync 001-user-auth
+# AI 填写 sync-report.md
+sovei workflow sync 001-user-auth --complete
+# Feature 状态变为 completed
+```
+
+### 常用操作速查
+
+```bash
+# 查看 Feature 状态
+sovei workflow status 001-user-auth
+
+# 列出所有阶段及其契约
+sovei workflow list-stages
+
+# 返工到指定阶段
+sovei workflow reopen 001-user-auth --target scope --reason "发现遗漏"
+
+# 构建上下文包（供 AI 代理使用）
+sovei context build --stage spec --feature 001-user-auth
+
+# 快速通道（小改动，不走完整工作流）
+sovei quick "修复拼写错误" --paths src/utils/format.ts
+```
+
+### 关键设计原则
+
+1. **explore 与 load 职责正交**：explore 读 PRD + 业务覆盖面（需求侧），load 读源码（代码侧），避免重复读代码浪费上下文
+2. **一个命令一条指令**：`explore --prd` 同时完成 Feature 创建 + PRD 复制 + 阶段准备
+3. **两层拆分互补**：explore 基于需求功能域做首次拆分提议，scope 基于代码影响面做二次修正
+4. **prepare → complete 两段式**：`prepare` 生成提示契约和模板，AI 填写产物后 `--complete` 校验并推进，防止空模板被视为完成
+5. **向后兼容**：老 Feature 无 explore 阶段事件时自动静默跳过，不阻塞推进
 
 ## 外部 Skills 运行时
 
@@ -203,8 +416,8 @@ sovei skills sync
 sovei skills clean
 ```
 
-Skill 配置存储在 `harness/skills/skill-map.yaml`（绑定）和 `harness/skills/skill-lock.yaml`
-（版本锁定 + checksum）。Vendor 文件位于 `harness/vendor/`。升级必须人工审查 diff 后确认，
+Skill 配置存储在 `sovei-flow/skills/skill-map.yaml`（绑定）和 `sovei-flow/skills/skill-lock.yaml`
+（版本锁定 + checksum）。Vendor 文件位于 `sovei-flow/vendor/`。升级必须人工审查 diff 后确认，
 不自动跟随上游 latest。
 
 ## 项目场景
@@ -228,7 +441,7 @@ Hub 只向卫星分发 stable 知识；卫星只向 Hub 提交 candidate。项�
 
 ## 项目工程规范（Rules）
 
-项目规范存储在 `harness/project/rules/*.rules.json`。它和另外两类约束严格分开：
+项目规范存储在 `sovei-flow/project/rules/*.rules.json`。它和另外两类约束严格分开：
 
 | 类型 | 解决的问题 | 生效方式 |
 |---|---|---|
@@ -409,9 +622,9 @@ sovei architecture check --fail-on required
 - `expand-migrate-contract`：高 churn、多职责模块分批扩展、迁移、收口。
 - `stabilize-with-tests`：边界不清时先补行为基线，再决定拆分。
 
-架构数据保存在 `harness/project/architecture/`：策略、当前快照、趋势历史和
+架构数据保存在 `sovei-flow/project/architecture/`：策略、当前快照、趋势历史和
 债务登记相互分离。`scope`、`converge`、`learn` 会使用这些信号，但原有
-12 阶段工作流保持不变。
+13 阶段工作流保持不变。
 
 ## 目录结构
 
@@ -420,16 +633,17 @@ sovei/
 ├── packages/sovei-core/          # TypeScript 引擎包
 │   ├── src/
 │   │   ├── engine/               # 状态机 + 事件存储
-│   │   ├── stages/               # 12 个阶段插件
+│   │   ├── stages/               # 13 个阶段插件
 │   │   ├── architecture/         # 架构健康分析 + 债务登记
 │   │   ├── knowledge/            # 知识仓库 (Redux store)
 │   │   ├── providers/            # DI 容器
 │   │   ├── storage/              # 存储后端
 │   │   ├── artifacts/            # Artifact 仓库
 │   │   ├── config/               # 配置
-│   │   └── cli/                  # CLI 命令
+│   │   └── cli/                  # CLI 命令（含 version-check 版本提示）
 │   └── test/                     # 测试
-├── harness/                      # 稳定知识层
+├── sovei-flow/                   # 项目工作流层（init 产物，换项目清空重填）
+│   ├── agents/                   # 工作流阶段 agent 指令模板
 │   ├── project/                  # 料（换项目清空重填）
 │   │   ├── project.config.json   # 项目声明
 │   │   ├── knowledge/            # 类型化知识 (JSON)
@@ -437,8 +651,8 @@ sovei/
 │   │   ├── codegraph/            # 代码地图
 │   │   └── rules/                # 规则库
 │   ├── skills/                   # Skill 配置（map + lock）
-│   ├── vendor/                   # 第三方 Skill 源文件
-│   └── templates/                # 壳（文档模板）
+│   │   └── base/                 # 预置技能基座（vue2/vue3/react/cli/python/quant）
+│   └── vendor/                   # 第三方 Skill 源文件
 ├── specs/                        # Feature 实例
 └── design-docs/                  # 架构设计文档
 ```
@@ -449,9 +663,10 @@ sovei/
 
 ## 技术栈
 
-- **运行时**：Node.js >= 20
+- **运行时**：Node.js >= 14.18
 - **语言**：TypeScript 7.x
 - **依赖**：commander (CLI)、zod (schema 验证)、yaml (配置解析)
+- **发布产物零运行时依赖**（dependencies 为空，单文件 `sovei.cjs`）
 - **无 Python、无 PowerShell 依赖**（发版脚本除外）
 
 ## 发布 Sovei CLI
@@ -481,4 +696,4 @@ pnpm run release:sovei
 
 ## 许可
 
-个人使用。
+MIT License — 详见 [LICENSE.md](packages/sovei-core/LICENSE.md)。

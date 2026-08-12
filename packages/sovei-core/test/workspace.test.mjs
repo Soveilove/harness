@@ -7,11 +7,11 @@ import { FilesystemStorage, MemoryStorage } from '../dist/index.js';
 import { WorkspaceManager } from '../dist/config/workspace.js';
 
 async function makeProject(root, name, entries = [], redlines = []) {
-  await mkdir(join(root, 'harness', 'project', 'knowledge'), { recursive: true });
-  await mkdir(join(root, 'harness', 'project', 'governance'), { recursive: true });
-  await writeFile(join(root, 'harness', 'project', 'project.config.json'), JSON.stringify({ project: { name } }), 'utf8');
-  await writeFile(join(root, 'harness', 'project', 'knowledge', 'rule.json'), JSON.stringify(entries), 'utf8');
-  await writeFile(join(root, 'harness', 'project', 'governance', 'redlines.json'), JSON.stringify(redlines), 'utf8');
+  await mkdir(join(root, 'sovei-flow', 'project', 'knowledge'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'governance'), { recursive: true });
+  await writeFile(join(root, 'sovei-flow', 'project', 'project.config.json'), JSON.stringify({ project: { name } }), 'utf8');
+  await writeFile(join(root, 'sovei-flow', 'project', 'knowledge', 'rule.json'), JSON.stringify(entries), 'utf8');
+  await writeFile(join(root, 'sovei-flow', 'project', 'governance', 'redlines.json'), JSON.stringify(redlines), 'utf8');
 }
 
 function knowledge(overrides) {
@@ -68,9 +68,9 @@ test('workspace registry rejects identity collisions and reads knowledge from re
 
     const result = await manager.syncToSatellite('work', new FilesystemStorage(satellite));
     assert.equal(result.synced, 1);
-    const synced = JSON.parse(await readFile(join(satellite, 'harness', 'project', 'knowledge', 'rule.json'), 'utf8'));
+    const synced = JSON.parse(await readFile(join(satellite, 'sovei-flow', 'project', 'knowledge', 'rule.json'), 'utf8'));
     assert.equal(synced[0].content, 'hub truth');
-    const syncedRedlines = JSON.parse(await readFile(join(satellite, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    const syncedRedlines = JSON.parse(await readFile(join(satellite, 'sovei-flow', 'project', 'governance', 'redlines.json'), 'utf8'));
     assert.equal(syncedRedlines[0].id, 'AUTH_REQUIRED');
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -88,7 +88,7 @@ test('workspace sync stops before writing when a local candidate collides with h
     await manager.register({ id: 'main', name: 'Main', path: hub, role: 'hub' });
     await manager.register({ id: 'work', name: 'Work', path: satellite, role: 'satellite' });
     await assert.rejects(manager.syncToSatellite('work', new FilesystemStorage(satellite)), /Knowledge conflict/);
-    const unchanged = JSON.parse(await readFile(join(satellite, 'harness', 'project', 'knowledge', 'rule.json'), 'utf8'));
+    const unchanged = JSON.parse(await readFile(join(satellite, 'sovei-flow', 'project', 'knowledge', 'rule.json'), 'utf8'));
     assert.equal(unchanged[0].content, 'local');
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -120,16 +120,16 @@ test('workspace sync filters redlines by branch scope', async () => {
     await manager.register({ id: 'none', name: 'None', path: satNone, role: 'satellite' });
 
     await manager.syncToSatellite('a', new FilesystemStorage(satA));
-    const syncedA = JSON.parse(await readFile(join(satA, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    const syncedA = JSON.parse(await readFile(join(satA, 'sovei-flow', 'project', 'governance', 'redlines.json'), 'utf8'));
     assert.deepEqual(syncedA.map((rl) => rl.id).sort(), ['BRANCH_A_RL', 'GLOBAL_RL']);
 
     await manager.syncToSatellite('b', new FilesystemStorage(satB));
-    const syncedB = JSON.parse(await readFile(join(satB, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    const syncedB = JSON.parse(await readFile(join(satB, 'sovei-flow', 'project', 'governance', 'redlines.json'), 'utf8'));
     assert.deepEqual(syncedB.map((rl) => rl.id).sort(), ['BRANCH_B_RL', 'GLOBAL_RL']);
 
     // Satellite without a known branch receives only global redlines.
     await manager.syncToSatellite('none', new FilesystemStorage(satNone));
-    const syncedNone = JSON.parse(await readFile(join(satNone, 'harness', 'project', 'governance', 'redlines.json'), 'utf8'));
+    const syncedNone = JSON.parse(await readFile(join(satNone, 'sovei-flow', 'project', 'governance', 'redlines.json'), 'utf8'));
     assert.deepEqual(syncedNone.map((rl) => rl.id), ['GLOBAL_RL']);
   } finally {
     await rm(root, { recursive: true, force: true });

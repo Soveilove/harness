@@ -1,0 +1,20 @@
+{
+  "id": "D-004",
+  "title": "scope sub-change-map schema",
+  "question": "scope阶段产出的sub-change-map.md的schema是什么",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "sub-change-map.md是scope阶段可选产物。schema: YAML frontmatter含sub-changes数组,每项id(SC-030-NN)/name(kebab-case)/goal(一句话)/dependsOn(依赖ID数组)/status(pending|planning|implementing|verifying|merged)。无子变更时不出此文件(向后兼容)。AI在scope阶段分析spec+scope后提议划分,用户确认后落盘",
+  "evidence": [
+    "decision-log.md Q5",
+    "F5-webplugin-change划分"
+  ],
+  "contextPointers": [],
+  "exclusionReason": null,
+  "createdAt": "2026-08-12T16:09:07.899Z",
+  "updatedAt": "2026-08-12T16:09:39.920Z",
+  "resolvedAt": "2026-08-12T16:09:39.920Z"
+}

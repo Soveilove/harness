@@ -13,11 +13,20 @@ const logger = { info() {}, warn() {}, error() {}, debug() {} };
 const config = {
   rootPath: '.',
   specsDir: 'specs',
-  knowledgeDir: 'harness/project/knowledge',
-  harnessDir: 'harness',
+  knowledgeDir: 'sovei-flow/project/knowledge',
+  harnessDir: 'sovei-flow',
   project: { name: 'test', description: 'test', techStack: {}, started: '2026-01-01' },
   workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
 };
+
+/** Fast-forward through explore stage (first stage) so tests can operate on load+. */
+async function skipExplore(storage, featureId) {
+  const events = new EventStore(storage);
+  const path = `specs/${featureId}`;
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
+  await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
+}
 
 test('material change cannot bypass absolute or unapproved business redlines', async () => {
   const storage = new MemoryStorage();
@@ -96,7 +105,7 @@ test('applying a reviewed change archives stale artifacts and reopens the earlie
   assert.equal(state.currentStage, 'spec');
   assert.equal(state.activeChangeId, request.id);
   assert.equal(state.revision, 1);
-  assert.deepEqual(state.completedStages, ['load', 'grill', 'wayfind']);
+  assert.deepEqual(state.completedStages, ['explore', 'load', 'grill', 'wayfind']);
   assert.equal(await storage.read(`${featurePath}/spec.md`), null);
   assert.equal(await storage.read(`${featurePath}/scope.md`), null);
   assert.equal(await storage.read(`${featurePath}/decision-log.md`), '# Decisions\n\nAuthentication stays required.');
@@ -145,6 +154,7 @@ test('change request becomes stale when workflow events advance after its review
   await repository.addRedline({ id: 'AUTH_REQUIRED', title: 'Authentication', rule: 'Protected actions require authentication', enforcement: 'absolute' });
   const engine = new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config);
   await engine.bootstrap('005-stale');
+  await skipExplore(storage, '005-stale');
   const request = await engine.prepareChange('005-stale', 'load', 'Restart design', 'Direction changed', ['business-direction']);
   request.affectedSurfaces = ['whole feature'];
   request.authorizedBy = 'business-owner';
@@ -167,6 +177,7 @@ test('pending material change freezes ordinary workflow until applied or cancell
   await repository.addRedline({ id: 'AUTH_REQUIRED', title: 'Authentication', rule: 'Protected actions require authentication', enforcement: 'absolute' });
   const engine = new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config);
   await engine.bootstrap('006-freeze');
+  await skipExplore(storage, '006-freeze');
   const request = await engine.prepareChange('006-freeze', 'load', 'Explore replacement', 'Direction may change', ['business-direction']);
   await assert.rejects(engine.prepareStage('006-freeze', 'load'), /Workflow frozen by pending material change/);
   await assert.rejects(engine.completeStage('006-freeze', 'load'), /Workflow frozen by pending material change/);

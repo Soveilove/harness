@@ -152,8 +152,8 @@ function engineConfig(root) {
   return {
     rootPath: root,
     specsDir: 'specs',
-    knowledgeDir: 'harness/project/knowledge',
-    harnessDir: 'harness',
+    knowledgeDir: 'sovei-flow/project/knowledge',
+    harnessDir: 'sovei-flow',
     project: { name: 'test', description: 'test', techStack: {}, started: '2026-01-01' },
     workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
   };
@@ -175,7 +175,7 @@ test('sync stage completion writes a repository-level baseline file', async () =
     // 用事件日志快进到 learn 阶段完成
     const events = new EventStore(storage);
     await events.append(path, { type: 'BOOTSTRAP', featureId });
-    for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 11)) {
+    for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 12)) {
       await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
       await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
     }
@@ -207,7 +207,7 @@ test('sync stage completion skips baseline write when not a git repository', asy
     const path = `specs/${featureId}`;
     const events = new EventStore(storage);
     await events.append(path, { type: 'BOOTSTRAP', featureId });
-    for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 11)) {
+    for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 12)) {
       await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
       await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
     }

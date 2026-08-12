@@ -12,6 +12,7 @@ import { container, TOKENS } from '../../providers/container.js';
 import type { StorageBackend } from '../../storage/types.js';
 import type { SoveiConfig } from '../../config/types.js';
 import { getFeaturePath } from '../../config/loader.js';
+import type { WorkflowEngine } from '../../engine/workflow-engine.js';
 
 /** 持久文件白名单——这些文件留在顶层不归档 */
 const PERSISTENT_FILES = new Set([
@@ -20,16 +21,19 @@ const PERSISTENT_FILES = new Set([
   'load-summary.md',
   'wayfinder.md',
   'summary.md',
+  'sub-change-map.md',
+  'exploration.md',
 ]);
 
 /** 工作流阶段顺序（与 stages 引擎一致） */
 const STAGE_ORDER = [
-  'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ];
 
 /** 各阶段 → 主要产物文件（用于时间线渲染与章节说明） */
 const STAGE_ARTIFACTS: Record<string, string[]> = {
+  explore: ['exploration.md', 'sub-change-map.md'],
   load: ['load-summary.md'],
   grill: ['decision-log.md'],
   wayfind: ['wayfinder.md'],
@@ -567,4 +571,161 @@ export function registerFeatureCommands(program: Command): void {
         process.exitCode = 1;
       }
     });
+
+  // ── split ──
+  feature
+    .command('split')
+    .description('将 Feature 拆分为多个可独立开发的子变更（scope 完成后可用）')
+    .argument('<id>', 'Feature ID')
+    .option('--json', '输出拆分提议的 JSON 提示契约（不执行拆分），供 AI 填充后回填')
+    .action(async (featureId: string, opts: { json?: boolean }) => {
+      const config = getConfig();
+      const featurePath = getFeaturePath(config, featureId);
+
+      try {
+        if (opts.json) {
+          // 输出拆分提议提示契约，供 AI 读取后填充 sub-change-map.md 草稿。
+          // 前置条件：explore 完成后即可拆分（exploration.md 存在）；
+          // 若 exploration.md 不存在（老 Feature 或未走 explore），回退到 spec.md + scope.md。
+          const storage = getStorage();
+          const explorationExists = await storage.exists(`${featurePath}/exploration.md`);
+          const specExists = await storage.exists(`${featurePath}/spec.md`);
+          const scopeExists = await storage.exists(`${featurePath}/scope.md`);
+          if (!explorationExists && (!specExists || !scopeExists)) {
+            throw new Error(
+              `Cannot split: exploration.md must exist (complete explore stage first), or spec.md and scope.md must exist (complete spec and scope stages first).`,
+            );
+          }
+          const instruction = explorationExists
+            ? 'Read exploration.md (and sub-change-map.md if explore already proposed), then propose/refine sub-change divisions.'
+            : 'Read spec.md and scope.md, then propose sub-change divisions.';
+          const contract = {
+            action: 'feature-split-proposal',
+            featureId,
+            instruction,
+            principles: [
+              '功能内聚：每个子变更应是一组紧密相关的改动',
+              '可独立验证：每个子变更可独立完成 verify',
+              '依赖最小化：尽量减少子变更间依赖',
+              '一层嵌套：子变更不能再拆子变更',
+            ],
+            schema: {
+              subChanges: [
+                {
+                  id: 'SC-<feature>-<NN>',
+                  name: 'kebab-case-name',
+                  goal: '一句话目标',
+                  dependsOn: ['SC-<feature>-<NN>', '...'],
+                },
+              ],
+            },
+            output: 'Write the proposal as sub-change-map.md (draft), then run `sovei feature split <id>` without --json to confirm.',
+          };
+          console.log(JSON.stringify(contract, null, 2));
+          return;
+        }
+
+        // 执行拆分：读取 sub-change-map.md（AI 已填充），解析后调用 engine.splitFeature
+        const storage = getStorage();
+        const mapPath = `${featurePath}/sub-change-map.md`;
+        const mapExists = await storage.exists(mapPath);
+        if (!mapExists) {
+          throw new Error(
+            `sub-change-map.md not found. Run \`sovei feature split ${featureId} --json\` first to get the proposal contract, `
+            + 'fill it with AI, then re-run this command to confirm the split.',
+          );
+        }
+        const mapContent = await storage.read(mapPath);
+        if (!mapContent) {
+          throw new Error('sub-change-map.md is empty or unreadable.');
+        }
+        const subChanges = parseSubChangeMap(mapContent);
+        if (subChanges.length === 0) {
+          throw new Error('No sub-changes found in sub-change-map.md. Ensure the table is filled.');
+        }
+
+        const engine = container.inject<WorkflowEngine>(TOKENS.WorkflowEngine);
+        const newState = await engine.splitFeature(featureId, subChanges);
+
+        console.log('');
+        console.log(`  ✓ Feature ${featureId} 已拆分为 ${newState.subChanges.length} 个子变更`);
+        console.log('');
+        console.log('  子变更清单：');
+        for (const sc of newState.subChanges) {
+          const dep = sc.dependsOn.length ? ` (依赖: ${sc.dependsOn.join(', ')})` : '';
+          console.log(`    · ${sc.id} — ${sc.name}${dep}`);
+        }
+        console.log('');
+        console.log('  推进方式：');
+        console.log(`    sovei workflow plan ${featureId} --sub-change <id>`);
+        console.log('');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('\n  ✗ ' + message + '\n');
+        process.exitCode = 1;
+      }
+    });
+
+  // ── sub-change ──
+  const subChange = feature.command('sub-change').description('子变更管理');
+
+  subChange
+    .command('list')
+    .description('列出 Feature 的所有子变更及其状态')
+    .argument('<id>', 'Feature ID')
+    .option('--json', '输出结构化 JSON')
+    .action(async (featureId: string, opts: { json?: boolean }) => {
+      try {
+        const engine = container.inject<WorkflowEngine>(TOKENS.WorkflowEngine);
+        const list = await engine.listSubChanges(featureId);
+
+        if (opts.json) {
+          console.log(JSON.stringify(list, null, 2));
+          return;
+        }
+
+        if (list.length === 0) {
+          console.log(`\n  Feature ${featureId} 无子变更（未拆分）\n`);
+          return;
+        }
+
+        console.log('');
+        console.log(`  Feature ${featureId} 子变更清单（${list.length}）`);
+        console.log('');
+        for (const sc of list) {
+          const blockedTag = sc.blocked ? ` [阻塞: ${sc.blockedBy.join(',')}]` : '';
+          const stageTag = sc.currentStage ? ` @ ${sc.currentStage}` : '';
+          console.log(`  ${sc.id}  ${sc.name}  — ${sc.status}${stageTag}${blockedTag}`);
+          console.log(`    目标：${sc.goal}`);
+          if (sc.dependsOn.length) {
+            console.log(`    依赖：${sc.dependsOn.join(', ')}`);
+          }
+          console.log('');
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('\n  ✗ ' + message + '\n');
+        process.exitCode = 1;
+      }
+    });
+}
+
+/**
+ * Parse sub-change-map.md table into structured sub-change definitions.
+ * Expects markdown table rows: `| SC-id | name | goal | deps | status |`
+ */
+function parseSubChangeMap(content: string): Array<{ id: string; name: string; goal: string; dependsOn: string[] }> {
+  const result: Array<{ id: string; name: string; goal: string; dependsOn: string[] }> = [];
+  const lines = content.split('\n');
+  for (const line of lines) {
+    // Match table rows starting with | SC-
+    const match = line.match(/^\|\s*(SC-[^\s|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]*)\s*\|\s*([^|]*)\s*\|/);
+    if (!match) continue;
+    const [, id, name, goal, deps] = match;
+    const dependsOn = deps.trim() === '—' || deps.trim() === '' || deps.trim() === '-'
+      ? []
+      : deps.split(',').map((d) => d.trim()).filter(Boolean);
+    result.push({ id: id.trim(), name: name.trim(), goal: goal.trim(), dependsOn });
+  }
+  return result;
 }

@@ -2,7 +2,7 @@ node_modules/
 .pnpm-store/
 packages/sovei-core/dist/
 *.log
-harness/project/usage.jsonl
+sovei-flow/project/usage.jsonl
 
 # Embedded separate repository (public scaffold), not part of the harness repo
 public-repo/

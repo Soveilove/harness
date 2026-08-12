@@ -3,7 +3,7 @@ import type { ContextShadowSummary } from '../context/policy.js';
 import type { StorageBackend } from '../storage/types.js';
 
 export const USAGE_SCHEMA_VERSION = 1 as const;
-export const USAGE_FILE = 'harness/project/usage.jsonl';
+export const USAGE_FILE = 'sovei-flow/project/usage.jsonl';
 
 export const UsageTokenStatusSchema = z.enum(['known', 'unknown']);
 export type UsageTokenStatus = z.infer<typeof UsageTokenStatusSchema>;

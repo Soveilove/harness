@@ -20,10 +20,10 @@ import type {
   ConflictResolution,
 } from './types.js';
 
-const REDLINES_PATH = 'harness/project/governance/redlines.json';
-const REDLINE_EVENTS_PATH = 'harness/project/governance/redline-events.jsonl';
-const PREFLIGHT_EVENTS_PATH = 'harness/project/governance/preflight-events.jsonl';
-const KNOWLEDGE_DIR = 'harness/project/knowledge';
+const REDLINES_PATH = 'sovei-flow/project/governance/redlines.json';
+const REDLINE_EVENTS_PATH = 'sovei-flow/project/governance/redline-events.jsonl';
+const PREFLIGHT_EVENTS_PATH = 'sovei-flow/project/governance/preflight-events.jsonl';
+const KNOWLEDGE_DIR = 'sovei-flow/project/knowledge';
 const KNOWLEDGE_TYPES = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
 
 /**

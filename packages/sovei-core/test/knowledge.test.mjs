@@ -30,7 +30,7 @@ test('knowledge dispatch enforces schema, evidence, and unique IDs', () => {
 
 test('knowledge load reports invalid persisted data instead of silently skipping it', async () => {
   const storage = new MemoryStorage();
-  await storage.write('harness/project/knowledge/rule.json', '[{"id":"broken"}]');
+  await storage.write('sovei-flow/project/knowledge/rule.json', '[{"id":"broken"}]');
   const store = new KnowledgeStore(storage);
   await assert.rejects(store.load(), /Invalid knowledge file/);
 });

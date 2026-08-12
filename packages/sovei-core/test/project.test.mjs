@@ -17,7 +17,7 @@ async function fixture(run) {
 
 test('loadConfig reads and merges the project declaration', async () => {
   await fixture(async (root) => {
-    const directory = join(root, 'harness', 'project');
+    const directory = join(root, 'sovei-flow', 'project');
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'project.config.json'), JSON.stringify({
       project: { name: 'real-project', techStack: { framework: 'vue' } },
@@ -26,7 +26,7 @@ test('loadConfig reads and merges the project declaration', async () => {
     const config = loadConfig(root);
     assert.equal(config.project.name, 'real-project');
     assert.equal(config.project.techStack.framework, 'vue');
-    assert.equal(config.workflow.stageOrder.length, 12);
+    assert.equal(config.workflow.stageOrder.length, 13);
   });
 });
 
@@ -36,17 +36,17 @@ test('project init writes to its path argument, not the global root', async () =
     const target = join(root, 'new-project');
     await mkdir(commandRoot, { recursive: true });
     await execFileAsync(process.execPath, [cli, '--root', commandRoot, 'project', 'init', target, '--blank']);
-    const declaration = JSON.parse(await readFile(join(target, 'harness', 'project', 'project.config.json'), 'utf8'));
+    const declaration = JSON.parse(await readFile(join(target, 'sovei-flow', 'project', 'project.config.json'), 'utf8'));
     assert.equal(declaration.project.name, 'new-project');
     assert.deepEqual(
-      JSON.parse(await readFile(join(target, 'harness', 'project', 'governance', 'redlines.json'), 'utf8')),
+      JSON.parse(await readFile(join(target, 'sovei-flow', 'project', 'governance', 'redlines.json'), 'utf8')),
       [],
     );
     assert.deepEqual(
-      JSON.parse(await readFile(join(target, 'harness', 'project', 'rules', 'project.rules.json'), 'utf8')),
+      JSON.parse(await readFile(join(target, 'sovei-flow', 'project', 'rules', 'project.rules.json'), 'utf8')),
       { schemaVersion: 1, rules: [] },
     );
-    await assert.rejects(access(join(commandRoot, 'harness', 'project', 'project.config.json')));
+    await assert.rejects(access(join(commandRoot, 'sovei-flow', 'project', 'project.config.json')));
   });
 });
 
@@ -54,7 +54,7 @@ test('non-blank project init also keeps the Rules container empty', async () => 
   await fixture(async (root) => {
     const target = join(root, 'new-project');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--name', 'new-project']);
-    const document = JSON.parse(await readFile(join(target, 'harness', 'project', 'rules', 'project.rules.json'), 'utf8'));
+    const document = JSON.parse(await readFile(join(target, 'sovei-flow', 'project', 'rules', 'project.rules.json'), 'utf8'));
     assert.deepEqual(document, { schemaVersion: 1, rules: [] });
   });
 });
@@ -64,7 +64,12 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'bootstrap', '001-chinese-output']);
     assert.match(stdout, /已初始化 Feature：001-chinese-output/);
     assert.match(stdout, /Sovei 工作流状态/);
-    assert.match(stdout, /下一步命令：\s+sovei workflow load 001-chinese-output/);
+    assert.match(stdout, /下一步命令：\s+sovei workflow explore 001-chinese-output/);
+    // Complete explore stage first (now the entry stage)
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '001-chinese-output', '--brief', 'test requirement']);
+    await writeFile(join(root, 'specs', '001-chinese-output', 'exploration.md'), '# 需求探索\n\n核心目标。', 'utf8');
+    await writeFile(join(root, 'specs', '001-chinese-output', 'sub-change-map.md'), 'no-split', 'utf8');
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '001-chinese-output', '--complete']);
     await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output']);
     await writeFile(join(root, 'specs', '001-chinese-output', 'load-summary.md'), '# 加载摘要\n\n代码库现状摘要。', 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output', '--complete']);
@@ -77,21 +82,21 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
 test('project init preserves an existing project declaration and AGENTS.md without --force', async () => {
   await fixture(async (root) => {
     const target = join(root, 'existing-project');
-    await mkdir(join(target, 'harness', 'project'), { recursive: true });
+    await mkdir(join(target, 'sovei-flow', 'project'), { recursive: true });
     const customAgents = '# Custom AGENTS\n\nManually maintained guidance.\n';
     const customConfig = JSON.stringify({ project: { name: 'existing-project' }, workflow: { version: '2.3.2' } }, null, 2);
     await writeFile(join(target, 'AGENTS.md'), customAgents, 'utf8');
-    await writeFile(join(target, 'harness', 'project', 'project.config.json'), customConfig, 'utf8');
+    await writeFile(join(target, 'sovei-flow', 'project', 'project.config.json'), customConfig, 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank']);
     assert.equal(await readFile(join(target, 'AGENTS.md'), 'utf8'), customAgents);
-    assert.equal(await readFile(join(target, 'harness', 'project', 'project.config.json'), 'utf8'), customConfig);
+    assert.equal(await readFile(join(target, 'sovei-flow', 'project', 'project.config.json'), 'utf8'), customConfig);
   });
 });
 
 test('project init --force overwrites an existing AGENTS.md', async () => {
   await fixture(async (root) => {
     const target = join(root, 'existing-project');
-    await mkdir(join(target, 'harness', 'project'), { recursive: true });
+    await mkdir(join(target, 'sovei-flow', 'project'), { recursive: true });
     await writeFile(join(target, 'AGENTS.md'), '# Custom AGENTS\n\nManually maintained guidance.\n', 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank', '--force']);
     const content = await readFile(join(target, 'AGENTS.md'), 'utf8');
@@ -114,13 +119,13 @@ test('onboard is idempotent for generated candidate knowledge', async () => {
   await fixture(async (root) => {
     await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'existing-app', dependencies: { vue: '^3.0.0' } }), 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'onboard']);
-    const first = JSON.parse(await readFile(join(root, 'harness', 'project', 'knowledge', 'code-map.json'), 'utf8'));
+    const first = JSON.parse(await readFile(join(root, 'sovei-flow', 'project', 'knowledge', 'code-map.json'), 'utf8'));
     first[0].lifecycle = 'stable';
     first[0].evidence = [first[0].evidence[0], { ...first[0].evidence[0], feature: 'review-2' }, { ...first[0].evidence[0], feature: 'review-3' }];
     first[0].promotedAt = new Date().toISOString();
-    await writeFile(join(root, 'harness', 'project', 'knowledge', 'code-map.json'), JSON.stringify(first), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'knowledge', 'code-map.json'), JSON.stringify(first), 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'onboard']);
-    const second = JSON.parse(await readFile(join(root, 'harness', 'project', 'knowledge', 'code-map.json'), 'utf8'));
+    const second = JSON.parse(await readFile(join(root, 'sovei-flow', 'project', 'knowledge', 'code-map.json'), 'utf8'));
     assert.equal(second.length, first.length);
     assert.deepEqual(second.map((entry) => entry.id), first.map((entry) => entry.id));
     assert.equal(second[0].lifecycle, 'stable');
@@ -151,24 +156,24 @@ test('onboard reports nested packages while preserving root project identity', a
     assert.match(stdout, /未发现项目原有 Agent\/IDE Rules，未生成规范候选/);
     assert.match(stdout, /packages\/tool \(@example\/tool\)/);
     assert.match(stdout, /入口：packages\/tool\/dist\/cli\.js/);
-    const declaration = JSON.parse(await readFile(join(root, 'harness', 'project', 'project.config.json'), 'utf8'));
+    const declaration = JSON.parse(await readFile(join(root, 'sovei-flow', 'project', 'project.config.json'), 'utf8'));
     assert.equal(declaration.project.name, 'root-project');
     assert.equal(declaration.project.description, 'Root authority');
     assert.equal(declaration.project.techStack.language, 'TypeScript');
-    const codeMap = JSON.parse(await readFile(join(root, 'harness', 'project', 'knowledge', 'code-map.json'), 'utf8'));
+    const codeMap = JSON.parse(await readFile(join(root, 'sovei-flow', 'project', 'knowledge', 'code-map.json'), 'utf8'));
     assert.equal(codeMap[0].lifecycle, 'candidate');
     assert.match(codeMap[0].content, /packages\/tool \(`@example\/tool`\)/);
     assert.match(codeMap[0].content, /packages\/tool\/dist\/cli\.js/);
-    const businessMap = JSON.parse(await readFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), 'utf8'));
+    const businessMap = JSON.parse(await readFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), 'utf8'));
     assert.equal(businessMap.lifecycle, 'candidate');
     assert.equal(businessMap.generator.mode, 'builtin-static-analysis');
-    await assert.rejects(access(join(root, 'harness', 'project', 'rules', 'adapted.rules.json')));
+    await assert.rejects(access(join(root, 'sovei-flow', 'project', 'rules', 'adapted.rules.json')));
   });
 });
 
 test('loadConfig warns on workflow.version mismatch', async () => {
   await fixture(async (root) => {
-    const directory = join(root, 'harness', 'project');
+    const directory = join(root, 'sovei-flow', 'project');
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'project.config.json'), JSON.stringify({
       project: { name: 'test-project' },
@@ -192,7 +197,7 @@ test('loadConfig warns on workflow.version mismatch', async () => {
 
 test('loadConfig does not warn when workflow.version matches', async () => {
   await fixture(async (root) => {
-    const directory = join(root, 'harness', 'project');
+    const directory = join(root, 'sovei-flow', 'project');
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'project.config.json'), JSON.stringify({
       project: { name: 'test-project' },
@@ -215,7 +220,7 @@ test('loadConfig does not warn when workflow.version matches', async () => {
 test('rules CLI deprecates a rule with reviewer evidence', async () => {
   await fixture(async (root) => {
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank']);
-    const rulesDir = join(root, 'harness', 'project', 'rules');
+    const rulesDir = join(root, 'sovei-flow', 'project', 'rules');
     await mkdir(rulesDir, { recursive: true });
     await writeFile(join(rulesDir, 'project.rules.json'), JSON.stringify({
       schemaVersion: 1,

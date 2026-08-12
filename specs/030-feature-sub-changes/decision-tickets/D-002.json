@@ -1,0 +1,20 @@
+{
+  "id": "D-002",
+  "title": "子变更事件类型设计",
+  "question": "需要哪些新事件类型",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "新增4个事件类型:SUBCHANGE_CREATED(id,name,goal,dependsOn)/SUBCHANGE_STAGE_PREPARE/SUBCHANGE_STAGE_COMPLETE(推进currentStage)/SUBCHANGE_MERGED(完成verify后合并到父)。所有事件带subChangeId字段,顶层事件为null。复用现有STAGE_PREPARE/STAGE_COMPLETE的reducer模式但路由到子变更状态",
+  "evidence": [
+    "state-machine.ts事件联合",
+    "decision-log.md I3"
+  ],
+  "contextPointers": [],
+  "exclusionReason": null,
+  "createdAt": "2026-08-12T16:09:07.316Z",
+  "updatedAt": "2026-08-12T16:09:31.615Z",
+  "resolvedAt": "2026-08-12T16:09:31.615Z"
+}

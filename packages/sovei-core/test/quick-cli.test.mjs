@@ -18,7 +18,7 @@ test('quick CLI escalates when the target scope is not explicit', async () => {
     assert.equal(result.run.status, 'escalated');
     assert.equal(result.run.phase, 'report');
     assert.equal(result.git, null);
-    const usage = await readFile(join(root, 'harness', 'project', 'usage.jsonl'), 'utf8');
+    const usage = await readFile(join(root, 'sovei-flow', 'project', 'usage.jsonl'), 'utf8');
     assert.match(usage, /"event":"run-start"/);
     assert.match(usage, /"event":"context-selected"/);
     assert.match(usage, /"event":"run-end"/);
@@ -45,7 +45,7 @@ test('quick CLI completes only when the real diff stays in scope', async () => {
     assert.equal(result.run.status, 'completed');
     assert.deepEqual(result.run.actualDiff, ['target.txt']);
     assert.equal(result.git.status, 'verified');
-    assert.equal(await readFile(join(root, 'harness', 'project', 'usage.jsonl'), 'utf8').then((value) => value.includes('workflow-events')), false);
+    assert.equal(await readFile(join(root, 'sovei-flow', 'project', 'usage.jsonl'), 'utf8').then((value) => value.includes('workflow-events')), false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -77,12 +77,12 @@ test('project init preserves usage history and adds the quick declaration', asyn
   const root = await mkdtemp(join(tmpdir(), 'sovei-quick-init-'));
   try {
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank']);
-    const usagePath = join(root, 'harness', 'project', 'usage.jsonl');
+    const usagePath = join(root, 'sovei-flow', 'project', 'usage.jsonl');
     await writeFile(usagePath, 'historical-event\n', 'utf8');
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank', '--force']);
     assert.equal(await readFile(usagePath, 'utf8'), 'historical-event\n');
     assert.match(await readFile(join(root, 'AGENTS.md'), 'utf8'), /sovei quick <target>/);
-    assert.match(await readFile(join(root, '.gitignore'), 'utf8'), /harness\/project\/usage\.jsonl/);
+    assert.match(await readFile(join(root, '.gitignore'), 'utf8'), /sovei-flow\/project\/usage\.jsonl/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

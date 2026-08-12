@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   DEFAULT_WORKFLOW,
+  EventStore,
   KnowledgeStore,
   MemoryStorage,
   WorkflowEngine,
@@ -13,8 +14,8 @@ const logger = { info() {}, warn() {}, error() {}, debug() {} };
 const config = {
   rootPath: '.',
   specsDir: 'specs',
-  knowledgeDir: 'harness/project/knowledge',
-  harnessDir: 'harness',
+  knowledgeDir: 'sovei-flow/project/knowledge',
+  harnessDir: 'sovei-flow',
   project: { name: 'test', description: 'test', techStack: {}, started: '2026-01-01' },
   workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
 };
@@ -36,7 +37,7 @@ function createEngineWithSkill() {
     id: 'mattpocock/grilling',
     name: 'grilling',
     version: '1.0.0',
-    source: { type: 'path', locator: 'harness/vendor/mattpocock/skills/productivity/grilling' },
+    source: { type: 'path', locator: 'sovei-flow/vendor/mattpocock/skills/productivity/grilling' },
     supportedStages: ['grill'],
     readOnly: true,
     protocolVersion: '1.0.0',
@@ -57,9 +58,19 @@ function createEngineWithoutSkill() {
   return { storage, engine: new WorkflowEngine(storage, knowledgeStore, logger, config) };
 }
 
+/** Fast-forward through explore stage (first stage) so tests can operate on load+. */
+async function skipExplore(storage, featureId) {
+  const events = new EventStore(storage);
+  const path = `specs/${featureId}`;
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
+  await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
+}
+
 test('prepareStage with external skill injects skill body into prompt', async () => {
   const { storage, engine } = createEngineWithSkill();
   await engine.bootstrap('test-skill');
+  await skipExplore(storage, 'test-skill');
   await engine.prepareStage('test-skill', 'load');
   await storage.write('specs/test-skill/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-skill', 'load');
@@ -81,6 +92,7 @@ test('prepareStage with external skill injects skill body into prompt', async ()
 test('prepareStage without skill resolver uses native mode', async () => {
   const { storage, engine } = createEngineWithoutSkill();
   await engine.bootstrap('test-native');
+  await skipExplore(storage, 'test-native');
   await engine.prepareStage('test-native', 'load');
   await storage.write('specs/test-native/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-native', 'load');
@@ -105,6 +117,7 @@ test('prepareStage falls back when adapter not registered', async () => {
 
   const engine = new WorkflowEngine(storage, knowledgeStore, logger, config, registry);
   await engine.bootstrap('test-fallback');
+  await skipExplore(storage, 'test-fallback');
   await engine.prepareStage('test-fallback', 'load');
   await storage.write('specs/test-fallback/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-fallback', 'load');
@@ -122,6 +135,7 @@ test('prepareStage falls back when adapter not registered', async () => {
 test('prompt structure: authority notice → skill body → stage contract', async () => {
   const { storage, engine } = createEngineWithSkill();
   await engine.bootstrap('test-order');
+  await skipExplore(storage, 'test-order');
   await engine.prepareStage('test-order', 'load');
   await storage.write('specs/test-order/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
   await engine.completeStage('test-order', 'load');

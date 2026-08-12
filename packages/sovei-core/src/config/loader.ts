@@ -9,15 +9,15 @@ import { join } from 'node:path';
 import { parseProjectJson } from './json.js';
 
 const DEFAULT_STAGE_ORDER = [
-  'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ];
 
 const DEFAULT_CONFIG: Omit<SoveiConfig, 'rootPath'> = {
   specsDir: 'specs',
-  knowledgeDir: 'harness/project/knowledge',
-  rulesDir: 'harness/project/rules',
-  harnessDir: 'harness',
+  knowledgeDir: 'sovei-flow/project/knowledge',
+  rulesDir: 'sovei-flow/project/rules',
+  harnessDir: 'sovei-flow',
   project: {
     name: 'untitled',
     description: 'New project - configure me',
@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: Omit<SoveiConfig, 'rootPath'> = {
 };
 
 export function loadConfig(rootPath: string): SoveiConfig {
-  const configPath = join(rootPath, 'harness', 'project', 'project.config.json');
+  const configPath = join(rootPath, 'sovei-flow', 'project', 'project.config.json');
   let configured: Partial<SoveiConfig> = {};
   try {
     configured = parseProjectJson<Partial<SoveiConfig>>(readFileSync(configPath, 'utf8'), configPath);
@@ -42,14 +42,14 @@ export function loadConfig(rootPath: string): SoveiConfig {
   }
   const configuredOrder = configured.workflow?.stageOrder;
   if (configuredOrder) {
+    // Relaxed validation: allow configs that predate 'explore' (12-stage) for
+    // backward compat. Only reject unknown stages and duplicates.
     const unknown = configuredOrder.filter((stage) => !DEFAULT_STAGE_ORDER.includes(stage));
-    if (
-      unknown.length
-      || configuredOrder.length !== DEFAULT_STAGE_ORDER.length
-      || new Set(configuredOrder).size !== configuredOrder.length
-      || DEFAULT_STAGE_ORDER.some((stage) => !configuredOrder.includes(stage))
-    ) {
-      throw new Error(`Invalid workflow.stageOrder in ${configPath}`);
+    if (unknown.length || new Set(configuredOrder).size !== configuredOrder.length) {
+      throw new Error(
+        `Invalid workflow.stageOrder in ${configPath}: unknown stages [${unknown.join(', ')}] or duplicates. ` +
+        `Expected a subset of: ${DEFAULT_STAGE_ORDER.join(', ')}`,
+      );
     }
   }
   const configuredVersion = configured.workflow?.version;
@@ -57,7 +57,7 @@ export function loadConfig(rootPath: string): SoveiConfig {
     process.stderr.write(
       `\n  \u26A0\uFE0F  workflow.version mismatch: project declares "${configuredVersion}", ` +
       `engine expects "${DEFAULT_CONFIG.workflow.version}"\n` +
-      `     If this is intentional, update harness/project/project.config.json to match.\n` +
+      `     If this is intentional, update sovei-flow/project/project.config.json to match.\n` +
       `     If unsure, run: sovei project init --force\n\n`,
     );
   }

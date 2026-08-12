@@ -12,7 +12,7 @@
 
 // Engine
 export { WorkflowEngine, DEFAULT_WORKFLOW } from './engine/workflow-engine.js';
-export { workflowReducer, createInitialState, canExecuteStage } from './engine/state-machine.js';
+export { workflowReducer, createInitialState, canExecuteStage, aggregationGate } from './engine/state-machine.js';
 export { EventStore } from './engine/event-store.js';
 export type * from './engine/types.js';
 

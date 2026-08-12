@@ -14,6 +14,77 @@ import { stageRegistry } from './registry.js';
 import { parseLearningReport, reconcileObservations, formatReconcileReport } from '../knowledge/reconcile.js';
 
 // ──────────────────────────────────────────────
+// explore - PRD + 业务理解 → 需求拆分提议（工作流第 1 阶段）
+// ──────────────────────────────────────────────
+export const exploreStage = defineStage({
+  name: 'explore',
+  description: '读 PRD + 业务覆盖面 → 需求理解 + 拆分提议',
+  contract: {
+    requiredArtifacts: [],
+    producesArtifacts: ['exploration.md', 'sub-change-map.md'],
+  },
+  async preExecute(ctx) {
+    await ctx.knowledge.loadByTaskType('general');
+  },
+  async execute(ctx) {
+    return {
+      stage: 'explore',
+      artifactsWritten: ['exploration.md', 'sub-change-map.md'],
+      nextStage: 'load',
+      blockers: [],
+      knowledgeSourcesUsed: ctx.knowledge.getLoadedSources(),
+      prompt: `# 阶段：explore
+
+## 输入
+- PRD 文件（specs/<feature>/prd.md）或 brief 描述（specs/<feature>/brief.md）
+- 业务覆盖面报告（sovei-flow/project/business-coverage.md）
+- 能力依赖图（sovei-flow/project/business-map.json，可选）
+
+## 操作
+
+### 1. PRD 摘要
+读取 PRD/brief，提炼需求核心目标、关键功能项、非功能需求。
+
+### 2. 业务关联
+对照 business-coverage.md，标注：
+- 哪些需求项属于本项目范围内（已有业务实体覆盖）
+- 哪些需求项是全新业务域（需扩展业务覆盖面）
+- 哪些需求项可能涉及其他系统（外部依赖）
+
+### 3. 拆分提议
+基于需求功能域划分，评估是否需要拆分为子变更：
+- **拆分信号**：需求包含 ≥ 2 个可独立验证的功能域；或涉及多个业务模块且耦合低。
+- **不拆分信号**：单一功能域；或需求范围明确且模块间强耦合。
+- **如建议拆分**：列出子变更清单（SC-ID / 名称 / 目标 / 依赖），填入 sub-change-map.md。
+- **如不建议拆分**：sub-change-map.md 写 "no-split"。
+
+explore 阶段不读代码——代码现状探索是 load 阶段的职责。
+
+## 输出
+exploration.md，包含：
+- PRD 摘要（核心目标 + 功能项 + 非功能需求）
+- 业务关联分析（范围内 / 全新域 / 外部依赖）
+- 拆分建议理由
+
+sub-change-map.md，包含：
+- 拆分提议表（SC-ID / 名称 / 目标 / 依赖）或 "no-split"
+- 用户确认后运行 \`sovei feature split <feature> --json\` 执行拆分
+
+## 停止条件
+PRD/brief 不存在；或 business-coverage.md 不存在且无法推断业务边界。
+`,
+    };
+  },
+  async postExecute(ctx) {
+    const exploration = await ctx.artifacts.read('exploration.md');
+    if (!exploration) throw new Error('exploration.md not generated');
+    // sub-change-map.md 可能是 "no-split"，只要存在即可
+    const map = await ctx.artifacts.read('sub-change-map.md');
+    if (!map) throw new Error('sub-change-map.md not generated');
+  },
+});
+
+// ──────────────────────────────────────────────
 // load - Initialize or resume a feature
 // ──────────────────────────────────────────────
 export const loadStage = defineStage({
@@ -299,6 +370,19 @@ scope.md 和 coverage-matrix.md；缺少证据的判断标记为 candidate。
 ## 必需覆盖
 入口/路由 → UI 状态 → store/service → 参数 → API → 鉴权/计费 → 异步回调 →
 成功/失败/清理 → 历史/详情/重试 → 兼容入口 → 测试/文档/运行时证据。
+
+## 拆分修正（基于代码影响面）
+
+完成 scope.md 和 coverage-matrix.md 后，基于代码影响面修正 explore 阶段的拆分提议：
+
+- **explore 已拆分**：验证拆分是否合理。若 scope 发现拆分不合理（模块间耦合高于预期），建议调整 sub-change-map.md。
+- **explore 未拆分（no-split）**：基于代码影响面重新评估。若发现影响模块 ≥ 4 个且耦合低，建议补做拆分。
+- **拆分信号**：影响模块 ≥ 4 个且模块间耦合低；或 plan 阶段预计 TASK ≥ 15 个；或涉及多个可独立验证的功能域。
+- **不拆分信号**：影响模块 ≤ 3 个；或模块间强耦合无法独立验证；或单一功能域的小改动。
+- **如建议调整/补做拆分**：运行 \`sovei feature split <feature> --json\` 获取拆分提议契约，AI 填充 sub-change-map.md 后执行拆分。
+- **如不建议拆分**：直接推进 plan 阶段（单管线模式，行为不变）。
+
+拆分是可选的——不拆分的 Feature 走当前单管线，完全向后兼容。
 `,
     };
   },
@@ -667,7 +751,7 @@ sync-report.md，包含目标、同步前后差异、受保护文件、命令结
 // Register all stages
 // ──────────────────────────────────────────────
 const allStages = [
-  loadStage, grillStage, wayfindStage, specStage, scopeStage, planStage,
+  exploreStage, loadStage, grillStage, wayfindStage, specStage, scopeStage, planStage,
   tasksStage, implementStage, convergeStage, verifyStage, learnStage, syncStage,
 ];
 

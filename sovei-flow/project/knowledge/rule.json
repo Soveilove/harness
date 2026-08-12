@@ -563,5 +563,30 @@
     "updatedAt": "2026-08-11T15:29:53.185Z",
     "promotedAt": null,
     "deprecatedReason": null
+  },
+  {
+    "id": "rule-聚合门禁独立于状态转移-门禁在引擎层拦截-reducer-保持纯函数-a5862305",
+    "type": "rule",
+    "title": "聚合门禁独立于状态转移：门禁在引擎层拦截，reducer 保持纯函数",
+    "content": ">",
+    "lifecycle": "candidate",
+    "evidence": [
+      {
+        "feature": "030-feature-sub-changes",
+        "date": "2026-08-12T16:33:29.933Z",
+        "description": "Feature 030：aggregationGate() 独立导出纯函数，prepareStage('learn') 调用检查全部 merged",
+        "verified": false
+      }
+    ],
+    "tags": [
+      "aggregation-gate",
+      "separation-of-concerns",
+      "workflow-engine"
+    ],
+    "scope": "project",
+    "createdAt": "2026-08-12T16:33:29.933Z",
+    "updatedAt": "2026-08-12T16:33:29.933Z",
+    "promotedAt": null,
+    "deprecatedReason": null
   }
 ]

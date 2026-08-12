@@ -97,8 +97,8 @@ test('summaryFeature: in_progress Feature 生成进度快照，未执行阶段�
 
   const markdown = await summaryFeature(storage, featurePath, 'wip-feature', false);
 
-  // 概览阶段进度为 1/12
-  assert.ok(markdown.includes('1/12'));
+  // 概览阶段进度为 1/13
+  assert.ok(markdown.includes('1/13'));
   // 需求从 load-summary.md 回退（无 spec.md），显示探索摘要
   assert.ok(markdown.includes('探索中'));
   // 关键决策降级（无 decision-log.md）

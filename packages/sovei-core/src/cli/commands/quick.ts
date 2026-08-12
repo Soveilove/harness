@@ -129,7 +129,7 @@ export function registerQuickCommands(program: Command): void {
       }
       console.log(`  确认：${result.confirmation}`);
       for (const line of result.report) console.log(`  · ${line}`);
-      console.log(`  usage：harness/project/usage.jsonl\n`);
+      console.log(`  usage：sovei-flow/project/usage.jsonl\n`);
     });
 }
 

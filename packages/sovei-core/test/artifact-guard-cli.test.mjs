@@ -60,9 +60,9 @@ function freshBusinessMap() {
 }
 
 async function writeProjectRoot(root) {
-  await mkdir(join(root, 'harness', 'project', 'codegraph'), { recursive: true });
-  await mkdir(join(root, 'harness', 'project', 'config'), { recursive: true });
-  await writeFile(join(root, 'harness', 'project', 'project.config.json'), JSON.stringify({
+  await mkdir(join(root, 'sovei-flow', 'project', 'codegraph'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'config'), { recursive: true });
+  await writeFile(join(root, 'sovei-flow', 'project', 'project.config.json'), JSON.stringify({
     project: { name: 'guard-test', techStack: {} },
     workflow: { version: '2.1.0' },
   }, null, 2), 'utf8');
@@ -71,7 +71,7 @@ async function writeProjectRoot(root) {
 test('map is blocked on stale business map without bypass', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     await assert.rejects(
       () => execFileAsync(process.execPath, [cli, '--root', root, 'project', 'map']),
       (err) => {
@@ -87,7 +87,7 @@ test('map is blocked on stale business map without bypass', async () => {
 test('map proceeds with --force bypass', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'map', '--force']);
     assert.match(stdout, /已放行旧产物读取/);
   });
@@ -96,7 +96,7 @@ test('map proceeds with --force bypass', async () => {
 test('map proceeds with --refresh alias bypass', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'map', '--refresh']);
     assert.match(stdout, /已放行旧产物读取/);
   });
@@ -105,7 +105,7 @@ test('map proceeds with --refresh alias bypass', async () => {
 test('map runs normally on a fresh business map', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), freshBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), freshBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'map']);
     assert.match(stdout, /支付/);
     assert.doesNotMatch(stdout, /已放行旧产物读取/);
@@ -115,7 +115,7 @@ test('map runs normally on a fresh business map', async () => {
 test('rescan --dry-run prints write-side refresh notice on stale artifacts', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'rescan', '--dry-run']);
     assert.match(stdout, /检测到旧版 onboarding 产物/);
     assert.match(stdout, /整体刷新/);
@@ -125,7 +125,7 @@ test('rescan --dry-run prints write-side refresh notice on stale artifacts', asy
 test('knowledge list is not blocked by stale artifacts (005 fix)', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'knowledge', 'list']);
     assert.doesNotMatch(stdout, /守卫拦截/);
   });
@@ -134,7 +134,7 @@ test('knowledge list is not blocked by stale artifacts (005 fix)', async () => {
 test('project status is not blocked by stale artifacts (005 fix)', async () => {
   await fixture(async (root) => {
     await writeProjectRoot(root);
-    await writeFile(join(root, 'harness', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'codegraph', 'business-map.json'), staleBusinessMap(), 'utf8');
     const { stdout } = await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'status']);
     assert.doesNotMatch(stdout, /守卫拦截/);
   });

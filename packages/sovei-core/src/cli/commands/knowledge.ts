@@ -79,7 +79,7 @@ export function registerKnowledgeCommands(program: Command): void {
     .action(async (opts: { type: string; title: string; content: string; tags?: string; feature?: string }) => {
       const store = getStore();
       const storage = container.inject<StorageBackend>(TOKENS.Storage);
-      await storage.withLock('harness/project/knowledge', async () => {
+      await storage.withLock('sovei-flow/project/knowledge', async () => {
         await store.load();
 
         const type = KnowledgeType.parse(opts.type);
@@ -117,7 +117,7 @@ export function registerKnowledgeCommands(program: Command): void {
     .action(async (id: string, opts: { to?: string; feature?: string; description?: string }) => {
       const store = getStore();
       const storage = container.inject<StorageBackend>(TOKENS.Storage);
-      await storage.withLock('harness/project/knowledge', async () => {
+      await storage.withLock('sovei-flow/project/knowledge', async () => {
         await store.load();
         const entry = store.selectById(id);
         if (!entry) {
@@ -167,7 +167,7 @@ export function registerKnowledgeCommands(program: Command): void {
     .action(async (id: string, opts: { reason: string }) => {
       const store = getStore();
       const storage = container.inject<StorageBackend>(TOKENS.Storage);
-      await storage.withLock('harness/project/knowledge', async () => {
+      await storage.withLock('sovei-flow/project/knowledge', async () => {
         await store.load();
         store.dispatch({ type: 'DEPRECATE', id, reason: opts.reason });
         await store.persist();

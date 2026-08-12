@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "031-explore-stage",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "grill 决策树已闭环，无未知决策需探索",
+  "revision": 0,
+  "updatedAt": "2026-08-12T17:40:11.779Z",
+  "ticketIndex": [],
+  "fog": []
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "featureId": "030-feature-sub-changes",
+  "destination": "实现 Feature 拆分为多个子变更的能力：AI 驱动拆分(scope 产物) + 依赖图并行 + 子变更独立 plan→verify + 父 Feature 聚合 learn→sync，向后兼容单管线",
+  "notes": "grill 已决：方案B粒度/独立游标/依赖图并行/新建SubChange实体/scope产物拆分。零运行时依赖+Node14兼容。",
+  "notRequiredReason": null,
+  "revision": 15,
+  "updatedAt": "2026-08-12T16:09:40.532Z",
+  "ticketIndex": [
+    {
+      "id": "D-001",
+      "title": "SubChange状态存储设计",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-002",
+      "title": "子变更事件类型设计",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-003",
+      "title": "父Feature门禁机制",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-004",
+      "title": "scope sub-change-map schema",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    },
+    {
+      "id": "D-005",
+      "title": "context build子变更聚焦",
+      "type": "research",
+      "interaction": "AFK",
+      "status": "resolved",
+      "blockedBy": [],
+      "claimedBy": null,
+      "claimExpiresAt": null
+    }
+  ],
+  "fog": []
+}

@@ -6,7 +6,7 @@
  * derived by replaying events through the reducer.
  */
 
-import type { WorkflowState, WorkflowEvent, WorkflowEventEntry } from './types.js';
+import type { WorkflowState, WorkflowEvent, WorkflowEventEntry, SubChangeState } from './types.js';
 import type { WorkflowDefinition } from './types.js';
 import { workflowReducer, createInitialState } from './state-machine.js';
 import type { StorageBackend } from '../storage/types.js';
@@ -76,7 +76,11 @@ export class EventStore {
       throw new Error('First event must be BOOTSTRAP');
     }
 
-    let state = createInitialState(firstEntry.event.featureId);
+    let state = createInitialState(
+      firstEntry.event.featureId,
+      workflow.stageOrder[0],
+      workflow.stageOrder[1] ?? null,
+    );
     for (const entry of events.slice(1)) {
       state = workflowReducer(state, entry.event, workflow);
     }
@@ -126,25 +130,70 @@ export class EventStore {
       `riskLevel: ${state.riskLevel}`,
       `blockers:`,
       ...(state.blockers.length ? state.blockers.map((b) => `  - ${JSON.stringify(b)}`) : ['  []']),
+      `subChanges:`,
+      ...(state.subChanges.length
+        ? state.subChanges.flatMap((sc) => [
+            `  - id: ${JSON.stringify(sc.id)}`,
+            `    name: ${JSON.stringify(sc.name)}`,
+            `    goal: ${JSON.stringify(sc.goal)}`,
+            `    dependsOn:`,
+            ...(sc.dependsOn.length ? sc.dependsOn.map((d) => `      - ${JSON.stringify(d)}`) : ['      []']),
+            `    currentStage: ${sc.currentStage ? JSON.stringify(sc.currentStage) : 'null'}`,
+            `    completedStages:`,
+            ...(sc.completedStages.length ? sc.completedStages.map((s) => `      - ${JSON.stringify(s)}`) : ['      []']),
+            `    completedTaskIds:`,
+            ...(sc.completedTaskIds.length ? sc.completedTaskIds.map((t) => `      - ${JSON.stringify(t)}`) : ['      []']),
+            `    status: ${sc.status}`,
+            `    createdAt: ${JSON.stringify(sc.createdAt)}`,
+          ])
+        : ['  []']),
       `updatedAt: ${JSON.stringify(state.updatedAt)}`,
     ];
     return lines.join('\n') + '\n';
   }
 
   private parseStateYaml(content: string): WorkflowState {
-    // Simple YAML parser for our own format
+    // Simple YAML parser for our own format.
+    // Top-level scalar/list fields use line-by-line parsing; the nested
+    // `subChanges` block (objects with nested arrays) is parsed by a
+    // dedicated block scanner.
     const state: Partial<WorkflowState> = {
       completedStages: [],
       reopenedStages: [],
       completedTaskIds: [],
       activeChangeId: null,
       blockers: [],
+      subChanges: [],
     };
     let currentList: string[] | null = null;
 
-    for (const line of content.split('\n')) {
+    const lines = content.split('\n');
+
+    // ── Extract the subChanges block first (nested objects) ──
+    state.subChanges = this.parseSubChangesBlock(lines);
+
+    // ── Line-by-line parse for top-level fields ──
+    // Skip the subChanges block entirely so its nested `  - ` entries
+    // don't get misinterpreted as top-level list items.
+    let inSubChangesBlock = false;
+    for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith('#')) continue;
+
+      // Detect entering the subChanges block
+      if (/^subChanges:\s*$/.test(trimmed)) {
+        inSubChangesBlock = true;
+        currentList = null;
+        continue;
+      }
+      // Detect leaving the subChanges block (next top-level key at column 0)
+      if (inSubChangesBlock) {
+        if (/^[^\s-]/.test(line)) {
+          inSubChangesBlock = false;
+        } else {
+          continue; // still inside subChanges block
+        }
+      }
 
       if (line.startsWith('  - ')) {
         const value = JSON.parse(trimmed.slice(2));
@@ -192,6 +241,10 @@ export class EventStore {
         case 'blockers':
           currentList = state.blockers!;
           break;
+        case 'subChanges':
+          // Handled by parseSubChangesBlock above; just reset currentList.
+          currentList = null;
+          break;
         case 'updatedAt':
           state.updatedAt = JSON.parse(value);
           break;
@@ -199,5 +252,145 @@ export class EventStore {
     }
 
     return state as WorkflowState;
+  }
+
+  /**
+   * Parse the `subChanges:` block — a list of nested objects.
+   * Format:
+   *   subChanges:
+   *     - id: "SC-030-01"
+   *       name: "foo"
+   *       goal: "..."
+   *       dependsOn:
+   *         - "SC-030-00"
+   *       currentStage: "plan"
+   *       completedStages:
+   *         - "plan"
+   *       completedTaskIds: []
+   *       status: planning
+   *       createdAt: "..."
+   *
+   * Returns [] when the block is missing or `[]`.
+   */
+  private parseSubChangesBlock(lines: string[]): SubChangeState[] {
+    let startIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^subChanges:\s*$/.test(lines[i].trim())) {
+        startIdx = i + 1;
+        break;
+      }
+    }
+    if (startIdx < 0) return [];
+
+    // Collect block body until the next top-level (column-0) key.
+    const body: string[] = [];
+    for (let i = startIdx; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.trim() === '') continue;
+      if (/^[^\s-]/.test(line)) break; // next top-level key
+      body.push(line);
+    }
+    if (body.length === 0) return [];
+    if (body.length === 1 && body[0].trim() === '[]') return [];
+
+    const result: SubChangeState[] = [];
+    let current: Partial<SubChangeState> | null = null;
+    let nestedList: string[] | null = null;
+
+    for (const line of body) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+
+      // New sub-change entry: `  - id: "..."`
+      const entryMatch = line.match(/^  - id:\s*(.+)$/);
+      if (entryMatch) {
+        if (current) result.push(current as SubChangeState);
+        current = {
+          dependsOn: [],
+          completedStages: [],
+          completedTaskIds: [],
+        };
+        nestedList = null;
+        current.id = this.parseScalar(entryMatch[1].trim());
+        continue;
+      }
+
+      if (!current) continue;
+
+      // Nested list item under a sub-change field: `      - "..."`
+      const nestedItemMatch = line.match(/^      - (.+)$/);
+      if (nestedItemMatch && nestedList) {
+        nestedList.push(this.parseScalar(nestedItemMatch[1].trim()));
+        continue;
+      }
+
+      // Sub-change field: `    name: "..."`, `    dependsOn:`, etc.
+      const fieldMatch = line.match(/^    (\w+):\s*(.*)$/);
+      if (fieldMatch) {
+        const key = fieldMatch[1];
+        const value = fieldMatch[2].trim();
+        nestedList = null;
+        switch (key) {
+          case 'id':
+            current.id = this.parseScalar(value);
+            break;
+          case 'name':
+            current.name = this.parseScalar(value);
+            break;
+          case 'goal':
+            current.goal = this.parseScalar(value);
+            break;
+          case 'dependsOn':
+            if (value === '[]' || value === '') {
+              current.dependsOn = [];
+            } else {
+              current.dependsOn = [];
+              nestedList = current.dependsOn;
+            }
+            break;
+          case 'currentStage':
+            current.currentStage = value === 'null' ? null : this.parseScalar(value);
+            break;
+          case 'completedStages':
+            if (value === '[]' || value === '') {
+              current.completedStages = [];
+            } else {
+              current.completedStages = [];
+              nestedList = current.completedStages;
+            }
+            break;
+          case 'completedTaskIds':
+            if (value === '[]' || value === '') {
+              current.completedTaskIds = [];
+            } else {
+              current.completedTaskIds = [];
+              nestedList = current.completedTaskIds;
+            }
+            break;
+          case 'status':
+            current.status = value as SubChangeState['status'];
+            break;
+          case 'createdAt':
+            current.createdAt = this.parseScalar(value);
+            break;
+        }
+      }
+    }
+    if (current) result.push(current as SubChangeState);
+    return result;
+  }
+
+  /** Parse a YAML scalar: strip surrounding quotes, handle null. */
+  private parseScalar(value: string): string {
+    if (value === 'null') return '';
+    // JSON-style quoted string
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value.slice(1, -1);
+      }
+    }
+    return value;
   }
 }

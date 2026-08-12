@@ -40,7 +40,7 @@ export class KnowledgeStore {
   private storage: StorageBackend;
   private knowledgeDir: string;
 
-  constructor(storage: StorageBackend, knowledgeDir = 'harness/project/knowledge') {
+  constructor(storage: StorageBackend, knowledgeDir = 'sovei-flow/project/knowledge') {
     this.storage = storage;
     this.knowledgeDir = knowledgeDir;
   }

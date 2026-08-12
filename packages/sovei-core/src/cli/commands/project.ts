@@ -19,7 +19,8 @@ import { VERSION } from '../../config/version.js';
 import { ARTIFACT_FILES, assertArtifactsCurrent, getStaleArtifactVersion } from '../../config/artifact-version-guard.js';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from '../../config/tech-stack.js';
 import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import { rename, access } from 'node:fs/promises';
+import { resolve, join } from 'node:path';
 import { emptyRulesDocument, ProjectRulesRepository, DEFAULT_RULES_FILE } from '../../rules/repository.js';
 import { adaptProjectRules } from '../../rules/adaptation.js';
 import { SkillManager } from '../../skills/manager.js';
@@ -63,13 +64,13 @@ async function writeEvidenceFiles(
   result: Awaited<ReturnType<ProjectScanner['scan']>>,
 ): Promise<{ businessMapPath: string; seedPath: string; candidateRedlines: number }> {
   // Ensure governance infrastructure exists (same as project init)
-  if (!(await storage.exists('harness/project/governance/redlines.json'))) {
-    await storage.write('harness/project/governance/redlines.json', '[]');
-    console.log('  · 已创建 harness/project/governance/redlines.json');
+  if (!(await storage.exists('sovei-flow/project/governance/redlines.json'))) {
+    await storage.write('sovei-flow/project/governance/redlines.json', '[]');
+    console.log('  · 已创建 sovei-flow/project/governance/redlines.json');
   }
 
   // Write generated knowledge entries
-  const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+  const knowledgeStore = new KnowledgeStore(storage, 'sovei-flow/project/knowledge');
   await knowledgeStore.load();
   let added = 0;
   let updated = 0;
@@ -92,7 +93,7 @@ async function writeEvidenceFiles(
 
   // Business topology is generated as a typed candidate. Humans review it;
   // they do not have to reconstruct capabilities and dependencies manually.
-  const businessMapPath = 'harness/project/codegraph/business-map.json';
+  const businessMapPath = 'sovei-flow/project/codegraph/business-map.json';
   await storage.write(businessMapPath, JSON.stringify(result.businessMap, null, 2));
   console.log('  · 已写入 ' + businessMapPath + '（' + result.businessMap.capabilities.length + ' 项候选业务能力）');
   if (result.businessMap.coverage.truncated) {
@@ -101,7 +102,7 @@ async function writeEvidenceFiles(
   console.log('  · 查看业务拓扑：sovei project map');
 
   // Write candidate redlines to seed file for human review (never auto-activate)
-  const seedPath = 'harness/project/governance/redlines-seed.json';
+  const seedPath = 'sovei-flow/project/governance/redlines-seed.json';
   const seedData = {
     schemaVersion: 1 as const,
     generatedAt: new Date().toISOString(),
@@ -163,13 +164,13 @@ export function registerProjectCommands(program: Command): void {
       console.log('\n  正在初始化 Sovei 项目：' + resolvedTarget + '\n');
 
       // Create directory structure
-      const dirs = ['specs', 'harness/project/knowledge', 'harness/project/codegraph', 'harness/project/rules', 'harness/project/governance', 'harness/skills'];
+      const dirs = ['specs', 'sovei-flow/agents', 'sovei-flow/project/knowledge', 'sovei-flow/project/codegraph', 'sovei-flow/project/rules', 'sovei-flow/project/governance', 'sovei-flow/skills', 'sovei-flow/skills/base'];
       const storage = new FilesystemStorage(resolvedTarget);
-      const projectExists = await storage.exists('harness/project/project.config.json');
+      const projectExists = await storage.exists('sovei-flow/project/project.config.json');
       if (projectExists && !opts.force) {
         console.log('  · Sovei 项目已存在，保留现有声明（未重新初始化）');
         console.log('    如需与最新 Sovei 工作流声明同步，请复制以下指令给你的 AI 助手，由它审查并决定如何更新：');
-        console.log('    「请审查本项目的 AGENTS.md 与 harness/project/project.config.json，确认其 Sovei Workflow 声明（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation、workflow version）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
+        console.log('    「请审查本项目的 AGENTS.md 与 sovei-flow/project/project.config.json，确认其 Sovei Workflow 声明（Key Commands、Workflow Stages、Confirmation Gates、Reconciliation、workflow version）是否与最新声明一致。若缺失或过期请补充/更新；若无变更请保留现状；不要凭空删除现有内容。」');
         console.log('    （如需强制重新初始化项目声明：sovei project init <path> --force）');
         return;
       }
@@ -177,26 +178,71 @@ export function registerProjectCommands(program: Command): void {
         await storage.write(dir + '/.gitkeep', '');
         console.log('  · 已创建 ' + dir + '/');
       }
-      const usageCreated = await storage.writeIfAbsent('harness/project/usage.jsonl', '');
-      if (usageCreated) console.log('  · 已创建 harness/project/usage.jsonl（原始 usage 默认不提交 Git）');
+      const usageCreated = await storage.writeIfAbsent('sovei-flow/project/usage.jsonl', '');
+      if (usageCreated) console.log('  · 已创建 sovei-flow/project/usage.jsonl（原始 usage 默认不提交 Git）');
       const existingGitignore = await storage.read('.gitignore');
       if (existingGitignore === null) {
-        await storage.write('.gitignore', 'harness/project/usage.jsonl\n');
-      } else if (!existingGitignore.split(/\r?\n/).some((line) => line.trim() === 'harness/project/usage.jsonl')) {
-        await storage.write('.gitignore', existingGitignore.replace(/\s*$/, '') + '\nharness/project/usage.jsonl\n');
+        await storage.write('.gitignore', 'sovei-flow/project/usage.jsonl\n');
+      } else if (!existingGitignore.split(/\r?\n/).some((line) => line.trim() === 'sovei-flow/project/usage.jsonl')) {
+        await storage.write('.gitignore', existingGitignore.replace(/\s*$/, '') + '\nsovei-flow/project/usage.jsonl\n');
       }
 
       // Initialize external skills skeleton (skill-map + skill-lock)
       await new SkillManager(storage).ensureSkeleton();
-      console.log('  · 已创建 harness/skills/（skill-map.yaml + skill-lock.yaml，仅 native 绑定）');
+      console.log('  · 已创建 sovei-flow/skills/（skill-map.yaml + skill-lock.yaml，仅 native 绑定）');
+
+      // Write agents/ README (N1: agent 指令与 skills 分开存放)
+      await storage.writeIfAbsent('sovei-flow/agents/README.md', [
+        '# Agents',
+        '',
+        '> 12 个工作流阶段的 agent 指令模板。与 `skills/` 分开存放。',
+        '',
+        '## 工作流阶段',
+        '',
+        '```',
+        'explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
+        '```',
+        '',
+        '## 说明',
+        '',
+        '- 阶段提示契约由引擎内置（`sovei workflow <stage> <feature>` 触发时注入）。',
+        '- 本目录用于存放项目自定义的 agent 指令补充材料（如团队约定、阶段增强提示）。',
+        '- 自定义内容不会被引擎自动加载，需在阶段产物中引用或通过 skill 绑定注入。',
+        '',
+      ].join('\n'));
+      console.log('  · 已创建 sovei-flow/agents/（agent 指令目录）');
+
+      // Write skills/base/ README (N2: skills 基座)
+      await storage.writeIfAbsent('sovei-flow/skills/base/README.md', [
+        '# Skills Base',
+        '',
+        '> 预置技能基座，可按项目技术栈注入。每个技能一个目录 + SKILL.md。',
+        '',
+        '## 可用技能',
+        '',
+        '| 技能 | 说明 | 启用命令 |',
+        '|---|---|---|',
+        '| vue2 | Vue 2 开发规范 | `sovei skills use --local sovei-flow/skills/base/vue2` |',
+        '| vue3 | Vue 3 开发规范 | `sovei skills use --local sovei-flow/skills/base/vue3` |',
+        '| react | React 开发规范 | `sovei skills use --local sovei-flow/skills/base/react` |',
+        '| cli | CLI 工具开发规范 | `sovei skills use --local sovei-flow/skills/base/cli` |',
+        '| python | Python 开发规范 | `sovei skills use --local sovei-flow/skills/base/python` |',
+        '| quant | 量化系统知识 | `sovei skills use --local sovei-flow/skills/base/quant` |',
+        '',
+        '## 自定义',
+        '',
+        '编辑对应技能目录下的 `SKILL.md`，或新建技能目录。技能格式遵循 agentskills.io 规范（frontmatter + body）。',
+        '',
+      ].join('\n'));
+      console.log('  · 已创建 sovei-flow/skills/base/（skills 基座目录）');
 
       // Create project.config.json
       const projectConfig = {
         project: { name: projectName, description: 'New project', techStack: stack, started: new Date().toISOString().split('T')[0] },
         workflow: { version: DEFAULT_WORKFLOW.version },
       };
-      await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
-      console.log('  · 已创建 harness/project/project.config.json');
+      await storage.write('sovei-flow/project/project.config.json', JSON.stringify(projectConfig, null, 2));
+      console.log('  · 已创建 sovei-flow/project/project.config.json');
 
       // Write AGENTS.md with Sovei declaration
       const agentsMd = [
@@ -230,7 +276,7 @@ export function registerProjectCommands(program: Command): void {
         '### Workflow Stages',
         '',
         '```',
-        'load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
+        'explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
         '```',
         '',
         '### Confirmation Gates',
@@ -317,15 +363,15 @@ export function registerProjectCommands(program: Command): void {
       // Create knowledge files
       const knowledgeTypes = ['pitfall', 'rule', 'decision', 'code-map', 'architecture', 'preference', 'constitution'];
       for (const type of knowledgeTypes) {
-        const knowledgePath = 'harness/project/knowledge/' + type + '.json';
+        const knowledgePath = 'sovei-flow/project/knowledge/' + type + '.json';
         if (!(await storage.exists(knowledgePath))) {
           await storage.write(knowledgePath, '[]');
           console.log('  · 已创建 ' + knowledgePath);
         }
       }
-      if (!(await storage.exists('harness/project/governance/redlines.json'))) {
-        await storage.write('harness/project/governance/redlines.json', '[]');
-        console.log('  · 已创建 harness/project/governance/redlines.json');
+      if (!(await storage.exists('sovei-flow/project/governance/redlines.json'))) {
+        await storage.write('sovei-flow/project/governance/redlines.json', '[]');
+        console.log('  · 已创建 sovei-flow/project/governance/redlines.json');
       }
       if (!(await storage.exists(DEFAULT_RULES_FILE))) {
         const rulesRepository = new ProjectRulesRepository(storage);
@@ -338,7 +384,7 @@ export function registerProjectCommands(program: Command): void {
         const seeds = generateSeeds(stack);
         if (seeds.length > 0) {
           const entries = seedsToEntries(seeds);
-          const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+          const knowledgeStore = new KnowledgeStore(storage, 'sovei-flow/project/knowledge');
           await knowledgeStore.load();
           for (const entry of entries) {
             const fullEntry = { ...entry, id: generateId(entry.type, entry.title) };
@@ -354,7 +400,7 @@ export function registerProjectCommands(program: Command): void {
 
       console.log('\n  ✓ 项目已初始化。\n');
       console.log('  后续步骤：');
-      console.log('    1. 编辑 harness/project/project.config.json');
+      console.log('    1. 编辑 sovei-flow/project/project.config.json');
       console.log('    2. 查看 skills 接入状态：sovei skills status');
       console.log('    3. 接入外部 skill：sovei skills use --global <dir> → sovei skills bind --stage <stage> --skill <id>');
       console.log('    4. 交付给 Agent：sovei skills sync（渲染进 AGENTS.md/CLAUDE.md/.cursorrules 等）');
@@ -515,16 +561,16 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('  2. ' + evidence.seedPath);
         console.log('     - Regex-detected redline candidates (may be empty or noisy)');
         console.log('');
-        console.log('  3. harness/project/knowledge/*.json');
+        console.log('  3. sovei-flow/project/knowledge/*.json');
         console.log('     - Auto-generated candidate knowledge entries');
         console.log('');
-        console.log('  4. harness/project/rules/adapted.rules.json');
+        console.log('  4. sovei-flow/project/rules/adapted.rules.json');
         console.log('     - Auto-adapted project rule candidates from AGENTS/Cursor Rules + team docs (doc/docs/CONTRIBUTING)');
         console.log('     - Includes `sovei` self-sections already excluded; confidence=high when config-backed');
         console.log('');
         console.log('  ## Step 1: Read and Clean Business Map');
         console.log('');
-        console.log('  Read harness/project/codegraph/business-map.json.');
+        console.log('  Read sovei-flow/project/codegraph/business-map.json.');
         console.log('  For each capability:');
         console.log('    - Read the codeEvidence files to verify it is a real business capability');
         console.log('    - REJECT if: test files, single-letter names, no real code, test fixtures');
@@ -555,7 +601,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('');
         console.log('  ## Step 4: Refine Project Rule Candidates');
         console.log('');
-        console.log('  Read harness/project/rules/adapted.rules.json.');
+        console.log('  Read sovei-flow/project/rules/adapted.rules.json.');
         console.log('  For each candidate rule, read its provenance.sources file and related real code/config:');
         console.log('    - STILL VALID → keep it (it will remain candidate for human activation)');
         console.log('    - STALE/NOISE → note its ID to discard (e.g. outdated convention, self-referential doc)');
@@ -566,12 +612,32 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('');
         console.log('  ## Step 5: Write Summary Report');
         console.log('');
-        console.log('  Write harness/project/onboard-report.md with:');
+        console.log('  Write sovei-flow/project/onboard-report.md with:');
         console.log('    - Confirmed business capabilities (with evidence)');
         console.log('    - Rejected candidates (with reasons)');
         console.log('    - Identified redlines (with rationale)');
         console.log('    - Refined project rules (kept vs discarded, with reasons)');
         console.log('    - Open questions for human review');
+        console.log('');
+        console.log('  ## Step 6: Write Business Coverage Report (for explore stage)');
+        console.log('');
+        console.log('  Write sovei-flow/project/business-coverage.md with a BUSINESS (not technical) view:');
+        console.log('    - Project positioning: what this system does, who uses it');
+        console.log('    - Entry types: API endpoints / CLI commands / UI pages / scheduled jobs');
+        console.log('    - Core business entities: the nouns the business cares about (User, Order, ...)');
+        console.log('    - Page/screen inventory: list of UI pages or views with their purpose');
+        console.log('    - Feature inventory: list of business features currently supported');
+        console.log('    - External dependencies: other systems this project talks to');
+        console.log('');
+        console.log('  Source data for this report:');
+        console.log('    - sovei-flow/project/codegraph/business-map.json (confirmed capabilities)');
+        console.log('    - Route/view configs (e.g. router.ts, routes/, pages/, views/)');
+        console.log('    - Type definitions (e.g. types/, models/, entities/)');
+        console.log('    - State layer (e.g. store/, reducers/, services/)');
+        console.log('    - API definitions (e.g. controllers/, handlers/, openapi.yaml)');
+        console.log('');
+        console.log('  This report is consumed by the explore stage to understand business boundaries');
+        console.log('  before analyzing a PRD. Keep it in business language, not implementation details.');
         console.log('');
         console.log('  ## Important Rules');
         console.log('');
@@ -584,10 +650,13 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         console.log('    sovei governance redline list');
         console.log('    sovei knowledge list --lifecycle candidate');
         console.log('    sovei rules list --lifecycle candidate   # activate the kept project rules');
-        console.log('    cat harness/project/onboard-report.md');
+        console.log('    cat sovei-flow/project/onboard-report.md');
+        console.log('    cat sovei-flow/project/business-coverage.md  # for explore stage');
         console.log('');
-        console.log('  Only after human review, start feature development:');
-        console.log('    sovei workflow bootstrap 001-first-feature');
+        console.log('  Only after human review, start feature development with PRD:');
+        console.log('    sovei workflow explore 001-first-feature --prd ./docs/prd.md');
+        console.log('    # or for brief requirements:');
+        console.log('    sovei workflow explore 001-first-feature --brief "requirement description"');
         console.log('');
         return;
       }
@@ -606,8 +675,8 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         },
         workflow: currentConfig.workflow,
       };
-      await storage.write('harness/project/project.config.json', JSON.stringify(projectConfig, null, 2));
-      console.log('  · 已更新 harness/project/project.config.json');
+      await storage.write('sovei-flow/project/project.config.json', JSON.stringify(projectConfig, null, 2));
+      console.log('  · 已更新 sovei-flow/project/project.config.json');
 
       // Existing projects are adapted into candidates only. Re-running onboard is
       // idempotent and preserves rules that have already been reviewed.
@@ -668,6 +737,71 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       console.log('');
 }
 
+  // ── migrate (harness → sovei-flow) ──
+  project
+    .command('migrate')
+    .description('将旧版 harness/ 目录迁移为 sovei-flow/（升级到 2.6.0+ 后对已初始化项目执行一次）')
+    .option('--dry-run', '只检查不执行迁移')
+    .action(async (opts: { dryRun?: boolean }) => {
+      const config = getConfig();
+      const rootPath = config.rootPath;
+      const oldDir = join(rootPath, 'harness');
+      const newDir = join(rootPath, 'sovei-flow');
+
+      const oldExists = await access(oldDir).then(() => true).catch(() => false);
+      const newExists = await access(newDir).then(() => true).catch(() => false);
+
+      if (!oldExists) {
+        console.log('\n  \u2713 未检测到旧版 harness/ 目录，无需迁移。\n');
+        return;
+      }
+
+      if (newExists) {
+        console.log('\n  \u26A0\uFE0F  检测到 harness/ 和 sovei-flow/ 同时存在。');
+        console.log('     请手动处理：将 harness/ 下的自定义内容合并到 sovei-flow/，然后删除 harness/。\n');
+        return;
+      }
+
+      if (opts.dryRun) {
+        console.log('\n  [dry-run] 将重命名 harness/ \u2192 sovei-flow/');
+        console.log('  [dry-run] 将更新 .gitignore 中的路径');
+        console.log('  [dry-run] 将更新 project.config.json（如果包含 harnessDir 字段）\n');
+        return;
+      }
+
+      // 1. 重命名目录
+      await rename(oldDir, newDir);
+      console.log('  \u00B7 已重命名 harness/ \u2192 sovei-flow/');
+
+      // 2. 更新 .gitignore
+      const storage = getStorage();
+      const gitignore = await storage.read('.gitignore');
+      if (gitignore) {
+        const updated = gitignore.replace(/harness\//g, 'sovei-flow/');
+        if (updated !== gitignore) {
+          await storage.write('.gitignore', updated);
+          console.log('  \u00B7 已更新 .gitignore 中的路径');
+        }
+      }
+
+      // 3. 更新 project.config.json（如果有 harnessDir 字段）
+      const configContent = await storage.read('sovei-flow/project/project.config.json');
+      if (configContent) {
+        try {
+          const projConfig = JSON.parse(configContent);
+          if (projConfig.harnessDir === 'harness') {
+            projConfig.harnessDir = 'sovei-flow';
+            await storage.write('sovei-flow/project/project.config.json', JSON.stringify(projConfig, null, 2));
+            console.log('  \u00B7 已更新 project.config.json 中的 harnessDir');
+          }
+        } catch {
+          // 忽略 JSON 解析错误
+        }
+      }
+
+      console.log('\n  \u2713 迁移完成。\n');
+    });
+
   // ── status ──
   project
     .command('status')
@@ -681,7 +815,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       console.log('  根目录：      ' + config.rootPath);
 
       // Read project.config.json for real project info
-      const projContent = await storage.read('harness/project/project.config.json');
+      const projContent = await storage.read('sovei-flow/project/project.config.json');
       if (projContent) {
         try {
           const proj = JSON.parse(projContent);
@@ -734,7 +868,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       }
 
       // Count redlines
-      const redlineContent = await storage.read('harness/project/governance/redlines.json');
+      const redlineContent = await storage.read('sovei-flow/project/governance/redlines.json');
       let activeRedlines = 0;
       let totalRedlines = 0;
       if (redlineContent) {
@@ -750,7 +884,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       console.log('  项目规范：    ' + projectRules.filter((rule) => rule.lifecycle === 'active').length + ' 条已激活，' + projectRules.filter((rule) => rule.lifecycle === 'candidate').length + ' 条待审');
 
       // Check workspaces
-      const wsContent = await storage.read('harness/project/workspaces.json');
+      const wsContent = await storage.read('sovei-flow/project/workspaces.json');
       if (wsContent) {
         try {
           const ws = JSON.parse(wsContent);
@@ -781,7 +915,7 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         force: opts.force ?? false,
         refresh: opts.refresh ?? false,
       });
-      const content = await storage.read('harness/project/codegraph/business-map.json');
+      const content = await storage.read('sovei-flow/project/codegraph/business-map.json');
       if (!content) {
         throw new Error('业务地图不存在。请先运行 sovei project onboard 生成。');
       }

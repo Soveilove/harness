@@ -34,7 +34,7 @@ export interface WorkspaceRegistry {
   workspaces: WorkspaceEntry[];
 }
 
-const REGISTRY_FILE = 'harness/project/workspaces.json';
+const REGISTRY_FILE = 'sovei-flow/project/workspaces.json';
 
 export class WorkspaceManager {
   constructor(private storage: StorageBackend) {}
@@ -61,7 +61,7 @@ export class WorkspaceManager {
     const registry = await this.loadRegistry();
     const canonicalPath = this.canonicalPath(entry.path);
     const targetStorage = new FilesystemStorage(canonicalPath);
-    const declaration = await targetStorage.read('harness/project/project.config.json');
+    const declaration = await targetStorage.read('sovei-flow/project/project.config.json');
     if (!declaration) throw new Error('Workspace is not a Sovei project: ' + canonicalPath);
     const projectName = (parseJson(declaration, 'project.config.json') as { project?: { name?: string } }).project?.name;
     if (!projectName) throw new Error('Workspace project declaration has no project.name: ' + canonicalPath);
@@ -69,7 +69,7 @@ export class WorkspaceManager {
     if (!expectedProjectName && registry.workspaces.length) {
       const existingHub = registry.workspaces.find((workspace) => workspace.role === 'hub');
       const existingDeclaration = existingHub
-        ? await new FilesystemStorage(existingHub.path).read('harness/project/project.config.json')
+        ? await new FilesystemStorage(existingHub.path).read('sovei-flow/project/project.config.json')
         : null;
       expectedProjectName = existingDeclaration
         ? (parseJson(existingDeclaration, 'project.config.json') as { project?: { name?: string } }).project?.name
@@ -159,7 +159,7 @@ export class WorkspaceManager {
 
     const hubStorage = new FilesystemStorage(hub.path);
     const pendingWrites: Array<{ path: string; content: string }> = [];
-    const hubRedlines = await hubStorage.read('harness/project/governance/redlines.json');
+    const hubRedlines = await hubStorage.read('sovei-flow/project/governance/redlines.json');
     if (hubRedlines) {
       const redlines = RedlineSchema.array().parse(parseJson(hubRedlines, 'hub redlines.json'));
       // Scope filter: only push redlines that apply to the target branch.
@@ -167,12 +167,12 @@ export class WorkspaceManager {
       // redlines apply only when the satellite's branch matches.
       const scoped = redlines.filter((redline) => this.redlineAppliesToBranch(redline, satellite.branch));
       pendingWrites.push({
-        path: 'harness/project/governance/redlines.json',
+        path: 'sovei-flow/project/governance/redlines.json',
         content: JSON.stringify(scoped, null, 2),
       });
     }
     for (const type of knowledgeTypes) {
-      const hubContent = await hubStorage.read('harness/project/knowledge/' + type + '.json');
+      const hubContent = await hubStorage.read('sovei-flow/project/knowledge/' + type + '.json');
       if (!hubContent) continue;
 
       const entries = this.parseKnowledge(hubContent, `hub ${type}`);
@@ -180,7 +180,7 @@ export class WorkspaceManager {
       const stableEntries = entries.filter((e) => e.lifecycle === 'stable');
 
       // Merge with satellite's existing entries
-      const satContent = await satelliteStorage.read('harness/project/knowledge/' + type + '.json');
+      const satContent = await satelliteStorage.read('sovei-flow/project/knowledge/' + type + '.json');
       const satEntries = satContent ? this.parseKnowledge(satContent, `satellite ${type}`) : [];
 
       // Merge: stable from hub + all local (candidate/pending/deprecated)
@@ -193,7 +193,7 @@ export class WorkspaceManager {
       const merged = [...stableEntries, ...localOnly];
 
       pendingWrites.push({
-        path: 'harness/project/knowledge/' + type + '.json',
+        path: 'sovei-flow/project/knowledge/' + type + '.json',
         content: JSON.stringify(merged, null, 2),
       });
       synced += stableEntries.length;
@@ -228,7 +228,7 @@ export class WorkspaceManager {
     const pendingWrites: Array<{ path: string; content: string }> = [];
 
     for (const type of knowledgeTypes) {
-      const satContent = await satelliteStorage.read('harness/project/knowledge/' + type + '.json');
+      const satContent = await satelliteStorage.read('sovei-flow/project/knowledge/' + type + '.json');
       if (!satContent) continue;
 
       const satEntries = this.parseKnowledge(satContent, `satellite ${type}`);
@@ -237,7 +237,7 @@ export class WorkspaceManager {
 
       if (candidates.length === 0) continue;
 
-      const hubContent = await hubStorage.read('harness/project/knowledge/' + type + '.json');
+      const hubContent = await hubStorage.read('sovei-flow/project/knowledge/' + type + '.json');
       const hubEntries = hubContent ? this.parseKnowledge(hubContent, `hub ${type}`) : [];
 
       for (const candidate of candidates) {
@@ -260,7 +260,7 @@ export class WorkspaceManager {
       }
 
       pendingWrites.push({
-        path: 'harness/project/knowledge/' + type + '.json',
+        path: 'sovei-flow/project/knowledge/' + type + '.json',
         content: JSON.stringify(hubEntries, null, 2),
       });
     }

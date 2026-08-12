@@ -1,7 +1,7 @@
 /**
  * SkillInstaller - Install external skills from git repos or local paths.
  *
- * Copies SKILL.md files into harness/vendor/, computes sha256 checksums,
+ * Copies SKILL.md files into sovei-flow/vendor/, computes sha256 checksums,
  * and updates skill-lock.yaml.
  */
 
@@ -29,8 +29,8 @@ export interface GitSkillSpec {
   skillId: string;
 }
 
-const VENDOR_BASE = 'harness/vendor/mattpocock/skills';
-const LOCK_FILE = 'harness/skills/skill-lock.yaml';
+const VENDOR_BASE = 'sovei-flow/vendor/mattpocock/skills';
+const LOCK_FILE = 'sovei-flow/skills/skill-lock.yaml';
 
 export class SkillInstaller {
   constructor(private readonly rootPath: string) {}

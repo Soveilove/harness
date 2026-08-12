@@ -1,15 +1,15 @@
 {
   "name": "@soveilove/sovei",
-  "version": "2.5.10",
+  "version": "2.6.1",
   "description": "⚠️ 高速迭代中：当前版本更新频率较高，建议关注最新版本。Sovei 工作流引擎 — 便携式开发 SOP、类型化知识管理与演进式架构治理。",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Soveilove/sovei.git"
+    "url": "git+https://github.com/Soveilove/harness.git"
   },
-  "homepage": "https://github.com/Soveilove/sovei#readme",
+  "homepage": "https://github.com/Soveilove/harness#readme",
   "bugs": {
-    "url": "https://github.com/Soveilove/sovei/issues"
+    "url": "https://github.com/Soveilove/harness/issues"
   },
   "publishConfig": {
     "access": "public",

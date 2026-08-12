@@ -4,7 +4,7 @@
  * Bridges the "contract layer" (types/config/registry) and the CLI so that a
  * project can actually *connect* skills at init time, from two sources:
  *
- *  1. local  - project-level `harness/skills/` (skill-map.yaml + skill-lock.yaml)
+ *  1. local  - project-level `sovei-flow/skills/` (skill-map.yaml + skill-lock.yaml)
  *  2. global - user-level `~/.sovei/skills/` (shared skill pool), referenced by
  *              a project via its skill-map without copying the payload.
  *
@@ -28,7 +28,7 @@ import {
 import type { SkillBinding, SkillStatus } from './types.js';
 
 /** Project-relative skills directory (local access). */
-export const SKILLS_DIR = 'harness/skills';
+export const SKILLS_DIR = 'sovei-flow/skills';
 export const SKILL_MAP_FILE = `${SKILLS_DIR}/skill-map.yaml`;
 export const SKILL_LOCK_FILE = `${SKILLS_DIR}/skill-lock.yaml`;
 

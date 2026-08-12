@@ -146,7 +146,7 @@ export class RedlineScanner {
   ): Promise<void> {
     const targets = [
       { path: 'AGENTS.md', weight: 'high' as const },
-      { path: 'harness/project/governance', weight: 'high' as const },
+      { path: 'sovei-flow/project/governance', weight: 'high' as const },
       { path: 'README.md', weight: 'medium' as const },
     ];
 

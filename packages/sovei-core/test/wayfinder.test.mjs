@@ -13,8 +13,8 @@ const logger = { info() {}, warn() {}, error() {}, debug() {} };
 const config = {
   rootPath: '.',
   specsDir: 'specs',
-  knowledgeDir: 'harness/project/knowledge',
-  harnessDir: 'harness',
+  knowledgeDir: 'sovei-flow/project/knowledge',
+  harnessDir: 'sovei-flow',
   project: { name: 'test', description: 'test', techStack: {}, started: '2026-01-01' },
   workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
 };

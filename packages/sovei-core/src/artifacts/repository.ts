@@ -6,6 +6,14 @@
 
 import type { StorageBackend } from '../storage/types.js';
 
+/**
+ * Build the artifact directory path for a sub-change.
+ * Sub-change artifacts live under `specs/<feature>/sub-changes/<id>/`.
+ */
+export function getSubChangePath(featurePath: string, subChangeId: string): string {
+  return `${featurePath}/sub-changes/${subChangeId}`;
+}
+
 export class ArtifactRepository {
   constructor(
     private storage: StorageBackend,

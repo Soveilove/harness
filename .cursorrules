@@ -1,0 +1,30 @@
+<!-- sovei-adapter-installed -->
+
+### Quick Channel (Trae)
+
+快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：
+
+- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 完成编辑 → 运行测试。
+- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。
+
+### Sovei Workflow Nodes (Trae)
+
+12 个工作流阶段节点（按顺序执行，每个节点 `--complete` 推进）：
+
+| 节点 | 命令 | 说明 |
+|---|---|---|
+| load | `sovei workflow load <feature>` | 加载/恢复 Feature 状态 |
+| grill | `sovei workflow grill <feature>` | 决策拷问（事实/推断/范围） |
+| wayfind | `sovei workflow wayfind <feature>` | 依赖分析与路径选择 |
+| spec | `sovei workflow spec <feature>` | 规格定义 + reconciliation |
+| scope | `sovei workflow scope <feature>` | 范围确定 + 拆分评估 |
+| plan | `sovei workflow plan <feature>` | 实现计划 |
+| tasks | `sovei workflow tasks <feature>` | 任务拆分 |
+| implement | `sovei workflow implement <feature> --task <id>` | 代码实现 |
+| converge | `sovei workflow converge <feature>` | 收敛检查 |
+| verify | `sovei workflow verify <feature>` | 验证 |
+| learn | `sovei workflow learn <feature>` | 知识提取 |
+| sync | `sovei workflow sync <feature>` | 同步 |
+
+> 完整步骤：`sovei workflow <stage> <feature>` 准备阶段 → 阅读提示契约 → 填写产物 → `sovei workflow <stage> <feature> --complete` 推进。
+> scope 完成后可运行 `sovei feature split <feature> --json` 获取拆分提议。

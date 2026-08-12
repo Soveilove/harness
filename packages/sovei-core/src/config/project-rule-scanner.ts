@@ -5,7 +5,7 @@ import type { StorageBackend } from '../storage/types.js';
 import type { ProjectRule, RuleConfidence } from '../rules/schemas.js';
 
 const NORMATIVE_TEXT = /(?:必须|不得|禁止|不要|应当|应该|优先|使用|保持|须|勿|must|must not|do not|never|always|required|prefer|use|preserve|enforce|禁止|不允许)/i;
-const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.next', '.nuxt', '.output', 'specs', 'harness']);
+const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.next', '.nuxt', '.output', 'specs', 'sovei-flow']);
 const RULES_DIRECTORY_EXTENSIONS = new Set(['.md', '.mdc', '.txt']);
 const RULES_DOCUMENT_EXTENSIONS = new Set(['.md', '.mdc', '.txt']);
 

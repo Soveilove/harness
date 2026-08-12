@@ -59,7 +59,7 @@ export function registerGovernanceCommands(program: Command): void {
         origin: (options.origin as 'manual' | 'scanner-seed' | 'pm-confirmed' | 'agent-generated') || 'manual',
       });
       console.log(`\n  Added redline ${entry.id} [${entry.enforcement}]`);
-      console.log('  人工审查视图已刷新：harness/project/governance/redlines.md\n');
+      console.log('  人工审查视图已刷新：sovei-flow/project/governance/redlines.md\n');
     });
 
   redline
@@ -85,7 +85,7 @@ export function registerGovernanceCommands(program: Command): void {
         console.log(`  ${entry.id} [${entry.enforcement}] ${entry.title}${statusTag}`);
         console.log(`    ${entry.rule}`);
       }
-      console.log('\n  人工审查视图：harness/project/governance/redlines.md（sovei governance redline render 重新生成）\n');
+      console.log('\n  人工审查视图：sovei-flow/project/governance/redlines.md（sovei governance redline render 重新生成）\n');
     });
 
   redline
@@ -96,7 +96,7 @@ export function registerGovernanceCommands(program: Command): void {
     .action(async (id: string, options: { reason: string }) => {
       const entry = await repository().deactivateRedline(id.toUpperCase(), options.reason);
       console.log(`\n  Deactivated redline ${entry.id}.`);
-      console.log('  人工审查视图已刷新：harness/project/governance/redlines.md\n');
+      console.log('  人工审查视图已刷新：sovei-flow/project/governance/redlines.md\n');
     })
 
   redline
@@ -138,12 +138,12 @@ export function registerGovernanceCommands(program: Command): void {
       }
       const entry = await repository().updateRedline(id.toUpperCase(), patch);
       console.log(`\n  Updated redline ${entry.id}.`);
-      console.log('  人工审查视图已刷新：harness/project/governance/redlines.md\n');
+      console.log('  人工审查视图已刷新：sovei-flow/project/governance/redlines.md\n');
     });
 
   redline
     .command('render')
-    .description('重新生成人工审查视图 harness/project/governance/redlines.md')
+    .description('重新生成人工审查视图 sovei-flow/project/governance/redlines.md')
     .option('--force', '放行读取旧版生成的 onboarding 产物')
     .option('--refresh', '放行读取旧版生成的 onboarding 产物（同 --force）')
     .action(async (opts: { force?: boolean; refresh?: boolean }) => {

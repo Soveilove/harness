@@ -13,7 +13,7 @@ const baseEntry = {
 
 test('context pack puts active redlines in required and candidates in suggested', async () => {
   const storage = new MemoryStorage();
-  const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+  const knowledgeStore = new KnowledgeStore(storage, 'sovei-flow/project/knowledge');
   await knowledgeStore.load();
   knowledgeStore.dispatch({ type: 'ADD', entry: { ...baseEntry, id: 'rule-stable-001', title: 'Stable rule', content: 'Never skip auth' } });
   knowledgeStore.dispatch({ type: 'ADD', entry: { ...baseEntry, id: 'pitfall-c-001', type: 'pitfall', title: 'Candidate pitfall', content: 'Watch out for X', lifecycle: 'candidate' } });
@@ -28,12 +28,12 @@ test('context pack puts active redlines in required and candidates in suggested'
       lifecycle: 'active', enforcement: 'required',
       appliesTo: { paths: ['**/*'], excludePaths: [], stages: ['implement'] },
       verification: [{ type: 'command', command: 'pnpm test', description: 'Run tests' }],
-      tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'harness/project/rules/project.rules.json',
+      tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'sovei-flow/project/rules/project.rules.json',
     }, {
       id: 'PROJECT_ADVISORY', title: 'Project advisory', instruction: 'Consider focused tests',
       lifecycle: 'active', enforcement: 'advisory',
       appliesTo: { paths: ['**/*'], excludePaths: [], stages: ['implement'] },
-      verification: [], tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'harness/project/rules/project.rules.json',
+      verification: [], tags: [], provenance: { kind: 'declared', sources: ['AGENTS.md'] }, source: 'sovei-flow/project/rules/project.rules.json',
     }],
     knowledge: knowledgeStore.selectAll(), artifacts: [], snapshot: null,
   });
@@ -51,8 +51,8 @@ test('snapshot detects stale knowledge after content change', async () => {
   const root = await mkdtemp(join(tmpdir(), 'sovei-snap-'));
   try {
     const storage = new FilesystemStorage(root);
-    await mkdir(join(root, 'harness', 'project', 'knowledge'), { recursive: true });
-    const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+    await mkdir(join(root, 'sovei-flow', 'project', 'knowledge'), { recursive: true });
+    const knowledgeStore = new KnowledgeStore(storage, 'sovei-flow/project/knowledge');
     await knowledgeStore.load();
     knowledgeStore.dispatch({ type: 'ADD', entry: { ...baseEntry, id: 'rule-test-001', content: 'Original content' } });
     await knowledgeStore.persist();
@@ -72,7 +72,7 @@ test('snapshot detects stale knowledge after content change', async () => {
 
 test('context status works without a saved snapshot', async () => {
   const storage = new MemoryStorage();
-  const knowledgeStore = new KnowledgeStore(storage, 'harness/project/knowledge');
+  const knowledgeStore = new KnowledgeStore(storage, 'sovei-flow/project/knowledge');
   await knowledgeStore.load();
   assert.equal(isStale(knowledgeStore.selectAll(), null), true);
 });

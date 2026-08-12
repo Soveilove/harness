@@ -41,8 +41,8 @@ export function bootstrap(rootPath: string, logger?: Logger): SoveiConfig {
   // Synchronously read skill config and register adapters so they are available
   // before the WorkflowEngine is constructed.
   try {
-    const mapPath = join(rootPath, 'harness/skills/skill-map.yaml');
-    const lockPath = join(rootPath, 'harness/skills/skill-lock.yaml');
+    const mapPath = join(rootPath, 'sovei-flow/skills/skill-map.yaml');
+    const lockPath = join(rootPath, 'sovei-flow/skills/skill-lock.yaml');
     const mapContent = readFileSync(mapPath, 'utf8');
     const lockContent = readFileSync(lockPath, 'utf8');
     const map = parseSkillMap(mapContent);

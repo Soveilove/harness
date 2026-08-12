@@ -2,7 +2,7 @@
  * Skills Commands
  *
  * Bridge the SkillManager into the CLI so a project can *connect* external
- * skills at init time, from both a local (project harness/skills) and a global
+ * skills at init time, from both a local (project sovei-flow/skills) and a global
  * (user ~/.sovei/skills) source.
  *
  *   sovei skills init          - create the project skills skeleton (idempotent)
@@ -199,7 +199,7 @@ export function registerSkillsCommands(program: Command): void {
   // ── install (from git or local path) ──
   skills
     .command('install')
-    .description('从 git 仓库或本地目录安装 skill 到 harness/vendor/')
+    .description('从 git 仓库或本地目录安装 skill 到 sovei-flow/vendor/')
     .option('--git <url>', 'git 仓库 URL')
     .option('--ref <ref>', 'git 分支或标签（默认 main）', 'main')
     .option('--paths <paths>', '仓库内 skill 路径（逗号分隔，如 skills/productivity/grilling）')
@@ -275,5 +275,5 @@ export function registerSkillsCommands(program: Command): void {
     });
 }
 
-const SKILLS_LABEL = 'harness/skills';
+const SKILLS_LABEL = 'sovei-flow/skills';
 const GLOBAL_LABEL = '~/.sovei/skills';

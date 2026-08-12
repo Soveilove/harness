@@ -27,11 +27,11 @@ function rule(id, overrides = {}) {
 test('project rules fail closed on duplicate IDs and invalid documents', async () => {
   const storage = new MemoryStorage();
   const repository = new ProjectRulesRepository(storage);
-  await repository.writeDocument('harness/project/rules/a.rules.json', { schemaVersion: 1, rules: [rule('DUPLICATE_RULE')] });
-  await repository.writeDocument('harness/project/rules/b.rules.json', { schemaVersion: 1, rules: [rule('DUPLICATE_RULE')] });
+  await repository.writeDocument('sovei-flow/project/rules/a.rules.json', { schemaVersion: 1, rules: [rule('DUPLICATE_RULE')] });
+  await repository.writeDocument('sovei-flow/project/rules/b.rules.json', { schemaVersion: 1, rules: [rule('DUPLICATE_RULE')] });
   await assert.rejects(repository.load(), /Duplicate project rule id DUPLICATE_RULE/);
 
-  await storage.write('harness/project/rules/b.rules.json', '{"schemaVersion":2,"rules":[]}');
+  await storage.write('sovei-flow/project/rules/b.rules.json', '{"schemaVersion":2,"rules":[]}');
   await assert.rejects(repository.load(), /Invalid project rules/);
 });
 
@@ -41,7 +41,7 @@ test('project rules accept BOM and JSONC without corrupting URLs', async () => {
     instruction: 'Preserve https://example.com/contracts.',
   })] };
   const jsonc = '\uFEFF' + JSON.stringify(document, null, 2).replace(/\n}$/, ',\n  // reviewed project rule\n}');
-  await storage.write('harness/project/rules/windows.rules.json', jsonc);
+  await storage.write('sovei-flow/project/rules/windows.rules.json', jsonc);
 
   const loaded = await new ProjectRulesRepository(storage).load();
 
@@ -88,7 +88,7 @@ test('Agent and IDE Rules are adapted as scoped candidates and can be reviewed',
   const activated = (await repository.load()).find((item) => item.id === target.id);
   assert.equal(activated.lifecycle, 'active');
   assert.equal(activated.provenance.reviewedBy, 'maintainer');
-  assert.match(await storage.read('harness/project/rules/rule-events.jsonl'), /PROJECT_RULE_ACTIVATED/);
+  assert.match(await storage.read('sovei-flow/project/rules/rule-events.jsonl'), /PROJECT_RULE_ACTIVATED/);
 
   const refreshed = await adaptProjectRules(storage, repository);
   assert.equal(refreshed.total, candidates.length);
@@ -192,11 +192,11 @@ test('deprecateMany batch-discards candidates across files and preserves active 
   const storage = new MemoryStorage();
   const repository = new ProjectRulesRepository(storage);
   // writeDocument 期望不含 source 字段（source 由加载后附加）
-  await repository.writeDocument('harness/project/rules/a.rules.json', {
+  await repository.writeDocument('sovei-flow/project/rules/a.rules.json', {
     schemaVersion: 1,
     rules: [rule('CAND_A', { lifecycle: 'candidate' }), rule('ACTIVE_KEEP', { lifecycle: 'active' })],
   });
-  await repository.writeDocument('harness/project/rules/b.rules.json', {
+  await repository.writeDocument('sovei-flow/project/rules/b.rules.json', {
     schemaVersion: 1,
     rules: [rule('CAND_B', { lifecycle: 'candidate' })],
   });
@@ -208,13 +208,13 @@ test('deprecateMany batch-discards candidates across files and preserves active 
   assert.equal(loaded.find((r) => r.id === 'CAND_A').lifecycle, 'deprecated');
   assert.equal(loaded.find((r) => r.id === 'CAND_B').lifecycle, 'deprecated');
   assert.equal(loaded.find((r) => r.id === 'ACTIVE_KEEP').lifecycle, 'active', 'active rule must be preserved');
-  assert.match(await storage.read('harness/project/rules/rule-events.jsonl'), /PROJECT_RULE_DEPRECATED/);
+  assert.match(await storage.read('sovei-flow/project/rules/rule-events.jsonl'), /PROJECT_RULE_DEPRECATED/);
 });
 
 test('project rules deprecation preserves provenance and appends audit evidence', async () => {
   const storage = new MemoryStorage();
   const repository = new ProjectRulesRepository(storage);
-  await repository.writeDocument('harness/project/rules/project.rules.json', {
+  await repository.writeDocument('sovei-flow/project/rules/project.rules.json', {
     schemaVersion: 1,
     rules: [rule('RULE_TO_DEPRECATE')],
   });
@@ -224,7 +224,7 @@ test('project rules deprecation preserves provenance and appends audit evidence'
   assert.equal(deprecated.lifecycle, 'deprecated');
   assert.deepEqual(deprecated.provenance, { kind: 'declared', sources: ['AGENTS.md'] });
   assert.equal(resolveProjectRules(await repository.load(), { stage: 'implement', paths: ['src/app.ts'] }).length, 0);
-  assert.match(await storage.read('harness/project/rules/rule-events.jsonl'), /PROJECT_RULE_DEPRECATED/);
+  assert.match(await storage.read('sovei-flow/project/rules/rule-events.jsonl'), /PROJECT_RULE_DEPRECATED/);
   await assert.rejects(
     repository.deprecate('RULE_TO_DEPRECATE', 'maintainer', 'Duplicate request'),
     /already deprecated/,
@@ -259,7 +259,7 @@ test('project rules fail closed with a diagnostic message for duplicates within 
   const storage = new MemoryStorage();
   const repository = new ProjectRulesRepository(storage);
   // 同一文件内存在两条相同 id 的规则（title 不同用于校验报错信息）
-  await repository.writeDocument('harness/project/rules/same.rules.json', {
+  await repository.writeDocument('sovei-flow/project/rules/same.rules.json', {
     schemaVersion: 1,
     rules: [
       rule('IN_FILE_DUP', { title: 'First copy' }),

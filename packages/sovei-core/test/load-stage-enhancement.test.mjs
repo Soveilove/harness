@@ -11,8 +11,8 @@ const logger = { info() {}, warn() {}, error() {}, debug() {} };
 const config = {
   rootPath: '.',
   specsDir: 'specs',
-  knowledgeDir: 'harness/project/knowledge',
-  harnessDir: 'harness',
+  knowledgeDir: 'sovei-flow/project/knowledge',
+  harnessDir: 'sovei-flow',
   project: { name: 'test', description: 'test', techStack: {}, started: '2026-01-01' },
   workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
 };
@@ -20,6 +20,16 @@ const config = {
 function createEngine() {
   const storage = new MemoryStorage();
   return { storage, engine: new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config) };
+}
+
+/** Fast-forward through explore stage (first stage) so tests can operate on load+. */
+async function skipExplore(storage, featureId) {
+  const { EventStore } = await import('../dist/index.js');
+  const events = new EventStore(storage);
+  const path = `specs/${featureId}`;
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
+  await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
 }
 
 // ── TASK-001: TASK_TYPE_MAP['general'] 包含 code-map 和 rule ──
@@ -39,9 +49,10 @@ test('loadByTaskType("general") loads code-map and rule knowledge types', async 
 // ── TASK-002: loadStage 契约 + postExecute + prompt ──
 
 test('loadStage contract declares load-summary.md as produced artifact', async () => {
-  const { engine } = createEngine();
+  const { storage, engine } = createEngine();
   // 通过 prepareStage 间接验证契约——prepareStage 会为 producesArtifacts 创建模板
   await engine.bootstrap('test-contract');
+  await skipExplore(storage, 'test-contract');
   await engine.prepareStage('test-contract', 'load');
   // load-summary.md 模板应已创建
   // 验证方式：completeStage 会对模板报 "still templates" 错误
@@ -54,16 +65,18 @@ test('loadStage contract declares load-summary.md as produced artifact', async (
 test('loadStage postExecute validates workflow-state consistency', async () => {
   const { storage, engine } = createEngine();
   await engine.bootstrap('test-postexec');
+  await skipExplore(storage, 'test-postexec');
   await engine.prepareStage('test-postexec', 'load');
   await storage.write('specs/test-postexec/load-summary.md', '# 加载摘要\n\n代码库现状。');
   // 正常完成不应抛出异常
   const state = await engine.completeStage('test-postexec', 'load');
-  assert.deepEqual(state.completedStages, ['load']);
+  assert.deepEqual(state.completedStages, ['explore', 'load']);
 });
 
 test('load prompt includes exploration methodology keywords', async () => {
-  const { engine } = createEngine();
+  const { storage, engine } = createEngine();
   await engine.bootstrap('test-prompt');
+  await skipExplore(storage, 'test-prompt');
   const result = await engine.prepareStage('test-prompt', 'load');
   assert.match(result.prompt, /现状探索/);
   assert.match(result.prompt, /风险识别/);
@@ -76,6 +89,7 @@ test('load prompt includes exploration methodology keywords', async () => {
 test('grillStage requires load-summary.md as input artifact', async () => {
   const { storage, engine } = createEngine();
   await engine.bootstrap('test-grill-dep');
+  await skipExplore(storage, 'test-grill-dep');
   await engine.prepareStage('test-grill-dep', 'load');
   await storage.write('specs/test-grill-dep/load-summary.md', '# 加载摘要\n\n代码库现状。');
   await engine.completeStage('test-grill-dep', 'load');
@@ -93,7 +107,9 @@ test('grillStage preparation fails when load-summary.md is missing', async () =>
   const { EventStore } = await import('../dist/index.js');
   const events = new EventStore(storage);
   const path = 'specs/test-grill-missing';
-  // bootstrap 已创建 BOOTSTRAP 事件，只需追加 PREPARED + COMPLETE
+  // bootstrap 已创建 BOOTSTRAP 事件，先跳过 explore，再追加 load 的 PREPARED + COMPLETE
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
   await events.append(path, { type: 'STAGE_PREPARED', stage: 'load' }, 'load');
   await events.append(path, { type: 'STAGE_COMPLETE', stage: 'load', artifacts: [] }, 'load');
   await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));

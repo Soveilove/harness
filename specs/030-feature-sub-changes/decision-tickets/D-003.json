@@ -1,0 +1,20 @@
+{
+  "id": "D-003",
+  "title": "父Feature门禁机制",
+  "question": "父Feature的learn阶段如何等待所有子变更完成verify",
+  "type": "research",
+  "interaction": "AFK",
+  "status": "resolved",
+  "blockedBy": [],
+  "claim": null,
+  "resolution": "父Feature进入learn阶段前引擎检查所有子变更状态是否为merged。有未完成子变更时learn阶段prepare失败并报告未完成项。这是聚合门禁:learn-sync只在所有子变更merge后才能推进",
+  "evidence": [
+    "workflow-engine.ts prepareStage",
+    "decision-log.md Q1"
+  ],
+  "contextPointers": [],
+  "exclusionReason": null,
+  "createdAt": "2026-08-12T16:09:07.609Z",
+  "updatedAt": "2026-08-12T16:09:32.232Z",
+  "resolvedAt": "2026-08-12T16:09:32.232Z"
+}

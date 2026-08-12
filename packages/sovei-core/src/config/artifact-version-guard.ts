@@ -21,8 +21,8 @@ import { VERSION } from './version.js';
 
 /** Paths of onboarding artifacts that embed a scannerVersion. */
 export const ARTIFACT_FILES = {
-  businessMap: 'harness/project/codegraph/business-map.json',
-  redlineSeed: 'harness/project/governance/redlines-seed.json',
+  businessMap: 'sovei-flow/project/codegraph/business-map.json',
+  redlineSeed: 'sovei-flow/project/governance/redlines-seed.json',
 } as const;
 
 /** Read the scannerVersion embedded in an artifact. Returns null if the file

@@ -2,6 +2,22 @@
 
 All notable changes to the Sovei workflow engine are documented in this file.
 
+## [2.6.0] - 2026-08-13
+
+### Added
+
+- **Feature 拆分为子变更**：一个 Feature 可拆分为多个子变更并行开发（`feature split`）。共享前段（load→scope）、分叉后段（plan→verify）、聚合收尾（learn→sync）。子变更间支持依赖声明；聚合门禁确保所有子变更 merged 后父 Feature 才进入 learn。scope 阶段提示契约新增"拆分评估"段，AI 可主动建议拆分。
+- **init 产物改名 harness → sovei-flow**：init 产物目录从 `harness/` 改为 `sovei-flow/`。新增 `sovei project migrate` 命令一键迁移已初始化项目。
+- **agents 与 skills 分开存放**：init 新增 `sovei-flow/agents/` 目录存放工作流阶段指令，与 `sovei-flow/skills/` 分开。
+- **Skills 基座**：init 新增 `sovei-flow/skills/base/` 目录，预置 6 个技能模板（vue2/vue3/react/cli/python/quant），按项目技术栈注入。
+- **Codex 技能包适配**：Codex 适配器新增 12 节点按钮 + `skillPackage`（聚合技能文件 `sovei-workflow.md`），让 Codex 桌面版通过技能 description 主动唤起工作流。
+- **版本更新提示机制**：CLI 启动时检测 npm 最新版本。两类提示：①提示更新（简单通知）；②建议更新有新能力支持（列出能力清单）。24h 缓存，零运行时依赖，输出到 stderr 不污染 JSON。`SOVEI_NO_UPDATE_CHECK=1` 可关闭。
+
+### Changed
+
+- **开源许可**：从专有许可改为 MIT License，正式开源。
+- **README 重写**：npm 发布说明和仓库 README 全面更新，覆盖 sovei-flow 目录结构、Feature 拆分命令、Skills 基座、版本提示等新能力。
+
 ## [2.5.6] - 2026-08-07
 
 ### Fixed

@@ -1,6 +1,6 @@
 /**
  * Workflow Commands
- * 12 stage commands + bootstrap + reopen + status + list-stages
+ * 13 stage commands + bootstrap + reopen + status + list-stages
  * Each stage executes exactly one step and reports the next command.
  */
 
@@ -14,7 +14,7 @@ import '../../stages/index.js';
 import { ChangeDimension, type ChangeDimension as ChangeDimensionType } from '../../change-control/schemas.js';
 
 const STAGE_NAMES = [
-  'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ];
 
@@ -86,27 +86,40 @@ export function registerWorkflowCommands(program: Command): void {
       printNextCommand(state, feature);
     });
 
-  // ── All 12 stages ──
+  // ── All 13 stages（explore 单独注册，支持 --prd/--brief 入口模式）──
   for (const stageName of STAGE_NAMES) {
+    if (stageName === 'explore') continue; // explore 命令单独注册
     const stage = stageRegistry.get(stageName);
     workflow
       .command(stageName)
       .argument('<feature>', 'Feature ID')
       .option('--complete', '校验产物并完成该阶段')
       .option('--task <id>', 'implement 阶段选择的任务 ID')
+      .option('--sub-change <id>', '子变更 ID（仅 plan→verify 阶段可用）')
       .description(stage.description)
-      .action(async (feature: string, opts: { complete?: boolean; task?: string }) => {
+      .action(async (feature: string, opts: { complete?: boolean; task?: string; subChange?: string }) => {
         const engine = getEngine();
         if (stageName !== 'implement' && opts.task) {
           throw new Error('--task is only valid for the implement stage');
         }
+        // Sub-change constraint: only plan→verify stages allow --sub-change
+        const SUB_CHANGE_STAGES = ['plan', 'tasks', 'implement', 'converge', 'verify'];
+        if (opts.subChange && !SUB_CHANGE_STAGES.includes(stageName)) {
+          throw new Error(
+            `--sub-change is only valid for stages: ${SUB_CHANGE_STAGES.join(', ')}. `
+            + `Stage '${stageName}' is shared at the parent Feature level.`,
+          );
+        }
+        const subChangeOpts = opts.subChange ? { subChangeId: opts.subChange } : undefined;
         if (opts.complete) {
           const state = stageName === 'implement' && opts.task
             ? await engine.completeTask(feature, opts.task)
-            : await engine.completeStage(feature, stageName);
+            : await engine.completeStage(feature, stageName, subChangeOpts);
           const message = stageName === 'implement' && opts.task
             ? `任务 '${opts.task}' 已完成；implement 阶段继续保持活动。`
-            : `阶段 '${stageName}' 已完成。`;
+            : opts.subChange
+              ? `子变更 '${opts.subChange}' 阶段 '${stageName}' 已完成。`
+              : `阶段 '${stageName}' 已完成。`;
           console.log('\n  ✓ ' + message + '\n');
           printState(state);
           printNextCommand(state, feature);
@@ -115,7 +128,7 @@ export function registerWorkflowCommands(program: Command): void {
         if (stageName === 'implement' && !opts.task) {
           throw new Error("implement preparation requires --task <id>");
         }
-        const result = await engine.prepareStage(feature, stageName);
+        const result = await engine.prepareStage(feature, stageName, subChangeOpts);
         console.log('\n  已准备阶段 \'' + stageName + '\'；工作流状态未推进。\n');
         if (result.skillExecutionReport) {
           const sr = result.skillExecutionReport;
@@ -147,6 +160,64 @@ export function registerWorkflowCommands(program: Command): void {
         console.log('  完成命令：sovei workflow ' + stageName + ' ' + feature + ' --complete' + (opts.task ? ' --task ' + opts.task : '') + '\n');
       });
   }
+
+  // ── explore（兼任 Feature 入口，支持 --prd/--brief）──
+  workflow
+    .command('explore')
+    .description('explore 阶段：读 PRD + 业务覆盖面 → 需求理解 + 拆分提议。兼任 Feature 入口（--prd/--brief）。')
+    .argument('<feature>', 'Feature ID（新 Feature 自动 bootstrap）')
+    .option('--prd <path>', 'PRD 文件路径（入口模式：复制到 specs/<feature>/prd.md）')
+    .option('--brief <text>', '内联需求描述（无 PRD 文件时使用，写入 brief.md）')
+    .option('--complete', '校验 exploration.md + sub-change-map.md 并完成阶段')
+    .action(async (feature: string, opts: { prd?: string; brief?: string; complete?: boolean }) => {
+      const engine = getEngine();
+
+      // ── 完成模式 ──
+      if (opts.complete) {
+        const state = await engine.completeStage(feature, 'explore');
+        console.log('\n  ✓ 阶段 \'explore\' 已完成。\n');
+        printState(state);
+        printNextCommand(state, feature);
+        return;
+      }
+
+      // ── 入口模式：--prd 或 --brief 触发 bootstrap + 复制需求 ──
+      if (opts.prd || opts.brief) {
+        // bootstrap Feature（若已存在则不报错，支持重做 explore）
+        await engine.bootstrap(feature);
+
+        // 复制 PRD 或写入 brief
+        const storage = container.inject<any>(TOKENS.Storage);
+        const path = await import('node:path');
+        const fs = await import('node:fs/promises');
+        if (opts.prd) {
+          const prdContent = await fs.readFile(path.resolve(opts.prd), 'utf-8');
+          await storage.write(`specs/${feature}/prd.md`, prdContent);
+          console.log('\n  📄 已读取 PRD：' + opts.prd + ' → specs/' + feature + '/prd.md');
+        } else if (opts.brief) {
+          await storage.write(`specs/${feature}/brief.md`, opts.brief);
+          console.log('\n  📝 已写入需求描述 → specs/' + feature + '/brief.md');
+        }
+      }
+
+      // ── 准备 explore 阶段（注入提示契约 + 创建模板）──
+      const result = await engine.prepareStage(feature, 'explore');
+      console.log('\n  已准备阶段 \'explore\'；工作流状态未推进。\n');
+      if (result.artifactsWritten.length > 0) {
+        console.log('  已写入产物：');
+        for (const a of result.artifactsWritten) {
+          console.log('    · ' + a);
+        }
+      }
+      if (result.prompt) {
+        console.log('');
+        console.log('  ── 提示契约 ──');
+        console.log(result.prompt);
+      }
+      const state = await engine.getState(feature);
+      printState(state);
+      console.log('  完成命令：sovei workflow explore ' + feature + ' --complete\n');
+    });
 
   // ── reopen ──
   workflow

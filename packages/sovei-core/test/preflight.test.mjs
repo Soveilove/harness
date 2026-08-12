@@ -9,13 +9,13 @@ import { MergePreflightChecker, renderPreflightReport } from '../dist/preflight/
 // ── 辅助函数 ──
 
 async function makeProject(root, name, { entries = {}, redlines = [] } = {}) {
-  await mkdir(join(root, 'harness', 'project', 'knowledge'), { recursive: true });
-  await mkdir(join(root, 'harness', 'project', 'governance'), { recursive: true });
-  await writeFile(join(root, 'harness', 'project', 'project.config.json'), JSON.stringify({ project: { name } }), 'utf8');
+  await mkdir(join(root, 'sovei-flow', 'project', 'knowledge'), { recursive: true });
+  await mkdir(join(root, 'sovei-flow', 'project', 'governance'), { recursive: true });
+  await writeFile(join(root, 'sovei-flow', 'project', 'project.config.json'), JSON.stringify({ project: { name } }), 'utf8');
   for (const [type, list] of Object.entries(entries)) {
-    await writeFile(join(root, 'harness', 'project', 'knowledge', `${type}.json`), JSON.stringify(list), 'utf8');
+    await writeFile(join(root, 'sovei-flow', 'project', 'knowledge', `${type}.json`), JSON.stringify(list), 'utf8');
   }
-  await writeFile(join(root, 'harness', 'project', 'governance', 'redlines.json'), JSON.stringify(redlines), 'utf8');
+  await writeFile(join(root, 'sovei-flow', 'project', 'governance', 'redlines.json'), JSON.stringify(redlines), 'utf8');
 }
 
 function redline(overrides) {
@@ -294,11 +294,11 @@ test('preflight: 报告写入事件流（两侧审计一致）', async () => {
 
     // 验证两侧都写了事件
     const sourceEvents = await readFile(
-      join(sourcePath, 'harness', 'project', 'governance', 'preflight-events.jsonl'),
+      join(sourcePath, 'sovei-flow', 'project', 'governance', 'preflight-events.jsonl'),
       'utf8',
     );
     const targetEvents = await readFile(
-      join(targetPath, 'harness', 'project', 'governance', 'preflight-events.jsonl'),
+      join(targetPath, 'sovei-flow', 'project', 'governance', 'preflight-events.jsonl'),
       'utf8',
     );
 

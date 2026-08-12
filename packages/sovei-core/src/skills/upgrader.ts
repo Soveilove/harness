@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { parseSkillLock } from './config.js';
 import type { SkillLockEntry } from './config.js';
 
-const LOCK_FILE = 'harness/skills/skill-lock.yaml';
+const LOCK_FILE = 'sovei-flow/skills/skill-lock.yaml';
 
 export interface UpdateCheckResult {
   skillId: string;

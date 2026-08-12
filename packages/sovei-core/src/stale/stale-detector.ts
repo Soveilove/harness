@@ -12,7 +12,7 @@ import type { StorageBackend } from '../storage/types.js';
 import { getGitBaseline, getGitBranch } from '../quick/git-verifier.js';
 
 /** 仓库级 sync 基线文件路径（与红线/知识等治理资产同目录）。 */
-export const SYNC_BASELINE_PATH = 'harness/project/governance/sync-baseline.json';
+export const SYNC_BASELINE_PATH = 'sovei-flow/project/governance/sync-baseline.json';
 
 /** sync 基线文件 schema 版本（持久化结构，遵循 PERSISTED_SCHEMA_COMPAT）。 */
 export const SYNC_BASELINE_SCHEMA_VERSION = 1 as const;
