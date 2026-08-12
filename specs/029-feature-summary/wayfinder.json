@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "featureId": "029-feature-summary",
+  "destination": "",
+  "notes": "",
+  "notRequiredReason": "S1 small single-command feature, decisions resolved in grill",
+  "revision": 0,
+  "updatedAt": "2026-08-11T16:22:10.702Z",
+  "ticketIndex": [],
+  "fog": []
+}

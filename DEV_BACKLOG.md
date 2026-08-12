@@ -1,6 +1,7 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
 > 生成日期：2026-08-11（全面重整，含 spec 治理讨论结论 + web-plugins 吸收清单）
+> 最新追加：2026-08-11 —— 用户两大新诉求分析：① 自有 agent/skills 技能库；② IDE agent 直接调用工作流能力。
 > 依据：全面扫描 `specs/` 下全部 Feature、`design-docs/` 设计文档、源码与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
@@ -56,7 +57,7 @@
 | # | 项 | 简述 | 预估工作量 |
 |---|---|---|---|
 | ~~P1-1~~ | ~~**`sovei feature archive <id>`**~~ | ✅ **已完成**（2026-08-11，Feature 026）：过程产物折叠到 `_archive/`，持久文件留顶层。排除法归档（白名单排除），幂等，状态检查。测试 186/186 通过 | — |
-| **P1-2** | **`sovei feature summary <id>`** | 从 Feature 的事件流 + 各阶段产物中生成一个聚合的人可读视图（`summary.md`），包含：需求 → 决策 → 变更 → 验证 → 经验的完整故事线。替代原"独立 docs 系统"思路——先做 CLI 生成静态 .md，零运行时依赖 | 1 Feature |
+| ~~P1-2~~ | ~~**`sovei feature summary <id>`**~~ | ✅ **已完成**（2026-08-12，Feature 029）：从事件流 + 各阶段产物生成聚合 `summary.md`（需求→决策→变更→验证→经验→结论六章节），`_archive/` 回退支持归档后还原，支持 `--json` 结构化输出，状态容忍（in_progress/产物缺失降级），零运行时依赖。测试 192/192 通过。**P1 全部清零** | — |
 | ~~P1-3~~ | ~~**README 版本同步**~~ | ✅ **已完成**（2026-08-11，快速通道 quick-msosv36f）：版本号已是 2.5.10（三方同步）；命令速查表补充 5 条新命令（`context cross-feature-index`、`context expand`、`quick`、`workspace preflight`、`adapters install/list`） | — |
 | **P1-4** | **知识提取复用价值阈值** | 防 knowledge 膨胀：定义最少证据数 / 最小复用次数才入库的阈值规则。当前 trust-but-verify 机制（candidate→pending→stable）已有基础，缺前置门槛 | 1 Feature |
 
@@ -76,6 +77,7 @@
 | **P2-8** | **阶段上下文预算值** | shadow policy 已计算三变体字符数，但未设定阈值。需先观测真实使用数据再定预算 | 等评测数据 |
 | **P2-9** | **013 O2 sentinel upsert 晋升** | 已覆盖 3 Feature，第 4 个复用则晋升 stable。被动等待，不需主动开发 | — |
 | **P2-10** | **Cursor Adapter** | `adapters/registry.ts` 中 `cursor: pending`。其他 4 个 IDE（Codex/Claude/CodeBuddy/Trae）已完成 | 有无实际需求 |
+| **P2-11** | **architecture scan 支持 Python（`.py`）** | 默认 `includeExtensions` 是 TS/JS 家族（`.ts/.tsx/.js/.jsx/.vue/.svelte/.mjs/.cjs`，见 `policy.ts`），不含 `.py`。需：① includeExtensions 加 `.py`（或按项目类型扩展）；② analyzer 的依赖解析（fanIn/fanOut）适配 Python `import`/`from ... import` 语法；③ branch/function 度量适配 Python 缩进块。**备注**：Sovei 核心（workflow/quick/governance/knowledge/context）与语言无关、正常在用；scan 仅是不支持 Python 的附带辅助功能，当前已有 `test_arch_layers.py` 替代，不阻塞任何实际开发。**来源**：别人 AI 引入的待办 | 有 Python 项目时 |
 | **SA-2** | **子 Agent：context build 组装** | 分组并行加载 required 项 | — |
 | **SA-3** | **子 Agent：converge/verify 代码审查** | 分维度并行审查（类型安全/测试覆盖/规则合规/架构合规） | — |
 | **SA-5** | **子 Agent：preflight 并行检测** | 三类冲突检测并行。当前数据量小收益有限 | — |
@@ -141,6 +143,13 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | ❓ D9 | **WP-4 implement 分层增强是否立项？** | 需抽象掉 EC 三层架构，工作量中等 |
 | ❓ D10 | **WP-5 前端 skill 集是否剥离 EC 专属内容后 vendor？** | 剥离后 TS/React/Less/命名/Git 规范通用部分对任何前端项目可用 |
 | ❓ D11 | **是否引入"ad-hoc 专家咨询"模式？** | web-plugins 的 fullstack-engineer 是用户按需调用的非阶段专家。harness 目前无此模式，多数用户直接用宿主 AI 做 ad-hoc，**暂不建议** |
+| ❓ D12 | **是否启动自有 agent/skills 技能库（方案 A/D）？** | 摆脱对 mattpocock/softaworks 的依赖，沉淀我们自己的编码规范/工程方法论，`project init` 即引用。这是诉求一 |
+| ❓ D13 | **是否扩展 adapter 生成每阶段 slash command + 结构化返回（方案 B）？** | 让 IDE agent 用斜杠命令直接触发 load/spec/implement 等阶段并拿 JSON 结果。这是诉求二的中成本方案 |
+| ❓ D14 | **是否做 `sovei` 的 IDE 工具/MCP 封装层（方案 C）？** | 把 workflow/quick/context 暴露为 IDE 可调用工具。成本大，建议先看 B/F 的使用反馈再定 |
+| ❓ D15 | **自有技能库内容优先级？** | 先吸收哪个：编码规范（TS/React/Git）、工作流增强、还是工程方法论？建议从 web-plugins 可剥离素材（WP-3/5）起步 |
+| ❓ D16 | **是否做初始化四 agent 选择器 + 差异化安装（方案 F）？** | `project init` 交互式选 Claude Code/CodeBuddy/Trae/Codex，按各自指令/技能机制安装。诉求二在初始化环节的入口，建议优先 |
+| ❓ D17 | **是否做 Codex 技能封装（方案 G）？** | 桌面版 Codex 不支持指令，需把 `sovei` 工作流封装成技能包（聚合或每阶段）。这是 Codex 用户的唯一顺畅触发方式 |
+| ❓ D18 | **是否自研 CLI 交互面板层（方案 H）？** | 空格选择/Enter 确认/↑↓ 导航，应用 `adapters install`、`project init --agent` 等多选/不指定参数场景。受零运行时依赖约束，需自研（readline + 转义序列），不能引第三方库。是方案 F 的操作前提 |
 
 ---
 
@@ -148,22 +157,29 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 
 | 步骤 | 项 | 优先级 | 状态 |
 |---|---|---|---|
-| 1 | `sovei feature archive <id>` — 过程产物折叠 | P1 | ❌ 待开发 |
-| 2 | `sovei feature summary <id>` — 聚合人可读视图 | P1 | ❌ 待开发 |
-| 3 | README 版本同步 | P1 | ❌ 待开发 |
-| 4 | 知识提取复用价值阈值 | P1 | ❌ 待开发 |
+| 1 | `sovei feature archive <id>` — 过程产物折叠 | P1 | ✅ 已完成（Feature 026） |
+| 2 | `sovei feature summary <id>` — 聚合人可读视图 | P1 | ✅ 已完成（Feature 029，2026-08-12） |
+| 3 | README 版本同步 | P1 | ✅ 已完成 |
+| 4 | 知识提取复用价值阈值 | P1 | ⬅️ 下一个 P1 待开发 |
 | 5 | `--json` 全覆盖 | P2 | ❌ 待开发 |
 | 6 | `context build --paths` 语义修正 | P2 | ❌ 待开发 |
 | 7 | WP-1 / P2-6 Skill reference 加载策略 | P2 | ❌ 待开发 |
 | 8 | WP-2 verify 结构化审查 skill | P2 | ❌ 待开发 |
 | 9 | CI/CD 集成模板 | P2 | ❌ 待开发 |
 | 10 | 子 Agent 强化 SA-2/3/5/6 | P2 | ❌ 待评估 |
-| 11 | 其余 P2（usage export / 多 binding / 预算值 / Cursor / O2 晋升） | P2 | ❌ 待开发 |
+| 11 | 其余 P2（usage export / 多 binding / 预算值 / Cursor / O2 晋升 / **architecture scan 支持 Python P2-11**） | P2 | ❌ 待开发 |
 | 12 | 统一关系模型（问题四） | P3 | ❌ 待决策 |
 | 13 | 联邦星型 / Phase 4 / Phase 2 回放验证 | P3 | ❌ 待决策 |
 | 14 | 本地使用优化（use-local.ps1 + README 补充） | 低 | ❌ 待开发 |
+| 15 | **诉求一：自有 agent/skills 技能库（方案 A/D）** | P2 | ❌ 待决策（D12） |
+| 16 | **诉求二：IDE agent 直接调用工作流（方案 B，slash command + 结构化返回）** | P2 | ❌ 待决策（D13） |
+| 17 | **诉求二·初始化：四 agent 选择器 + 差异化安装（方案 F）** | P2 | ❌ 待决策（D16） |
+| 18 | **诉求二·Codex：工作流技能封装（方案 G）** | P2 | ❌ 待决策（D17） |
+| 19 | **诉求三：CLI 交互面板层（方案 H，空格选择/Enter 确认）** | P2 | ❌ 待决策（D18） |
 
 > **原则**：先做 P1-1/P1-2 观察 spec 治理体验，再决定是否需要架构级拆分。P2 按"使用频率 × 痛点程度"排，不按编号顺序。
+>
+> **新诉求排期倾向（§10.5/10.6/10.7）**：先 A + D（自有技能库，低成本），再 **H（CLI 交互面板，是 F 的操作前提）+ F + G（初始化四 agent 选择 + Codex 技能封装，中成本）**，B（slash command 结构化返回）随 F/G 扩展，C 视 B/F 反馈再评估。A/D 是 F/G/B/C 的内容基础，H 是 F/G 的交互底座。
 
 ---
 
@@ -191,6 +207,8 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 ## 8. web-plugins 吸收清单（2026-08-11）
 
 > 来源：扫描 `web-plugins/ec-web-ai-plugin/`（EC 前端团队 VS Code Copilot 插件，1.0.25）。含 8 个 `.agent.md`、6 个 skill、1 个 MCP。
+>
+> **关联诉求一（§10.1，自有技能库）**：本节大部分待吸收项都沉淀进**自有 skill 命名空间 `harness/vendor/ec-web/skills/`**，作为诉求一"自有 agent/skills 技能库"的内容来源。剥离 EC 专属后通用部分对任何项目可用。
 
 ### 8.1 待吸收项
 
@@ -249,3 +267,135 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 - skill body 是 structural-fact，Sovei 阶段契约是 semantic-annotation
 
 **建议路径**：统一关系模型（定义 schema + 适配器）→ 正向影响分析 → 反向同步 → 图查询上下文
+
+---
+
+## 10. 用户新诉求分析（2026-08-11）：自有技能库 + IDE 直接调用工作流 + CLI 交互体验
+
+> 用户原话（归纳）：① 突然意识到应该维护一套**属于我们自己的 agent 和 skills 技能库**，方便初始化项目时直接引用；② 当前 **IDE agent 不能通过指令直接调用我们的工作流能力**，使用上很难受；③（补充）**CLI 交互体验**：多选、或不指定参数时，要有**操作面板**（如空格选择、Enter 确认这种终端交互）。
+>
+> 本节把三个诉求拆开、对照现状、给出缺口判断与候选方案，供排期决策。
+
+### 10.1 诉求一：维护自有 agent + skills 技能库，初始化即引用
+
+**现状痛点**：
+- harness 的 skill 来源目前**完全依赖外部 vendor**：`mattpocock`（6 个工程 skill）+ `softaworks`（lesson-learned）。这些是第三方维护，与我们的实际工程习惯有距离，且 github.com 不通时拉取受限（需 raw 通道）。
+- 我们**没有自己沉淀的技能库**——`harness/vendor/` 下没有 `ec-web/`（自有命名空间），也没有"初始化即带上"的自有技能集。
+- `project init`（Feature 023）目前只生成骨架 + IDE 适配器，**不含自有 skills/agents**。
+- web-plugins 里有大量现成优质素材（coding-standards / skill-authoring-standards / vercel-react-best-practices 等），但它们是 **EC 前端专属、未与 harness 打通**，无法直接被 harness 项目引用。
+
+**要解决的"初始化时引用"**：希望新项目 `project init` 后，立即能有一套自有的、开箱即用的 agent 指令 + skill，而不是每次都要手动 vendor 或依赖第三方。
+
+**缺口判断**：
+- 缺一个**自有 skill 命名空间/仓库**（如 `harness/vendor/ec-web/skills/` 或独立 `skills/` 目录），集中存放我们的编码规范、工程方法论、工作流增强 skill。
+- 缺一个 **`project init --include-self-skills`** 或类似机制，把自有技能集作为 init 的可选/默认附带项。
+- 缺对 web-plugins 优质素材的**吸收与剥离**（剥离 EC 专属部分，见 §8）。
+
+### 10.2 诉求二：IDE agent 能直接（用指令/工具）调用工作流能力
+
+**现状痛点**：
+- 当前 adapter 机制（`adapters/registry.ts`）只是把 `sovei workflow <stage> <feature>` 的**文本指令**渲染进 AGENTS.md / CLAUDE.md / .cursorrules。IDE agent 看到的是"命令提示"，要自己开终端敲 `sovei`。
+- CodeBuddy 的调用约定是 `SOVEI: <stage> <feature>` **字符串**，无任何 IDE 原生能力绑定（无 slash command 语义、无自定义工具/MCP 触发）。
+- 结果：想让 agent 走 load/spec/implement 阶段，要么在对话里手写命令，要么让 agent 自己开 shell 执行——**割裂、不顺手、无法结构化返回**。
+
+**要解决的"直接调用"**：希望 IDE agent 能以**原生、可触发**的方式调用工作流能力——例如斜杠命令（Claude/CodeBuddy 的 slash command）、IDE 自定义工具（tool/agent）、或 MCP 能力——并拿到**结构化返回**（当前阶段产物、下一步、风险等级等），而不是让 agent 猜命令。
+
+**缺口判断**：
+- adapter 目前只做**文本渲染**，缺**可执行工具层**：把 `sovei` 工作流暴露成 IDE 可调用的工具/命令（slash command 已部分支持，见 §10.3 已具备项）。
+- 缺**结构化返回协议**：IDE 调用后能拿到 JSON 化的阶段产物/风险/下一步，供 agent 消费。
+- CodeBuddy 适配器无 MCP（`mcp: false`），在 IDE 侧直接触发受限。
+- **缺四 agent 初始化选择器**：`project init` 目前只支持 `--adapters <ids>` 手工传，没有"初始化时从四个 agent 里选"的引导；且四个 agent 用同一套文本渲染，没区分各自的指令/技能触发机制。
+- **缺 Codex 技能封装**：Codex 桌面版**不支持指令（slash command）**，必须把 `sovei` 调用**封装成技能（skill）**，让 agent 以技能方式被触发，而不是指令方式。这是 Codex 与其他三个 agent（Claude Code/CodeBuddy/Trae）的本质差异。
+
+### 10.3 已具备能力（避免重复造轮子）
+
+| 已具备 | 说明 | 与两诉求关系 |
+|---|---|---|
+| **S0 快速通道 + slash command** | Feature 020/021/023：`sovei quick` + Claude/CodeBuddy 的 `.claude/commands`、`.codebuddy/commands` 下生成 `sovei-quick.md` | 诉求二的**雏形**：只覆盖 quick，未覆盖完整 12 阶段工作流 |
+| **`adapters install`** | 把 quick 指令文本写入各 IDE contextFile | 只注入文本，未注入可执行工具 |
+| **`sovei skills use/bind/sync`** | 连接外部 skill 并渲染进 agent 上下文 | 诉求一的**机制底座**：但依赖外部源，无自有命名空间 |
+| **`project init --adapters`** | Feature 023：init 时装 IDE 适配器 | 诉求一的 init 引用入口雏形 |
+| **skill-authoring-standards**（web-plugins） | 教写好 skill 的元技能（agentskills.io 规范 + 500 行上限 + 渐进披露） | 诉求一的**方法论底座**，可吸收 |
+
+### 10.4 三个诉求的关联
+
+前两诉求**不是独立的两件事**，而是指向同一方向：**把"我们的工作流 + 我们的技能"变成 IDE agent 原生可用的一套能力**。
+- 诉求一提供"有什么"（自有技能库内容）。
+- 诉求二提供"怎么调"（IDE 原生触发 + 结构化返回）。
+- 结合后：新项目 init 即带自有技能，且 IDE agent 能直接触发工作流阶段并消费产物——形成"开箱即用 + 顺手驱动"的完整闭环。
+
+**诉求三（CLI 交互体验）是给人类操作者的体验层**：前两诉求面向 IDE agent，诉求三面向**在终端直接用 `sovei` 命令的人**。当人不指定参数（或需要多选）时，需要交互面板（空格选择/Enter 确认）而不是"打印列表让你自己敲参数"。三者叠加后：机器用 IDE 顺畅调、技能库有内容、人敲 CLI 也顺手。
+
+### 10.5 候选方案（供 §4 决策项引用）
+
+| # | 候选方案 | 对应诉求 | 工作量 |
+|---|---|---|---|
+| **方案 A** | 建立自有 skill 命名空间 `harness/vendor/ec-web/skills/`，吸收剥离 web-plugins 素材 + 自建编码规范/工程方法论 skill；`project init` 可选附带 | 诉求一 | 中 |
+| **方案 B** | 扩展 adapter：为每个工作流阶段生成 slash command（不只 quick），并输出结构化 JSON 返回 | 诉求二 | 中 |
+| **方案 C** | 开发 `sovei` 的 **IDE 工具/MCP 封装层**：把 `workflow`/`quick`/`context` 暴露为 IDE 可调用工具，支持 CodeBuddy/Claude 等 | 诉求二 | 大 |
+| **方案 D** | 吸收 `skill-authoring-standards` 为自有元技能，形成"我们怎么写 skill"的内部标准，反哺所有自建 skill | 诉求一 | 小 |
+| **方案 E** | `project init --include-skills` 一键拉取自有技能集 | 诉求一 | 小 |
+| **方案 F** | 初始化时四 agent 选择器 + 按 agent 能力差异化安装（Claude Code/CodeBuddy→slash command，Trae→文本，**Codex→技能封装**） | 诉求二 | 中 |
+| **方案 G** | 为 Codex 生成 `sovei` 工作流**技能包**（每个阶段一个 skill / 一个聚合 skill），弥补桌面版不支持指令的短板 | 诉求二 | 中 |
+| **方案 H** | **自研 CLI 交互面板层**（空格选择/Enter 确认/↑↓导航），应用到 `adapters install`、`project init --agent` 等多选/不指定参数场景 | 诉求三 | 中 |
+
+> 建议排期倾向：**先 A + D（低成本，解决"自有技能库"），再 F + G（中成本，解决"初始化四 agent 选择 + Codex 技能封装"，这正是诉求二的核心落地），C 视 B/F 的使用反馈再评估**。**方案 H（CLI 交互）是 F/G 的操作前提——F 的四 agent 选择器正好需要 H 的交互面板。** A/D 是 F/G 的内容基础。
+
+### 10.6 诉求二细化：初始化四 agent 选择 + Codex 技能封装（2026-08-11 补充）
+
+> 用户补充：诉求二在初始化时提供**四个 agent 可选**——Claude Code / Trae / CodeBuddy / Codex。其中 **Codex 桌面版不支持指令**，所以 **Codex 的指令必须封装成技能（skill）** 来调用。
+
+**四个 agent 的调用机制差异**（`adapters/registry.ts` + `installer.ts` 现状）：
+
+| Agent | 调用机制 | 现状（初始化安装） | 期望（诉求二） |
+|---|---|---|---|
+| **Claude Code** | `.claude/commands/*.md` **slash command** | ✅ 已支持：写 `sovei-quick.md` + 追加 CLAUDE.md | 扩展为每阶段 slash command + 结构化返回 |
+| **CodeBuddy** | `.codebuddy/commands/*.md` | ✅ 已支持：写 `sovei-quick.md` + 追加 AGENTS.md | 同上；并解决 `SOVEI:` 字符串约定无原生触发的痛点 |
+| **Trae** | `.cursorrules` 追加**文本** | ⚠️ 仅文本追加，无指令文件 | 保持文本 + 提供可直接复制的指令片段 |
+| **Codex** | **桌面版不支持 slash command/指令** | ⚠️ 仅 AGENTS.md 文本追加，**无技能封装** | **封装成技能（skill）**，agent 以技能方式触发 |
+
+**Codex 为什么必须封装成技能**：
+- 桌面版 Codex 没有 Claude/CodeBuddy 那样的 `/指令` 触发机制，agent 只能通过**技能（skill 文件 + 元数据 description）**被动感知"可以用什么能力"。
+- 若只往 AGENTS.md 追加文本，Codex agent 可能在长上下文里忽略它，无法像 slash command 那样被显式触发。
+- 封装为 skill 后：Codex agent 能通过 skill 的 `description` 在适当时机主动唤起 `sovei` 工作流，而非依赖用户手工敲指令。
+
+**方案 F 设计要点（四 agent 初始化选择器）**：
+- `project init` 交互式提供四选（或 `--agent <id>` 指定）：Claude Code / CodeBuddy / Trae / Codex。
+- 按 agent 能力**差异化安装**，而非一刀切文本：
+  - Claude Code / CodeBuddy → 生成每阶段 slash command（load/spec/implement/verify/...）+ quick。
+  - Trae → `.cursorrules` 追加完整指令片段。
+  - Codex → 生成 `sovei` **技能包**（写技能文件），并追加 AGENTS.md 简述 + 技能清单。
+- 记录所选 agent 到 `project.config.json`（如 `ideAgent: codex`），供后续 `context build`/技能渲染感知宿主能力。
+
+**方案 G 设计要点（Codex 技能包）**：
+- 在 `harness/skills/` 或 `harness/vendor/ec-web/skills/` 下生成一组 sovei 技能：
+  - 推荐：**一个聚合技能 `sovei-workflow`**（含全部阶段子命令说明）+ 可选每阶段独立技能（`sovei-load` / `sovei-spec` / `sovei-implement` ...）。
+  - 每个技能遵循 agentskills.io 规范（frontmatter `name`/`description` + 渐进披露），`description` 写明触发时机，让 Codex 在合适场景主动唤起。
+  - 技能内容 = 调用 `sovei workflow <stage> <feature>` 的操作步骤 + 产物/风险/下一步的结构化约定。
+- 与方案 A（自有技能库）打通：Codex 技能包挂在自有 skill 命名空间下。
+
+> **排期结论**：方案 F（四 agent 选择器）+ G（Codex 技能包）是诉求二在初始化环节的具体落地，**建议在方案 B（slash command 结构化返回）之前或并行**先做，因为初始化选择是用户最先接触的入口。
+
+### 10.7 诉求三细化：CLI 交互面板（2026-08-11 补充）
+
+> 用户补充：CLI 交互体验——**多选**、或不指定参数时，要有**操作面板**（空格选择、Enter 确认这种终端交互）。
+
+**现状痛点**（以 `adapters install` 为例，`src/cli/commands/adapters.ts`）：
+- 无参数时目前只 `console.log` 打印可选项列表 + 提示用户**手工敲 `--adapters trae,codebuddy`**，**没有任何交互面板**。
+- 人想多选必须自己记下编号再拼参数，体验割裂、易错。
+- 同类问题散落在多个命令（`adapters install`、`project init --adapters`、未来的 `project init --agent`、`skills bind` 等）——都是"打印列表让你自己敲"模式。
+
+**关键约束：零运行时依赖**：
+- `sovei` 是**零运行时依赖**（README + package.json `dependencies` 为空，发布物是单文件 `sovei.cjs`）。
+- 因此**不能引入 inquirer / prompts / enquirer 等第三方交互库**——会打破零依赖卖点。
+- 交互面板需**自研**：基于 Node 原生 `readline` + 终端转义序列（↑↓ 移动、空格 勾选、Enter 确认），内联到单文件即可，零新增依赖。
+
+**方案 H 设计要点（自研 CLI 交互面板层）**：
+- 建一个轻量 `src/cli/interactive/` 模块，提供两类原语：
+  - **单选 `select(prompt, items)`**：↑↓ 导航，Enter 确认 → 返回选中项。用于 `project init --agent` 四选、无参数时选单个。
+  - **多选 `multiselect(prompt, items)`**：↑↓ 导航，**空格勾选/取消**，Enter 确认 → 返回选中集合。用于 `adapters install`、`project init --adapters`。
+- 终端能力检测：非 TTY（管道/CI/被脚本调用）时**自动降级为文本提示**（打印编号 + 让用户输入，或直接报"请用 --flag 指定"），保证 `--json`/脚本消费不受影响。
+- 与 commander 参数解析结合：**有参数直接走参数；无参数才弹面板**，且面板只是便捷层，不阻塞脚本化。
+- 应用范围：`adapters install`、`project init --adapters/--agent`、`skills bind`、`feature archive` 等所有"多选/不指定参数"命令。
+
+> **排期结论**：方案 H 是方案 F 的操作前提——F 的四 agent 选择器（单选）和 `adapters install` 多选都需要 H 的交互面板。建议 **H 先于或并行于 F/G** 做。H 也是所有 CLI 多选命令的通用基础，收益面广。
