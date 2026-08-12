@@ -1,6 +1,6 @@
 # Sovei
 
-> ⚠️ **高速迭代中**：当前版本更新频率较高，API 可能在 minor 版本间调整。建议关注最新版本。
+> 🚀 **v2.6.1 重大更新**：已实现企业级 13 阶段 SOP 工作流闭环。新增 `explore` 需求入口（`/sovei-explore --prd` 一条指令搞定 PRD→需求分析→拆分提议）、Feature 子变更并行开发、Skills 基座、IDE 全适配。**建议立即升级：`npm install -g @soveilove/sovei@latest`**
 
 Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、
 决策地图、重大变更控制和演进式架构治理。
