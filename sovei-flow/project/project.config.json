@@ -2,8 +2,10 @@
   "project": {
     "name": "harness",
     "description": "New project",
-    "techStack": {},
-    "started": "2026-08-07"
+    "techStack": {
+      "language": "typescript"
+    },
+    "started": "2026-08-13"
   },
   "workflow": {
     "version": "3.0.0"

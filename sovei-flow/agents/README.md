@@ -1,11 +1,11 @@
 # Agents
 
-> 12 个工作流阶段的 agent 指令模板。与 `skills/` 分开存放。
+> 13 个工作流阶段的 agent 指令模板。与 `skills/` 分开存放。
 
 ## 工作流阶段
 
 ```
-load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
+explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
 ```
 
 ## 说明

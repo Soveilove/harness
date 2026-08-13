@@ -195,7 +195,7 @@ export function registerProjectCommands(program: Command): void {
       await storage.writeIfAbsent('sovei-flow/agents/README.md', [
         '# Agents',
         '',
-        '> 12 个工作流阶段的 agent 指令模板。与 `skills/` 分开存放。',
+        '> 13 个工作流阶段的 agent 指令模板。与 `skills/` 分开存放。',
         '',
         '## 工作流阶段',
         '',
@@ -261,7 +261,8 @@ export function registerProjectCommands(program: Command): void {
         '- `sovei workflow <stage> <feature>`: Prepare a workflow stage',
         '- `sovei workflow <stage> <feature> --complete`: Complete a stage and advance',
         '- `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate',
-        '- `sovei workflow bootstrap <feature>`: Start a new feature',
+        '- `sovei workflow explore <feature> --prd <path>`: Entry stage — create feature + analyze requirements from a PRD (or `--brief "<text>"`)',
+        '- `sovei workflow bootstrap <feature>`: Start a new feature (low-level; explore is the recommended entry)',
         '- `sovei quick <target> --paths <path> --json`: Machine-first local change check; escalates uncertain or out-of-scope work',
         '- `/sovei-quick`: Claude Code thin wrapper forwarding to the same Quick contract; confirm scope before editing, then rerun verification',
         '- `sovei project onboard --evidence-only`: Collect evidence for agent analysis (existing projects)',
@@ -315,7 +316,7 @@ export function registerProjectCommands(program: Command): void {
         'The quick channel (`sovei quick`) and the full Sovei workflow are **mutually exclusive alternatives** — pick one, not both:',
         '',
         '- **Quick channel**: for low-risk, well-scoped, ad-hoc changes that don\'t warrant a full Feature. Run `sovei quick "<description>" --paths <file>` **before** editing (exclusions auto-loaded from .gitignore) → make the change → run tests → quick records usage + verifies git diff scope.',
-        '- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 12 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.',
+        '- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 13 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.',
         '',
       ].join('\n');
       if ((await storage.exists('AGENTS.md')) && !opts.force) {
@@ -407,11 +408,11 @@ export function registerProjectCommands(program: Command): void {
       if (!opts.blank && stack.framework) {
         console.log('    4. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
         console.log('    5. 审查种子知识：sovei knowledge list');
-        console.log('    6. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    6. 开始 Feature（explore 起手）：sovei workflow explore 001-my-feature --prd ./docs/prd.md');
       } else {
         console.log('    4. 如项目已有 Agent/IDE Rules，运行：sovei rules adapt');
         console.log('    5. 添加知识：sovei knowledge add --type pitfall --title "..." --content "..." --feature manual');
-        console.log('    6. 开始 Feature：sovei workflow bootstrap 001-my-feature');
+        console.log('    6. 开始 Feature（explore 起手）：sovei workflow explore 001-my-feature --brief "<需求描述>"');
       }
       console.log('');
     });

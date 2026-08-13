@@ -1,8 +1,8 @@
 ---
-description: Sovei scope 阶段 — 范围确定 + 拆分评估
+description: Sovei scope 阶段 — 范围确定 + 拆分修正
 ---
 # Sovei scope
-> 范围确定 + 拆分评估
+> 范围确定 + 拆分修正
 ## 参数
 - `$ARGUMENTS`：Feature ID（如 001-my-feature）
 - 可选 `--sub-change <id>`：对子变更执行此阶段
@@ -25,4 +25,4 @@ description: Sovei scope 阶段 — 范围确定 + 拆分评估
 ## 说明
 - 每次只执行一个阶段，`--complete` 后才能推进到下一阶段。
 - 产物文件位于 `specs/<feature>/` 目录下。
-- **拆分评估**：完成 scope 后，CLI 会提示是否需要拆分为子变更。运行 `sovei feature split <feature> --json` 获取提议契约。
+- **拆分修正**：完成 scope 后，基于代码影响面修正 explore 的拆分提议。运行 `sovei feature split <feature> --json` 获取提议契约。
