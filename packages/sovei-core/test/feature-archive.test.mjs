@@ -6,14 +6,14 @@ import { archiveFeature } from '../dist/cli/commands/feature.js';
 /** 构建一个已完成的 Feature 目录，包含持久文件和过程产物 */
 function setupCompletedFeature(storage, featurePath) {
   // 持久文件
-  storage.write(`${featurePath}/workflow-state.yaml`, 'featureId: test\nstatus: completed\ncurrentStage: null\nrevision: 0\nriskLevel: S1\ncompletedStages:\n  - load\n  - grill\n  - wayfind\n  - spec\n  - scope\n  - plan\n  - tasks\n  - implement\n  - converge\n  - verify\n  - learn\n  - sync\nnextStage: null\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\npendingConfirmations: []\ncompletedTaskIds: []\nactiveChangeId: null\n');
+  storage.write(`${featurePath}/workflow-state.yaml`, 'featureId: test\nstatus: completed\ncurrentStage: null\nrevision: 0\nriskLevel: S1\ncompletedStages:\n  - explore\n  - grill\n  - wayfind\n  - spec\n  - scope\n  - plan\n  - tasks\n  - implement\n  - converge\n  - verify\n  - learn\n  - sync\nnextStage: null\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\npendingConfirmations: []\ncompletedTaskIds: []\nactiveChangeId: null\n');
   storage.write(`${featurePath}/workflow-events.jsonl`, '{"type":"STAGE_COMPLETED"}\n');
   storage.write(`${featurePath}/decision-log.md`, '# 决策日志\n\n已解决。');
   storage.write(`${featurePath}/wayfinder.json`, '{}');
   storage.write(`${featurePath}/wayfinder-events.jsonl`, '');
   storage.write(`${featurePath}/wayfinder.md`, '# 决策地图');
   storage.write(`${featurePath}/sync-report.md`, '# Sync Report');
-  storage.write(`${featurePath}/load-summary.md`, '# Load Summary');
+  storage.write(`${featurePath}/exploration.md`, '# 需求探索');
 
   // 过程产物（应被归档）
   storage.write(`${featurePath}/reconciliation.md`, '# Reconciliation');
@@ -52,7 +52,7 @@ test('archiveFeature: 归档 completed Feature 的过程产物到 _archive/', as
   // 持久文件应保留在顶层
   assert.ok(result.retained.includes('decision-log.md'));
   assert.ok(result.retained.includes('sync-report.md'));
-  assert.ok(result.retained.includes('load-summary.md'));
+  assert.ok(result.retained.includes('exploration.md'));
   assert.ok(result.retained.includes('wayfinder.md'));
 
   // 非 .md 文件应保留

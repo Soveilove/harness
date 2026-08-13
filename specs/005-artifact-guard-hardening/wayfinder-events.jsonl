@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-05T16:00:21.080Z","revision":0,"actor":"codebuddy","event":{"type":"MAP_SKIPPED","featureId":"005-artifact-guard-hardening","reason":"三件事（门禁审阅补全、knowledge list 守卫修正、CLI 集成测试）已在 grill 阶段核实并确认，均为 S1 低风险确定性改动，无需决策地图"}}

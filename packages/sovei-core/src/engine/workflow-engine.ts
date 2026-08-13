@@ -42,20 +42,25 @@ import { serializeSyncBaseline, SYNC_BASELINE_PATH, SYNC_BASELINE_SCHEMA_VERSION
 /**
  * Default workflow definition.
  *
- * version: '3.0.0' — tracks WorkflowDefinition structure (stageOrder,
+ * version: '4.0.0' — tracks WorkflowDefinition structure (stageOrder,
  * maxStagesPerInvocation, allowChaining). See WorkflowDefinition JSDoc for
- * bump rules. 3.0.0 is a breaking refactor: the duplicated per-stage artifact
- * contracts (`stages`) were removed — they are cohesive to the stage entity and
- * now live solely in the stage registry (`StageDefinition.contract`), the single
- * source of truth. The legal stage set is carried by `stageOrder` (always the
- * full stage list).
+ * bump rules. 4.0.0 is a breaking topology change: the standalone `load` stage
+ * was removed and its capabilities (code exploration, current-state mapping,
+ * risk identification) were absorbed into `explore`. explore is now the single
+ * workflow entry — it reads the requirement AND the codebase together, then
+ * derives the change set. State recovery (formerly load's other job) is handled
+ * by event replay, not a dedicated stage. 12 stages total.
+ *
+ * (3.0.0 was the prior refactor: duplicated per-stage artifact contracts were
+ * removed — they live solely in the stage registry, the single source of truth.
+ * The legal stage set is carried by `stageOrder`, always the full stage list.)
  */
 export const DEFAULT_WORKFLOW: WorkflowDefinition = {
-  version: '3.0.0',
+  version: '4.0.0',
   maxStagesPerInvocation: 1,
   allowChaining: false,
   stageOrder: [
-    'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+    'explore', 'grill', 'wayfind', 'spec', 'scope', 'plan',
     'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
   ],
 };
@@ -88,7 +93,11 @@ export class WorkflowEngine {
   // context (artifacts under sub-changes/<id>/, cursor from SubChangeState).
   // The top-level Feature cursor is untouched — sub-changes fork from plan→verify.
 
-  /** Bootstrap a new feature */
+  /**
+   * Bootstrap a new feature.
+   * NOTE: featureId 格式校验发生在 CLI 入口（explore / bootstrap 命令），
+   * 而非此原语——保持引擎对测试夹具与程序化调用的灵活性。
+   */
   async bootstrap(featureId: string): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
     const existingEvents = await this.eventStore.readAll(featurePath);
@@ -770,7 +779,7 @@ export class WorkflowEngine {
   /** Generate a template for an artifact */
   private getArtifactTemplate(artifactName: string, stageName: string, prompt?: string): string {
     const titles: Record<string, string> = {
-      'load-summary.md': '加载摘要',
+      'sub-change-map.md': '变更拆分图',
       'decision-log.md': '决策日志',
       'wayfinder.md': '决策地图',
       'spec.md': '功能规格',
@@ -901,7 +910,7 @@ export class WorkflowEngine {
     lines.push('');
     lines.push(`> Feature：${featureId}`);
     lines.push(`> Created：${createdAt}`);
-    lines.push('> 由 `sovei feature split` 生成。子变更共享 load→scope 上下文，从 plan→verify 独立推进。');
+    lines.push('> 由 `sovei feature split` 生成。子变更共享 explore→scope 上下文，从 plan→verify 独立推进。');
     lines.push('');
     lines.push('| ID | Name | Goal | Depends On | Status |');
     lines.push('|---|---|---|---|---|');

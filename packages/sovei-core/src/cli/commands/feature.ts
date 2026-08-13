@@ -18,7 +18,7 @@ import type { WorkflowEngine } from '../../engine/workflow-engine.js';
 const PERSISTENT_FILES = new Set([
   'decision-log.md',
   'sync-report.md',
-  'load-summary.md',
+  'requirement.md',
   'wayfinder.md',
   'summary.md',
   'sub-change-map.md',
@@ -27,14 +27,13 @@ const PERSISTENT_FILES = new Set([
 
 /** 工作流阶段顺序（与 stages 引擎一致） */
 const STAGE_ORDER = [
-  'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ];
 
 /** 各阶段 → 主要产物文件（用于时间线渲染与章节说明） */
 const STAGE_ARTIFACTS: Record<string, string[]> = {
   explore: ['exploration.md', 'sub-change-map.md'],
-  load: ['load-summary.md'],
   grill: ['decision-log.md'],
   wayfind: ['wayfinder.md'],
   spec: ['spec.md', 'reconciliation.md'],
@@ -339,7 +338,8 @@ async function readSectionText(
 }
 
 /**
- * 提取需求描述：spec.md 的 `## 目标` → reconciliation.md 的 `## 1. 需求翻译` → load-summary.md 首段。
+ * 提取需求描述：spec.md 的 `## 目标` → reconciliation.md 的 `## 1. 需求翻译`
+ * → exploration.md 首段 → requirement.md 原文。
  */
 async function extractRequirements(
   storage: StorageBackend,
@@ -355,10 +355,16 @@ async function extractRequirements(
     const mt = recon.match(/^\*\*技术理解\*\*：\s*([\s\S]*?)(?=\n\*\*|$)/);
     if (mt && mt[1].trim()) return mt[1].trim();
   }
-  const load = await readArtifact(storage, featurePath, 'load-summary.md');
-  if (load) {
-    // 取第一个 ## 标题之前的非空行（即文件头部摘要）
-    const head = load.split(/^##\s+/m)[0].trim();
+  // explore 阶段的探索产出：取第一个 ## 标题之前的头部摘要
+  const exploration = await readArtifact(storage, featurePath, 'exploration.md');
+  if (exploration) {
+    const head = exploration.split(/^##\s+/m)[0].trim();
+    if (head) return head;
+  }
+  // 兜底：explore 入口记录的自然语言需求原文
+  const requirement = await readArtifact(storage, featurePath, 'requirement.md');
+  if (requirement) {
+    const head = requirement.split(/^##\s+/m)[0].trim();
     if (head) return head;
   }
   return '';

@@ -45,7 +45,7 @@ export interface IDEAdapter {
   /**
    * 快速通道指令文本——嵌入 contextFile，告诉 IDE Agent 临时代码变更走 sovei quick。
    * 快速通道与完整工作流（sovei workflow）是二选一关系，不叠加：
-   * 低风险局部改动走 quick；已注册 Feature 走 13 阶段流程，代码在 implement 阶段完成。
+   * 低风险局部改动走 quick；已注册 Feature 走 12 阶段流程，代码在 implement 阶段完成。
    * installer 会将此文本追加到 contextFile 中。
    */
   quickChannelDirective: string;
@@ -60,8 +60,8 @@ export interface IDEAdapter {
     content: string;
   };
   /**
-   * 可选 slash command 文件列表（P0-B）——为 Claude Code / CodeBuddy 生成 13 阶段
-   * slash command，让 agent 用 /load、/spec、/implement 等原生方式触发工作流节点。
+   * 可选 slash command 文件列表（P0-B）——为 Claude Code / CodeBuddy 生成 12 阶段
+   * slash command，让 agent 用 /explore、/spec、/implement 等原生方式触发工作流节点。
    * installer 会为每个条目创建 dir/filename 文件。
    */
   slashCommands?: Array<{
@@ -83,11 +83,10 @@ export interface IDEAdapter {
 }
 
 /**
- * 13 个工作流阶段定义——用于生成 slash command 和节点说明。
+ * 12 个工作流阶段定义——用于生成 slash command 和节点说明。
  */
 const WORKFLOW_STAGES: Array<{ name: string; desc: string }> = [
-  { name: 'explore', desc: '需求探索 + 业务关联 + 拆分提议（入口）' },
-  { name: 'load', desc: '加载/恢复 Feature 状态' },
+  { name: 'explore', desc: '读懂自然需求 + 探索代码现状 + 判定变更拆分（唯一入口）' },
   { name: 'grill', desc: '决策拷问（事实/推断/范围）' },
   { name: 'wayfind', desc: '依赖分析与路径选择' },
   { name: 'spec', desc: '规格定义 + reconciliation' },
@@ -102,8 +101,8 @@ const WORKFLOW_STAGES: Array<{ name: string; desc: string }> = [
 ];
 
 /**
- * 为 Claude Code 生成 13 阶段 slash command 文件列表。
- * 每个 stage 一个 .md 文件，agent 可用 /sovei-explore、/sovei-load、/sovei-spec 等触发。
+ * 为 Claude Code 生成 12 阶段 slash command 文件列表。
+ * 每个 stage 一个 .md 文件，agent 可用 /sovei-explore、/sovei-grill、/sovei-spec 等触发。
  */
 function generateClaudeStageSlashCommands(dir: string): Array<{
   dir: string;
@@ -126,13 +125,13 @@ function generateClaudeStageSlashCommands(dir: string): Array<{
       '',
       stage.name === 'explore'
         ? [
-            '- `$ARGUMENTS`：Feature ID（如 001-my-feature）',
-            '- 可选 `--prd <path>`：PRD 文件路径（入口模式，复制到 specs/<feature>/prd.md）',
-            '- 可选 `--brief <text>`：内联需求描述（无 PRD 文件时使用）',
-            '- 可选 `--complete`：校验产物并完成阶段',
+            '- `$ARGUMENTS`：一段**自然语言需求**（一句话/多个问题/PRD 文本/md 文件路径）——不是 Feature ID。',
+            '- 必填 `--slug <slug>`：AI 归纳的 kebab-case 主题（2-4 个词），CLI 拼接三位序号得到 `NNN-slug`。',
+            '- 可选 `--prd <path>`：PRD 文件路径（内容写入 specs/<feature>/prd.md）。',
+            '- 复用/完成既有 Feature 时用 `--feature <NNN-slug>`（配合 `--complete`）。',
           ].join('\n')
         : [
-            '- `$ARGUMENTS`：Feature ID（如 001-my-feature）',
+            '- `$ARGUMENTS`：Feature ID（如 032-my-feature）',
             '- 可选 `--sub-change <id>`：对子变更执行此阶段',
             '- 可选 `--task <id>`：implement 阶段指定任务',
           ].join('\n'),
@@ -141,22 +140,22 @@ function generateClaudeStageSlashCommands(dir: string): Array<{
       '',
       stage.name === 'explore'
         ? [
-            '1. **入口模式**（首次进入 Feature，带 PRD 或 brief）：',
+            '1. **入口（唯一起点）**：把用户的自然语言需求原样作为参数，AI 归纳一个 2-4 词的 kebab slug：',
             '   ```bash',
-            '   sovei workflow explore $ARGUMENTS --prd ./docs/prd.md',
-            '   # 或内联需求：',
-            '   sovei workflow explore $ARGUMENTS --brief "需求描述"',
+            '   sovei workflow explore "$ARGUMENTS" --slug <ai-derived-slug>',
+            '   # 附带 PRD 文件：',
+            '   sovei workflow explore "$ARGUMENTS" --slug <slug> --prd ./docs/prd.md',
             '   ```',
-            '   CLI 会自动 bootstrap Feature + 复制 PRD + 注入提示契约。',
-            '2. **阅读提示契约**：按 explore 提示契约读 PRD + business-coverage.md，产出 exploration.md + sub-change-map.md。',
-            '3. **完成阶段**：',
+            '   CLI 会扫描 specs/ 分配下一个三位序号、校验 slug 格式、bootstrap Feature、记录需求原文并注入提示契约。',
+            '2. **阅读提示契约**：按 explore 提示契约读懂需求 + 探索代码现状 + 厘清关系与风险 + 依赖图判定拆分，产出 exploration.md + sub-change-map.md。',
+            '3. **完成阶段**（用上一步 CLI 回显的 Feature ID）：',
             '   ```bash',
-            '   sovei workflow explore $ARGUMENTS --complete',
+            '   sovei workflow explore --feature <NNN-slug> --complete',
             '   ```',
             '4. **拆分执行**（如 sub-change-map.md 建议拆分）：',
             '   ```bash',
-            '   sovei feature split $ARGUMENTS --json  # 获取提议契约',
-            '   sovei feature split $ARGUMENTS          # 执行拆分',
+            '   sovei feature split <NNN-slug> --json  # 获取提议契约',
+            '   sovei feature split <NNN-slug>          # 执行拆分',
             '   ```',
           ].join('\n')
         : [
@@ -195,7 +194,7 @@ function generateClaudeStageSlashCommands(dir: string): Array<{
 }
 
 /**
- * 为 CodeBuddy 生成 13 阶段 slash command 文件列表。
+ * 为 CodeBuddy 生成 12 阶段 slash command 文件列表。
  */
 function generateCodebuddyStageSlashCommands(dir: string): Array<{
   dir: string;
@@ -214,13 +213,13 @@ function generateCodebuddyStageSlashCommands(dir: string): Array<{
       '',
       stage.name === 'explore'
         ? [
-            '- `$ARGUMENTS`：Feature ID（如 001-my-feature）',
-            '- 可选 `--prd <path>`：PRD 文件路径（入口模式）',
-            '- 可选 `--brief <text>`：内联需求描述',
-            '- 可选 `--complete`：校验产物并完成阶段',
+            '- `$ARGUMENTS`：一段**自然语言需求**（一句话/多个问题/PRD 文本/md 文件路径）——不是 Feature ID。',
+            '- 必填 `--slug <slug>`：AI 归纳的 kebab-case 主题（2-4 个词），CLI 拼接三位序号得到 `NNN-slug`。',
+            '- 可选 `--prd <path>`：PRD 文件路径（内容写入 specs/<feature>/prd.md）。',
+            '- 复用/完成既有 Feature 时用 `--feature <NNN-slug>`（配合 `--complete`）。',
           ].join('\n')
         : [
-            '- `$ARGUMENTS`：Feature ID（如 001-my-feature）',
+            '- `$ARGUMENTS`：Feature ID（如 032-my-feature）',
             '- 可选 `--sub-change <id>`：对子变更执行此阶段',
             stage.name === 'implement' ? '- 必选 `--task <id>`：指定任务（如 TASK-001）' : '',
           ].join('\n'),
@@ -229,20 +228,21 @@ function generateCodebuddyStageSlashCommands(dir: string): Array<{
       '',
       stage.name === 'explore'
         ? [
-            '1. 入口模式（带 PRD 或 brief）：',
+            '1. 入口（唯一起点）：把用户的自然语言需求原样作为参数，AI 归纳一个 2-4 词的 kebab slug：',
             '   ```bash',
-            '   sovei workflow explore $ARGUMENTS --prd ./docs/prd.md',
-            '   # 或：sovei workflow explore $ARGUMENTS --brief "需求描述"',
+            '   sovei workflow explore "$ARGUMENTS" --slug <ai-derived-slug>',
+            '   # 附带 PRD 文件：sovei workflow explore "$ARGUMENTS" --slug <slug> --prd ./docs/prd.md',
             '   ```',
-            '2. 按提示契约读 PRD + business-coverage.md，产出 exploration.md + sub-change-map.md。',
-            '3. 完成阶段：',
+            '   CLI 会扫描 specs/ 分配下一个三位序号、校验 slug 格式、bootstrap Feature、记录需求原文并注入提示契约。',
+            '2. 按提示契约读懂需求 + 探索代码现状 + 厘清关系与风险 + 依赖图判定拆分，产出 exploration.md + sub-change-map.md。',
+            '3. 完成阶段（用上一步 CLI 回显的 Feature ID）：',
             '   ```bash',
-            '   sovei workflow explore $ARGUMENTS --complete',
+            '   sovei workflow explore --feature <NNN-slug> --complete',
             '   ```',
             '4. 如建议拆分：',
             '   ```bash',
-            '   sovei feature split $ARGUMENTS --json',
-            '   sovei feature split $ARGUMENTS',
+            '   sovei feature split <NNN-slug> --json',
+            '   sovei feature split <NNN-slug>',
             '   ```',
           ].join('\n')
         : [
@@ -265,7 +265,7 @@ function generateCodebuddyStageSlashCommands(dir: string): Array<{
         ? '> **拆分修正**：完成 scope 后运行 `sovei feature split <feature> --json` 修正拆分提议。'
         : '',
       stage.name === 'explore'
-        ? '> explore 是入口阶段，支持 `--prd`/`--brief` 一条指令完成 Feature 创建 + 需求分析。'
+        ? '> explore 是工作流唯一入口：接受一段自然语言需求 + `--slug`，CLI 分配 NNN-slug 并 bootstrap，一条指令完成 Feature 创建 + 需求理解 + 变更判定。'
         : '',
       '',
     ].filter(Boolean).join('\n'),
@@ -292,14 +292,13 @@ const codexAdapter: IDEAdapter = {
     '',
     '### Sovei Workflow Nodes (Codex)',
     '',
-    '13 个工作流阶段节点按钮（按顺序执行，每个节点 `--complete` 推进）：',
+    '12 个工作流阶段节点按钮（按顺序执行，每个节点 `--complete` 推进）：',
     '',
-    '> explore 是入口阶段，支持 `--prd`/`--brief` 一条指令完成 Feature 创建 + 需求分析。',
+    '> explore 是工作流唯一入口：接受一段自然语言需求 + `--slug`，CLI 分配 NNN-slug 并 bootstrap，一条指令完成 Feature 创建 + 需求理解 + 变更判定。',
     '',
     '| 节点 | 命令 | 说明 |',
     '|---|---|---|',
-    '| explore | `sovei workflow explore <feature> --prd <path>` | 需求探索 + 业务关联 + 拆分提议（入口） |',
-    '| load | `sovei workflow load <feature>` | 加载/恢复 Feature 状态 |',
+    '| explore | `sovei workflow explore "<需求>" --slug <slug>` | 读懂自然需求 + 探索代码现状 + 判定变更拆分（唯一入口） |',
     '| grill | `sovei workflow grill <feature>` | 决策拷问（事实/推断/范围） |',
     '| wayfind | `sovei workflow wayfind <feature>` | 依赖分析与路径选择 |',
     '| spec | `sovei workflow spec <feature>` | 规格定义 + reconciliation |',
@@ -313,7 +312,7 @@ const codexAdapter: IDEAdapter = {
     '| sync | `sovei workflow sync <feature>` | 同步 |',
     '',
     '其他命令：',
-    '- `sovei workflow explore <feature> --brief "<描述>"` — 无 PRD 文件时用内联描述进入 explore',
+    '- `sovei workflow explore --feature <NNN-slug> --complete` — 完成/复用既有 Feature 的 explore 阶段',
     '- `sovei context build --stage <stage> --feature <feature>` — 获取阶段提示 + 上下文包',
     '- `sovei feature split <feature> --json` — 拆分 Feature 为子变更（scope 后可用）',
     '- `sovei feature sub-change list <feature>` — 列出子变更状态',
@@ -323,7 +322,7 @@ const codexAdapter: IDEAdapter = {
     '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
     '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。编辑前运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）→ 完成编辑 → 运行测试。',
-    '- **完整工作流**：已注册 Feature 并走 13 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
   skillPackage: {
@@ -334,24 +333,24 @@ const codexAdapter: IDEAdapter = {
         content: [
           '---',
           'name: sovei-workflow',
-          'description: Sovei 结构化开发工作流。当需要走完整的 13 阶段开发流程（explore→load→grill→wayfind→spec→scope→plan→tasks→implement→converge→verify→learn→sync）时唤起此技能。适用于中大型需求、需要决策拷问和验证的变更。也适用于需要拆分 Feature 为子变更并行开发的场景。',
+          'description: Sovei 结构化开发工作流。当需要走完整的 12 阶段开发流程（explore→grill→wayfind→spec→scope→plan→tasks→implement→converge→verify→learn→sync）时唤起此技能。explore 是唯一入口：接受一段自然语言需求，读懂意图 + 探索代码 + 判定变更拆分。适用于中大型需求、需要决策拷问和验证的变更。也适用于需要拆分 Feature 为子变更并行开发的场景。',
           '---',
           '',
           '# Sovei Workflow',
           '',
-          '## 13 个阶段节点',
+          '## 12 个阶段节点',
           '',
           '按顺序执行，每个节点用 `--complete` 推进：',
           '',
           '```',
-          'explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
+          'explore → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync',
           '```',
           '',
           '### 核心命令',
           '',
-          '- `sovei workflow bootstrap <feature>` — 创建新 Feature',
-          '- `sovei workflow explore <feature> --prd <path>` — 入口模式（PRD → 需求分析 + 拆分提议）',
-          '- `sovei workflow explore <feature> --brief "<描述>"` — 入口模式（内联需求描述）',
+          '- `sovei workflow explore "<自然语言需求>" --slug <kebab-slug>` — 唯一入口（自动分配 NNN-slug，读懂需求 + 探索代码 + 判定拆分）',
+          '- `sovei workflow explore "<需求>" --slug <slug> --prd <path>` — 入口 + 附带 PRD 文件',
+          '- `sovei workflow explore --feature <NNN-slug> --complete` — 完成 explore 阶段',
           '- `sovei workflow <stage> <feature>` — 准备阶段（注入提示契约）',
           '- `sovei workflow <stage> <feature> --complete` — 完成阶段并推进',
           '- `sovei context build --stage <stage> --feature <feature>` — 获取阶段提示 + 上下文包',
@@ -363,8 +362,7 @@ const codexAdapter: IDEAdapter = {
           '',
           '| 阶段 | 产物 | 作用 |',
           '|---|---|---|',
-          '| explore | exploration.md + sub-change-map.md | 需求探索 + 业务关联 + 拆分提议（入口） |',
-          '| load | load-summary.md | 状态校验 + 现状探索 + 风险识别 |',
+          '| explore | exploration.md + sub-change-map.md | 读懂自然需求 + 探索代码现状 + 判定变更拆分（唯一入口） |',
           '| grill | decision-log.md | 决策拷问（事实核实/可推断/范围性） |',
           '| wayfind | wayfinder.md | 依赖分析 + 路径选择 |',
           '| spec | spec.md + reconciliation.md | 规格定义 + 技术对齐 |',
@@ -415,7 +413,7 @@ const claudeAdapter: IDEAdapter = {
     '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
     '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。使用 `/sovei-quick` slash command 或直接运行 `sovei quick "<变更描述>" --paths <文件>`（排除路径自动从 .gitignore 读取）→ 完成编辑 → 运行测试。',
-    '- **完整工作流**：已注册 Feature 并走 13 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
   slashCommand: {
@@ -442,7 +440,7 @@ const claudeAdapter: IDEAdapter = {
       '',
     ].join('\n'),
   },
-  // P0-B: 13 阶段 slash command，让 agent 用 /sovei-load、/sovei-spec 等触发工作流节点
+  // P0-B: 12 阶段 slash command，让 agent 用 /sovei-explore、/sovei-spec 等触发工作流节点
   slashCommands: generateClaudeStageSlashCommands('.claude/commands'),
 };
 
@@ -469,7 +467,7 @@ const codebuddyAdapter: IDEAdapter = {
     '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
     '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。使用 execute_command 运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 检查 riskLevel（escalated 需人工确认）→ 完成编辑 → 测试验证。',
-    '- **完整工作流**：已注册 Feature 并走 13 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
   ].join('\n'),
   slashCommand: {
@@ -494,7 +492,7 @@ const codebuddyAdapter: IDEAdapter = {
       '编辑完成后运行测试，快速通道会记录 usage 并验证 git diff 范围。',
     ].join('\n'),
   },
-  // P0-B: 13 阶段 slash command
+  // P0-B: 12 阶段 slash command
   slashCommands: generateCodebuddyStageSlashCommands('.codebuddy/commands'),
 };
 
@@ -521,7 +519,7 @@ const traeAdapter: IDEAdapter = {
     '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
     '',
     '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。运行 `sovei quick "<变更描述>" --paths <文件> --exclude dist/**` → 完成编辑 → 运行测试。',
-    '- **完整工作流**：已注册 Feature 并走 13 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
     '',
     '### Sovei Workflow Nodes (Trae)',
     '',
@@ -529,7 +527,7 @@ const traeAdapter: IDEAdapter = {
     '',
     '| 节点 | 命令 | 说明 |',
     '|---|---|---|',
-    '| load | `sovei workflow load <feature>` | 加载/恢复 Feature 状态 |',
+    '| explore | `sovei workflow explore "<需求>" --slug <slug>` | 读懂自然需求 + 探索代码现状 + 判定变更拆分（唯一入口） |',
     '| grill | `sovei workflow grill <feature>` | 决策拷问（事实/推断/范围） |',
     '| wayfind | `sovei workflow wayfind <feature>` | 依赖分析与路径选择 |',
     '| spec | `sovei workflow spec <feature>` | 规格定义 + reconciliation |',

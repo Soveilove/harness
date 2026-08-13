@@ -14,11 +14,11 @@ import { stageRegistry } from './registry.js';
 import { parseLearningReport, reconcileObservations, formatReconcileReport } from '../knowledge/reconcile.js';
 
 // ──────────────────────────────────────────────
-// explore - PRD + 业务理解 → 需求拆分提议（工作流第 1 阶段）
+// explore - 自然语言/PRD/文档 → 读需求+读代码+读关系 → 变更拆分（工作流第 1 阶段，唯一入口）
 // ──────────────────────────────────────────────
 export const exploreStage = defineStage({
   name: 'explore',
-  description: '读 PRD + 业务覆盖面 → 需求理解 + 拆分提议',
+  description: '带着上下文与业务红线，读懂自然需求 + 探索代码现状 + 判定变更拆分',
   contract: {
     requiredArtifacts: [],
     producesArtifacts: ['exploration.md', 'sub-change-map.md'],
@@ -30,48 +30,79 @@ export const exploreStage = defineStage({
     return {
       stage: 'explore',
       artifactsWritten: ['exploration.md', 'sub-change-map.md'],
-      nextStage: 'load',
+      nextStage: 'grill',
       blockers: [],
       knowledgeSourcesUsed: ctx.knowledge.getLoadedSources(),
-      prompt: `# 阶段：explore
+      prompt: `# 阶段：explore（工作流唯一入口）
 
-## 输入
-- PRD 文件（specs/<feature>/prd.md）或 brief 描述（specs/<feature>/brief.md）
-- 业务覆盖面报告（sovei-flow/project/business-coverage.md）
-- 能力依赖图（sovei-flow/project/business-map.json，可选）
+explore 是整个工作流的起点，也是最需要“想清楚”的阶段。它不是一个把 Feature ID
+翻译成目录的登记步骤——它是让 AI code agent **带着上下文（宪法/偏好/架构/代码地图/规则）
+和业务红线，去读懂一段自然需求、探索代码现状、厘清关系、判定要做的变更**。
+
+## 输入（任意一种自然形态，不要求预先命名 Feature）
+- 一句话需求 / 一个模糊问题 / 一次提了多个问题
+- 一段 PRD 文本，或 specs/<feature>/prd.md、specs/<feature>/brief.md
+- 一份 md 文档或需求链接
+- 辅助上下文：业务覆盖面（sovei-flow/project/business-coverage.md）、
+  能力依赖图（sovei-flow/project/business-map.json，可选）、已加载的知识库
 
 ## 操作
 
-### 1. PRD 摘要
-读取 PRD/brief，提炼需求核心目标、关键功能项、非功能需求。
+### 1. 读懂需求（理解，而非登记）
+提炼需求的**真实意图**、核心目标、显式与隐含的功能项、非功能约束。
+如果输入里“一口气提了多个问题”，逐个列出每个诉求，先不急着合并或拆分。
 
-### 2. 业务关联
-对照 business-coverage.md，标注：
-- 哪些需求项属于本项目范围内（已有业务实体覆盖）
-- 哪些需求项是全新业务域（需扩展业务覆盖面）
-- 哪些需求项可能涉及其他系统（外部依赖）
+### 2. 探索代码现状（吸收自原 load 能力）
+主动读取代码库关键文件，建立“现状地图”：
+- 项目结构概览（主要目录/包/模块、入口点、技术栈）
+- 与本需求相关的已有实现（哪些已经存在、在哪、怎么组织）
+- 模块边界与依赖关系
 
-### 3. 拆分提议
-基于需求功能域划分，评估是否需要拆分为子变更：
-- **拆分信号**：需求包含 ≥ 2 个可独立验证的功能域；或涉及多个业务模块且耦合低。
-- **不拆分信号**：单一功能域；或需求范围明确且模块间强耦合。
-- **如建议拆分**：列出子变更清单（SC-ID / 名称 / 目标 / 依赖），填入 sub-change-map.md。
-- **如不建议拆分**：sub-change-map.md 写 "no-split"。
+### 3. 厘清关系与风险（吸收自原 load 能力）
+基于现状，标注：
+- **业务关联**：范围内（已有业务实体覆盖）/ 全新业务域（需扩展覆盖面）/ 外部依赖（涉及其他系统）
+- **风险点**：潜在耦合与副作用、必须遵守的红线与规范、已知技术债或踩坑
 
-explore 阶段不读代码——代码现状探索是 load 阶段的职责。
+### 4. 判定变更拆分（依赖图驱动的智能拆分）
+一个需求对应**一个 Feature**，Feature 内部是一组可并行的 change（子变更）。
+用依赖关系图来判定如何拆分——这是主流 spec 工作流的做法，先单 agent 基线分析，
+只有在子问题**确实独立且不重叠**时才考虑并行加速：
+
+1. **画依赖图**：把第 1 步列出的每个诉求作为节点，标注它们之间的依赖/耦合边
+   （共享数据模型、调用关系、同一模块改动 = 耦合）。
+2. **按耦合分组**：强耦合的诉求归入同一个 change；无耦合的可拆为独立 change。
+3. **判定拆分形态**：
+   - 图为**单点或强连通**（诉求彼此紧密耦合）→ 不拆分，sub-change-map.md 写 "no-split"。
+   - 图呈**多个互不相连的子图**（诉求分属独立功能域）→ 拆为多个 change，标注 dependsOn。
+   - 图为**有向链/树**（存在先后依赖）→ 拆分但用 dependsOn 表达执行顺序。
+4. **可选的分析加速**：当分组彼此**完全独立、无交叉引用**时，可开启多个子 agent
+   分别深入探查各分组以加速；否则单 agent 顺序探查即可——过度拆分会显著抬高成本且易出错。
+   拆分是为“可独立验证的功能域”，不是为“看起来任务多”。
+
+### 5. Feature 命名规范（AI 自行判定，但格式必须遵守）
+AI 根据需求意图自行命名 Feature，但**必须**遵守以下格式约束：
+- 目录/ID 格式：\`NNN-<slug>\`，其中 NNN 是 CLI 扫描 specs/ 得到的下一个三位序号（如 032），
+  slug 是 2-4 个词的 kebab-case（小写字母、数字、连字符），概括需求主题。
+- 正则：\`^[0-9]{3}-[a-z0-9]+(-[a-z0-9]+)*$\`。
+- 禁止：空格、中文、大写、下划线、超过 4 个词。
+- 命名由 \`sovei explore "<自然语言需求>"\` 触发时，CLI 负责分配 NNN 并校验 slug 格式；
+  AI 只需给出符合规范的 slug。
 
 ## 输出
 exploration.md，包含：
-- PRD 摘要（核心目标 + 功能项 + 非功能需求）
+- 需求理解（真实意图 + 核心目标 + 功能项清单 + 非功能约束）
+- 代码现状摘要（关键模块/入口/架构/技术栈）
+- 相关已有实现与模块关系
 - 业务关联分析（范围内 / 全新域 / 外部依赖）
-- 拆分建议理由
+- 风险点清单（耦合/红线/技术债）
+- 变更拆分理由（依赖图分析 + 分组结论）
 
 sub-change-map.md，包含：
-- 拆分提议表（SC-ID / 名称 / 目标 / 依赖）或 "no-split"
+- 拆分提议表（SC-ID / 名称 / 目标 / dependsOn），或 "no-split"
 - 用户确认后运行 \`sovei feature split <feature> --json\` 执行拆分
 
 ## 停止条件
-PRD/brief 不存在；或 business-coverage.md 不存在且无法推断业务边界。
+需求输入完全缺失且无法从上下文推断；或无任何代码/业务上下文可供探索。
 `,
     };
   },
@@ -85,86 +116,18 @@ PRD/brief 不存在；或 business-coverage.md 不存在且无法推断业务边
 });
 
 // ──────────────────────────────────────────────
-// load - Initialize or resume a feature
-// ──────────────────────────────────────────────
-export const loadStage = defineStage({
-  name: 'load',
-  description: '根据实际文件校验状态并加载任务相关知识',
-  contract: {
-    requiredArtifacts: [],
-    producesArtifacts: ['load-summary.md'],
-  },
-  async preExecute(ctx) {
-    await ctx.knowledge.loadByTaskType('general');
-  },
-  async execute(ctx) {
-    return {
-      stage: 'load',
-      artifactsWritten: ['load-summary.md'],
-      nextStage: 'grill',
-      blockers: [],
-      knowledgeSourcesUsed: ctx.knowledge.getLoadedSources(),
-      prompt: `# 阶段：load
-
-## 输入
-- Harness 索引、Memory 索引、工作流定义、Feature 状态和实际产物列表。
-- 已加载的知识：宪法、偏好、架构、代码地图、规则。
-
-## 操作
-
-### 1. 状态校验
-根据实际文件校验状态，确认 Feature 状态、版本匹配、产物无冲突。
-
-### 2. 现状探索
-主动读取代码库关键文件，理解当前架构、模块边界和入口点：
-- 项目结构概览（主要目录/包/模块）
-- 与当前 Feature 可能相关的已有实现
-- 依赖关系和技术栈
-
-### 3. 风险识别
-基于现状探索，识别与当前 Feature 可能相关的风险点：
-- 潜在的耦合或副作用
-- 需要特别注意的约束（红线、规范）
-- 已知的技术债务或踩坑
-
-## 输出
-load-summary.md，包含以下结构：
-- 代码库现状摘要（关键模块/入口/架构）
-- 与当前 Feature 相关的已有实现
-- 潜在风险点
-
-## 初始化
-仅当用户明确提供一个尚无状态的 Feature 时创建 workflow-state.yaml，记录 load 已完成、grill 等待执行。
-
-## 停止条件
-Feature 不明确、版本不匹配、产物冲突，或缺少状态且用户未明确授权初始化。
-
-## 写入
-已有状态不写入；初始化时只写状态文件。load-summary.md 是 AI agent 的探索产出。
-`,
-    };
-  },
-  async postExecute(ctx) {
-    // 校验 workflow-state 一致性——load 是状态恢复阶段，状态文件是唯一可校验对象
-    const state = ctx.workflowState;
-    if (!state.featureId) throw new Error('workflow-state missing featureId');
-    if (state.revision < 0) throw new Error(`invalid revision: ${state.revision}`);
-  },
-});
-
-// ──────────────────────────────────────────────
 // grill - Resolve decisions by evidence tier: facts, inferences, scope questions
 // ──────────────────────────────────────────────
 export const grillStage = defineStage({
   name: 'grill',
   description: '区分事实核实、可推断决策与范围性决策，逐项解决业务决策',
   contract: {
-    requiredArtifacts: ['load-summary.md'],
+    requiredArtifacts: ['exploration.md'],
     producesArtifacts: ['decision-log.md'],
   },
   async preExecute(ctx) {
-    if (!ctx.workflowState.completedStages.includes('load')) {
-      return { block: true, reason: 'load stage not completed' };
+    if (!ctx.workflowState.completedStages.includes('explore')) {
+      return { block: true, reason: 'explore stage not completed' };
     }
     await ctx.knowledge.loadByTaskType('decision-making');
   },
@@ -178,7 +141,7 @@ export const grillStage = defineStage({
       prompt: `# 阶段：grill
 
 ## 输入
-有效的 load 结果和当前请求。
+有效的 explore 结果（exploration.md）和当前请求。
 
 ## 操作
 沿决策树逐层推进，依次解决依赖关系。对每个待决议项，先判断其类型，再选择处理方式：
@@ -751,7 +714,7 @@ sync-report.md，包含目标、同步前后差异、受保护文件、命令结
 // Register all stages
 // ──────────────────────────────────────────────
 const allStages = [
-  exploreStage, loadStage, grillStage, wayfindStage, specStage, scopeStage, planStage,
+  exploreStage, grillStage, wayfindStage, specStage, scopeStage, planStage,
   tasksStage, implementStage, convergeStage, verifyStage, learnStage, syncStage,
 ];
 

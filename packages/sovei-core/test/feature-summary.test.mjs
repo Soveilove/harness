@@ -8,14 +8,14 @@ function setupCompletedFeature(storage, featurePath) {
   // 状态
   storage.write(
     `${featurePath}/workflow-state.yaml`,
-    'featureId: "test-feature"\nstatus: completed\ncurrentStage: null\nriskLevel: S1\ncompletedStages:\n  - "load"\n  - "grill"\n  - "wayfind"\n  - "spec"\n  - "scope"\n  - "plan"\n  - "tasks"\n  - "implement"\n  - "converge"\n  - "verify"\n  - "learn"\n  - "sync"\nnextStage: null\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\ncompletedTaskIds:\n  - "TASK-001"\nactiveChangeId: null\n',
+    'featureId: "test-feature"\nstatus: completed\ncurrentStage: null\nriskLevel: S1\ncompletedStages:\n  - "explore"\n  - "grill"\n  - "wayfind"\n  - "spec"\n  - "scope"\n  - "plan"\n  - "tasks"\n  - "implement"\n  - "converge"\n  - "verify"\n  - "learn"\n  - "sync"\nnextStage: null\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\ncompletedTaskIds:\n  - "TASK-001"\nactiveChangeId: null\n',
   );
   // 事件流（含 BOOTSTRAP / STAGE / TASK / OVERRIDE）
   storage.write(
     `${featurePath}/workflow-events.jsonl`,
     '{"timestamp":"2026-08-11T00:00:00.000Z","event":{"type":"BOOTSTRAP","featureId":"test-feature"}}\n'
-      + '{"timestamp":"2026-08-11T00:00:01.000Z","event":{"type":"STAGE_PREPARED","stage":"load"}}\n'
-      + '{"timestamp":"2026-08-11T00:00:02.000Z","event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":["load-summary.md"]}}\n'
+      + '{"timestamp":"2026-08-11T00:00:01.000Z","event":{"type":"STAGE_PREPARED","stage":"explore"}}\n'
+      + '{"timestamp":"2026-08-11T00:00:02.000Z","event":{"type":"STAGE_COMPLETE","stage":"explore","artifacts":["exploration.md"]}}\n'
       + '{"timestamp":"2026-08-11T00:00:03.000Z","event":{"type":"STAGE_PREPARED","stage":"grill"}}\n'
       + '{"timestamp":"2026-08-11T00:00:04.000Z","event":{"type":"STAGE_COMPLETE","stage":"grill","artifacts":["decision-log.md"]}}\n'
       + '{"timestamp":"2026-08-11T00:00:05.000Z","event":{"type":"TASK_COMPLETE","taskId":"TASK-001","artifact":"change-manifest.md"}}\n'
@@ -24,7 +24,7 @@ function setupCompletedFeature(storage, featurePath) {
   // 持久产物
   storage.write(`${featurePath}/decision-log.md`, '# decision-log\n\n## 决策树\n\n### D1: 是否支持 --json？\n\n- **类型:** 可推断决策\n- **决策:** 支持。\n- **理由:** 供脚本消费。\n- **被拒绝方案:** 只输出 markdown。\n- **状态:** ✅ 已决\n');
   storage.write(`${featurePath}/sync-report.md`, '# Sync Report\n\n## 目标\n修复缺陷\n\n## 同步状态\n\n| 目标 | 状态 |\n|---|---|\n| 源码 | ✅ 已实施 |\n\n## 结论\n✅ 全部就绪\n');
-  storage.write(`${featurePath}/load-summary.md`, '# Load Summary — test-feature\n\n代码库现状摘要。\n');
+  storage.write(`${featurePath}/exploration.md`, '# 需求探索 — test-feature\n\n代码库现状摘要。\n');
   storage.write(`${featurePath}/wayfinder.md`, '# Wayfinder\n\n已标记 not required\n');
   // 过程产物：部分留在顶层，部分归档
   storage.write(`${featurePath}/spec.md`, '# Spec\n\n## 目标\n新增 feature summary 命令\n\n## 验收标准\n- AC1 ...\n');
@@ -34,19 +34,19 @@ function setupCompletedFeature(storage, featurePath) {
   storage.write(`${featurePath}/_archive/learning-report.md`, '# Learning\n\n## 学习\n观察：summary 复用 archive 的存储模式。\n');
 }
 
-/** 构建一个 in_progress Feature（只完成 load） */
+/** 构建一个 in_progress Feature（只完成 explore） */
 function setupInProgressFeature(storage, featurePath) {
   storage.write(
     `${featurePath}/workflow-state.yaml`,
-    'featureId: "wip-feature"\nstatus: in_progress\ncurrentStage: "grill"\nriskLevel: S1\ncompletedStages:\n  - "load"\nnextStage: "spec"\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\ncompletedTaskIds: []\nactiveChangeId: null\n',
+    'featureId: "wip-feature"\nstatus: in_progress\ncurrentStage: "grill"\nriskLevel: S1\ncompletedStages:\n  - "explore"\nnextStage: "wayfind"\nupdatedAt: "2026-08-11T00:00:00.000Z"\nreopenedStages: []\nblockers: []\ncompletedTaskIds: []\nactiveChangeId: null\n',
   );
   storage.write(
     `${featurePath}/workflow-events.jsonl`,
     '{"timestamp":"2026-08-11T00:00:00.000Z","event":{"type":"BOOTSTRAP","featureId":"wip-feature"}}\n'
-      + '{"timestamp":"2026-08-11T00:00:01.000Z","event":{"type":"STAGE_PREPARED","stage":"load"}}\n'
-      + '{"timestamp":"2026-08-11T00:00:02.000Z","event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":["load-summary.md"]}}\n',
+      + '{"timestamp":"2026-08-11T00:00:01.000Z","event":{"type":"STAGE_PREPARED","stage":"explore"}}\n'
+      + '{"timestamp":"2026-08-11T00:00:02.000Z","event":{"type":"STAGE_COMPLETE","stage":"explore","artifacts":["exploration.md"]}}\n',
   );
-  storage.write(`${featurePath}/load-summary.md`, '# Load Summary — wip-feature\n\n探索中。\n');
+  storage.write(`${featurePath}/exploration.md`, '# 需求探索 — wip-feature\n\n探索中。\n');
 }
 
 test('summaryFeature: completed Feature 生成含六章节的 summary.md', async () => {
@@ -97,9 +97,9 @@ test('summaryFeature: in_progress Feature 生成进度快照，未执行阶段�
 
   const markdown = await summaryFeature(storage, featurePath, 'wip-feature', false);
 
-  // 概览阶段进度为 1/13
-  assert.ok(markdown.includes('1/13'));
-  // 需求从 load-summary.md 回退（无 spec.md），显示探索摘要
+  // 概览阶段进度为 1/12
+  assert.ok(markdown.includes('1/12'));
+  // 需求从 exploration.md 回退（无 spec.md），显示探索摘要
   assert.ok(markdown.includes('探索中'));
   // 关键决策降级（无 decision-log.md）
   assert.ok(markdown.includes('无决策条目'));

@@ -23,12 +23,16 @@ function createEngine() {
   return { storage, engine: new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config) };
 }
 
-/** Fast-forward through explore stage (first stage) so tests can operate on load+. */
+/**
+ * Fast-forward through explore stage (sole entry) so tests can operate on grill+.
+ * Writes exploration.md so grill's requiredArtifacts is satisfied.
+ */
 async function skipExplore(storage, featureId) {
   const events = new EventStore(storage);
   const path = `specs/${featureId}`;
   await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
+  await storage.write(`${path}/exploration.md`, '# 需求探索\n\n核心目标与代码现状。');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');
   await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
 }
 
@@ -36,13 +40,10 @@ test('bootstrap is idempotent and preparation cannot complete placeholder artifa
   const { storage, engine } = createEngine();
   await engine.bootstrap('001-safe-state');
   await skipExplore(storage, '001-safe-state');
-  await engine.prepareStage('001-safe-state', 'load');
-  await storage.write('specs/001-safe-state/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
-  await engine.completeStage('001-safe-state', 'load');
   const before = await storage.read('specs/001-safe-state/workflow-events.jsonl');
 
   const bootstrappedAgain = await engine.bootstrap('001-safe-state');
-  assert.deepEqual(bootstrappedAgain.completedStages, ['explore', 'load']);
+  assert.deepEqual(bootstrappedAgain.completedStages, ['explore']);
   assert.equal(await storage.read('specs/001-safe-state/workflow-events.jsonl'), before);
 
   const prepared = await engine.prepareStage('001-safe-state', 'grill');
@@ -58,7 +59,7 @@ test('bootstrap is idempotent and preparation cannot complete placeholder artifa
   );
   await storage.write('specs/001-safe-state/decision-log.md', '# 决策\n\n已批准请求的行为。');
   const completed = await engine.completeStage('001-safe-state', 'grill');
-  assert.deepEqual(completed.completedStages, ['explore', 'load', 'grill']);
+  assert.deepEqual(completed.completedStages, ['explore', 'grill']);
 });
 
 test('implement tracks individual tasks and blocks stage completion while tasks remain', async () => {
@@ -66,7 +67,9 @@ test('implement tracks individual tasks and blocks stage completion while tasks 
   const events = new EventStore(storage);
   const path = 'specs/002-multi-task';
   await events.append(path, { type: 'BOOTSTRAP', featureId: '002-multi-task' });
-  for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 8)) {
+  // Complete every stage up to (but not including) implement, then prepare it.
+  const implementIndex = DEFAULT_WORKFLOW.stageOrder.indexOf('implement');
+  for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, implementIndex)) {
     await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
     await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
   }
@@ -99,9 +102,9 @@ test('completeStage throws when stage was not prepared', async () => {
   const { storage, engine } = createEngine();
   await engine.bootstrap('004-no-prepare');
   await skipExplore(storage, '004-no-prepare');
-  // load stage exists, no artifacts needed, but prepareStage was never called
+  // grill stage exists, but prepareStage was never called
   await assert.rejects(
-    engine.completeStage('004-no-prepare', 'load'),
+    engine.completeStage('004-no-prepare', 'grill'),
     /stage was not prepared/,
   );
 });
@@ -113,12 +116,12 @@ test('prepareStage enables completeStage and records STAGE_PREPARED event', asyn
   const stateBefore = await engine.getState('005-prepare-then-complete');
   assert.deepEqual(stateBefore.preparedStages, []);
 
-  await engine.prepareStage('005-prepare-then-complete', 'load');
+  await engine.prepareStage('005-prepare-then-complete', 'grill');
   const stateAfter = await engine.getState('005-prepare-then-complete');
-  assert.deepEqual(stateAfter.preparedStages, ['load']);
+  assert.deepEqual(stateAfter.preparedStages, ['grill']);
 
-  await storage.write('specs/005-prepare-then-complete/load-summary.md', '# 加载摘要\n\n代码库现状摘要。');
-  const completed = await engine.completeStage('005-prepare-then-complete', 'load');
+  await storage.write('specs/005-prepare-then-complete/decision-log.md', '# 决策\n\n已批准请求的行为。');
+  const completed = await engine.completeStage('005-prepare-then-complete', 'grill');
   assert.deepEqual(completed.preparedStages, []);
-  assert.deepEqual(completed.completedStages, ['explore', 'load']);
+  assert.deepEqual(completed.completedStages, ['explore', 'grill']);
 });

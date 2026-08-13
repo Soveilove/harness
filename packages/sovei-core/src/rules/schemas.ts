@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const RuleLifecycleSchema = z.enum(['candidate', 'active', 'deprecated']);
 export const RuleEnforcementSchema = z.enum(['required', 'advisory']);
 export const ProjectStageSchema = z.enum([
-  'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ]);
 

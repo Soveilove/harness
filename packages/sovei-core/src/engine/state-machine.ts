@@ -20,7 +20,7 @@ import type {
 export function createInitialState(
   featureId: string,
   firstStage: string = 'explore',
-  secondStage: string | null = 'load',
+  secondStage: string | null = 'grill',
 ): WorkflowState {
   return {
     featureId,
@@ -41,7 +41,7 @@ export function createInitialState(
   };
 }
 
-/** Sub-change stage range (plan → verify). load→scope and learn→sync are shared/parent-only. */
+/** Sub-change stage range (plan → verify). explore→scope and learn→sync are shared/parent-only. */
 const SUB_CHANGE_STAGE_RANGE = ['plan', 'tasks', 'implement', 'converge', 'verify'];
 
 /** Locate a sub-change by id; throws if missing (fail-fast, no silent corruption). */
@@ -104,10 +104,9 @@ export function workflowReducer(
         ? workflow.stageOrder.indexOf(state.currentStage)
         : -1;
 
-      // Backward-compat:老 Feature 在 explore 加入 stageOrder 前创建，事件流无 explore。
-      // replay 时 currentStage='explore'，但第一个 STAGE_COMPLETE 是 'load'——允许前向跳过。
-      // 语义：完成从 currentStage 到 event.stage 之间的所有阶段（含 event.stage），
-      // 被跳过的阶段（如 explore）静默标记为 completed。
+      // 前向跳过容忍:当 STAGE_COMPLETE 的 event.stage 领先于 currentStage 时，
+      // 语义为完成从 currentStage 到 event.stage 之间的所有阶段（含 event.stage），
+      // 被跳过的中间阶段静默标记为 completed。仅允许前向，绝不允许回跳。
       if (eventIndex < currentIndex) {
         throw new Error(
           `Stage mismatch: current is '${state.currentStage}', cannot complete past stage '${event.stage}'`,

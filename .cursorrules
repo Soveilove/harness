@@ -13,7 +13,7 @@
 
 | 节点 | 命令 | 说明 |
 |---|---|---|
-| load | `sovei workflow load <feature>` | 加载/恢复 Feature 状态 |
+| explore | `sovei workflow explore "<需求>" --slug <slug>` | 读懂自然需求 + 探索代码现状 + 判定变更拆分（唯一入口） |
 | grill | `sovei workflow grill <feature>` | 决策拷问（事实/推断/范围） |
 | wayfind | `sovei workflow wayfind <feature>` | 依赖分析与路径选择 |
 | spec | `sovei workflow spec <feature>` | 规格定义 + reconciliation |

@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-12T17:40:11.779Z","revision":0,"actor":"agent","event":{"type":"MAP_SKIPPED","featureId":"031-explore-stage","reason":"grill 决策树已闭环，无未知决策需探索"}}

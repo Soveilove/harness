@@ -4,7 +4,7 @@ description: Sovei implement 阶段 — 代码实现
 # Sovei implement
 > 代码实现
 ## 参数
-- `$ARGUMENTS`：Feature ID（如 001-my-feature）
+- `$ARGUMENTS`：Feature ID（如 032-my-feature）
 - 可选 `--sub-change <id>`：对子变更执行此阶段
 - 可选 `--task <id>`：implement 阶段指定任务
 ## 执行步骤

@@ -26,7 +26,7 @@ test('loadConfig reads and merges the project declaration', async () => {
     const config = loadConfig(root);
     assert.equal(config.project.name, 'real-project');
     assert.equal(config.project.techStack.framework, 'vue');
-    assert.equal(config.workflow.stageOrder.length, 13);
+    assert.equal(config.workflow.stageOrder.length, 12);
   });
 });
 
@@ -65,14 +65,11 @@ test('workflow CLI uses Simplified Chinese guidance while preserving commands', 
     assert.match(stdout, /已初始化 Feature：001-chinese-output/);
     assert.match(stdout, /Sovei 工作流状态/);
     assert.match(stdout, /下一步命令：\s+sovei workflow explore 001-chinese-output/);
-    // Complete explore stage first (now the entry stage)
-    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '001-chinese-output', '--brief', 'test requirement']);
+    // Complete explore stage first (now the single entry stage; reuse an already-bootstrapped Feature via --feature)
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '--feature', '001-chinese-output']);
     await writeFile(join(root, 'specs', '001-chinese-output', 'exploration.md'), '# 需求探索\n\n核心目标。', 'utf8');
     await writeFile(join(root, 'specs', '001-chinese-output', 'sub-change-map.md'), 'no-split', 'utf8');
-    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '001-chinese-output', '--complete']);
-    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output']);
-    await writeFile(join(root, 'specs', '001-chinese-output', 'load-summary.md'), '# 加载摘要\n\n代码库现状摘要。', 'utf8');
-    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'load', '001-chinese-output', '--complete']);
+    await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'explore', '--feature', '001-chinese-output', '--complete']);
     const grill = await execFileAsync(process.execPath, [cli, '--root', root, 'workflow', 'grill', '001-chinese-output']);
     assert.match(grill.stdout, /grill 已触发：CLI 负责生成决策提示契约/);
     assert.match(grill.stdout, /区分事实核实.*范围性决策.*decision-log\.md.*--complete/);
@@ -111,7 +108,7 @@ test('project init generates AGENTS.md for a fresh target', async () => {
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', target, '--blank']);
     const content = await readFile(join(target, 'AGENTS.md'), 'utf8');
     assert.match(content, /## Sovei Workflow/);
-    assert.match(content, /load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync/);
+    assert.match(content, /explore → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync/);
   });
 });
 
@@ -191,7 +188,7 @@ test('loadConfig warns on workflow.version mismatch', async () => {
     const output = captured.join('');
     assert.match(output, /workflow\.version mismatch/);
     assert.match(output, /9\.9\.9/);
-    assert.match(output, /3\.0\.0/);
+    assert.match(output, /4\.0\.0/);
   });
 });
 
@@ -201,7 +198,7 @@ test('loadConfig does not warn when workflow.version matches', async () => {
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'project.config.json'), JSON.stringify({
       project: { name: 'test-project' },
-      workflow: { version: '3.0.0' },
+      workflow: { version: '4.0.0' },
     }), 'utf8');
 
     const originalStderr = process.stderr.write.bind(process.stderr);

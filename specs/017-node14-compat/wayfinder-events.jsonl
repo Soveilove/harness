@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-06T16:59:18.433Z","revision":0,"actor":"sovei","event":{"type":"MAP_SKIPPED","featureId":"017-node14-compat","reason":"S1 小型工作：grill 决策树已闭环（目标 Node14 / 产物 CJS / 仅发布产物兼容），剩余为实施细节无需跨会话决策地图"}}

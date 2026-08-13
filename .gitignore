@@ -12,3 +12,6 @@ web-plugins/
 
 # # IDE/agent internal memory (cross-session working notes, not part of the repo)
 # .codebuddy/
+
+# Claude Code 临时 worktree（每个 agent 会话的隔离副本，不纳入本仓库）
+.claude/worktrees/

@@ -1,6 +1,6 @@
 /**
  * Workflow Commands
- * 13 stage commands + bootstrap + reopen + status + list-stages
+ * 12 stage commands + bootstrap + reopen + status + list-stages
  * Each stage executes exactly one step and reports the next command.
  */
 
@@ -14,7 +14,7 @@ import '../../stages/index.js';
 import { ChangeDimension, type ChangeDimension as ChangeDimensionType } from '../../change-control/schemas.js';
 
 const STAGE_NAMES = [
-  'explore', 'load', 'grill', 'wayfind', 'spec', 'scope', 'plan',
+  'explore', 'grill', 'wayfind', 'spec', 'scope', 'plan',
   'tasks', 'implement', 'converge', 'verify', 'learn', 'sync',
 ];
 
@@ -58,15 +58,60 @@ function printNextCommand(state: any, feature: string): void {
   }
 }
 
+/** 列出 specs/ 下形如 NNN-slug 的既有 Feature 目录名，供序号分配使用。 */
+async function listFeatureIds(storage: any, specsDir: string): Promise<string[]> {
+  try {
+    const entries = await storage.listEntries(specsDir);
+    return entries.filter((e: any) => e.isDirectory).map((e: any) => e.name);
+  } catch {
+    return []; // specs/ 尚不存在（首个 Feature）
+  }
+}
+
+/** 生成需求原文文档（explore 阶段的自然语言输入留档）。 */
+function requirementDoc(requirement: string): string {
+  return [
+    '# 需求原文',
+    '',
+    '> 由 explore 入口记录的自然语言需求，供 AI code agent 读懂意图。',
+    '',
+    requirement.trim(),
+    '',
+  ].join('\n');
+}
+
+/** 准备 explore 阶段：注入提示契约 + 创建模板，打印下一步命令。 */
+async function prepareExplore(engine: WorkflowEngine, feature: string): Promise<void> {
+  const result = await engine.prepareStage(feature, 'explore');
+  console.log('\n  已准备阶段 \'explore\'；工作流状态未推进。\n');
+  if (result.artifactsWritten.length > 0) {
+    console.log('  已写入产物：');
+    for (const a of result.artifactsWritten) {
+      console.log('    · ' + a);
+    }
+  }
+  if (result.prompt) {
+    console.log('');
+    console.log('  ── 提示契约 ──');
+    console.log(result.prompt);
+  }
+  const state = await engine.getState(feature);
+  printState(state);
+  console.log('  完成命令：sovei workflow explore --feature ' + feature + ' --complete\n');
+}
+
 export function registerWorkflowCommands(program: Command): void {
   const workflow = program.command('workflow').description('工作流阶段命令');
 
   // ── bootstrap ──
   workflow
     .command('bootstrap')
-    .argument('<feature>', '要创建的 Feature ID')
+    .argument('<feature>', '要创建的 Feature ID（NNN-slug）')
     .description('创建带初始工作流状态的新 Feature')
     .action(async (feature: string) => {
+      const { validateFeatureId } = await import('../../config/loader.js');
+      const invalid = validateFeatureId(feature);
+      if (invalid) throw new Error(invalid);
       const engine = getEngine();
       const state = await engine.bootstrap(feature);
       console.log('\n  ✓ 已初始化 Feature：' + feature + '\n');
@@ -86,7 +131,7 @@ export function registerWorkflowCommands(program: Command): void {
       printNextCommand(state, feature);
     });
 
-  // ── All 13 stages（explore 单独注册，支持 --prd/--brief 入口模式）──
+  // ── All 12 stages（explore 单独注册：自然语言入口）──
   for (const stageName of STAGE_NAMES) {
     if (stageName === 'explore') continue; // explore 命令单独注册
     const stage = stageRegistry.get(stageName);
@@ -161,62 +206,90 @@ export function registerWorkflowCommands(program: Command): void {
       });
   }
 
-  // ── explore（兼任 Feature 入口，支持 --prd/--brief）──
+  // ── explore（工作流唯一入口：接受自然语言需求，自动分配 NNN + 校验 slug）──
+  //
+  // 设计要点（v4.0.0）：explore 不再要求预先命名 Feature。它接受一段自然语言需求
+  // （一句话 / 一个模糊问题 / 一次多个问题 / 一段 PRD 文本 / 一个 md 文件），由 AI code
+  // agent 读懂需求 + 探索代码 + 判定变更。命名由 AI 给出 slug、CLI 扫描 specs/ 分配下一个
+  // 三位序号并强制 slug 格式校验——从入口根除历史上出现过的畸形目录名。
+  //
+  // 两种调用形态：
+  //   1) 入口：sovei workflow explore "<自然语言需求>" [--slug <ai-derived-slug>] [--prd <path>]
+  //      → 分配 NNN-<slug>，bootstrap，写入 requirement.md/prd.md，准备 explore 提示契约。
+  //   2) 复用/完成既有 Feature：sovei workflow explore --feature <NNN-slug> [--complete]
   workflow
     .command('explore')
-    .description('explore 阶段：读 PRD + 业务覆盖面 → 需求理解 + 拆分提议。兼任 Feature 入口（--prd/--brief）。')
-    .argument('<feature>', 'Feature ID（新 Feature 自动 bootstrap）')
-    .option('--prd <path>', 'PRD 文件路径（入口模式：复制到 specs/<feature>/prd.md）')
-    .option('--brief <text>', '内联需求描述（无 PRD 文件时使用，写入 brief.md）')
+    .description('explore 阶段（工作流入口）：读懂自然需求 + 探索代码现状 + 判定变更拆分。')
+    .argument('[requirement]', '自然语言需求（一句话/多个问题/PRD 文本/md 文件路径）')
+    .option('--slug <slug>', 'AI 给出的 kebab-case 主题 slug（2-4 个词）；CLI 负责拼接 NNN 前缀')
+    .option('--prd <path>', 'PRD 文件路径（读取内容写入 specs/<feature>/prd.md）')
+    .option('--feature <id>', '复用/完成既有 Feature（形如 032-my-feature），跳过命名分配')
     .option('--complete', '校验 exploration.md + sub-change-map.md 并完成阶段')
-    .action(async (feature: string, opts: { prd?: string; brief?: string; complete?: boolean }) => {
+    .action(async (
+      requirement: string | undefined,
+      opts: { slug?: string; prd?: string; feature?: string; complete?: boolean },
+    ) => {
       const engine = getEngine();
+      const config = container.inject<any>(TOKENS.Config);
+      const storage = container.inject<any>(TOKENS.Storage);
+      const { validateFeatureId, normalizeSlug, nextFeatureSequence } = await import('../../config/loader.js');
 
-      // ── 完成模式 ──
-      if (opts.complete) {
-        const state = await engine.completeStage(feature, 'explore');
-        console.log('\n  ✓ 阶段 \'explore\' 已完成。\n');
-        printState(state);
-        printNextCommand(state, feature);
+      // ── 完成/复用模式：显式提供 --feature ──
+      if (opts.feature) {
+        const invalid = validateFeatureId(opts.feature);
+        if (invalid) throw new Error(invalid);
+        if (opts.complete) {
+          const state = await engine.completeStage(opts.feature, 'explore');
+          console.log('\n  ✓ 阶段 \'explore\' 已完成。\n');
+          printState(state);
+          printNextCommand(state, opts.feature);
+          return;
+        }
+        await prepareExplore(engine, opts.feature);
         return;
       }
 
-      // ── 入口模式：--prd 或 --brief 触发 bootstrap + 复制需求 ──
-      if (opts.prd || opts.brief) {
-        // bootstrap Feature（若已存在则不报错，支持重做 explore）
-        await engine.bootstrap(feature);
+      if (opts.complete) {
+        throw new Error('--complete 需配合 --feature <id> 指定要完成的 Feature');
+      }
 
-        // 复制 PRD 或写入 brief
-        const storage = container.inject<any>(TOKENS.Storage);
+      // ── 入口模式：从自然语言需求分配一个新 Feature ──
+      if (!requirement || !requirement.trim()) {
+        throw new Error(
+          'explore 需要一段自然语言需求作为入口，或用 --feature <id> 复用既有 Feature。\n'
+          + '  例：sovei workflow explore "把知识提取加上复用价值阈值" --slug knowledge-reuse-threshold',
+        );
+      }
+      if (!opts.slug) {
+        throw new Error(
+          'AI code agent 必须提供 --slug <kebab-case 主题>（2-4 个词），CLI 负责拼接 NNN 前缀。\n'
+          + '  slug 规范：小写字母/数字/连字符，禁止空格/中文/大写/下划线。',
+        );
+      }
+
+      const slug = normalizeSlug(opts.slug);
+      // 扫描 specs/ 现有目录，分配下一个三位序号（借鉴 spec-kit create-new-feature.sh）
+      const existing = await listFeatureIds(storage, config.specsDir);
+      const seq = nextFeatureSequence(existing);
+      const feature = `${seq}-${slug}`;
+      const invalid = validateFeatureId(feature);
+      if (invalid) throw new Error(invalid); // 双保险：拼接结果仍须合规
+
+      await engine.bootstrap(feature);
+      console.log('\n  🆕 已分配 Feature：' + feature);
+
+      // 写入需求原文，供 explore 阶段读取
+      if (opts.prd) {
         const path = await import('node:path');
         const fs = await import('node:fs/promises');
-        if (opts.prd) {
-          const prdContent = await fs.readFile(path.resolve(opts.prd), 'utf-8');
-          await storage.write(`specs/${feature}/prd.md`, prdContent);
-          console.log('\n  📄 已读取 PRD：' + opts.prd + ' → specs/' + feature + '/prd.md');
-        } else if (opts.brief) {
-          await storage.write(`specs/${feature}/brief.md`, opts.brief);
-          console.log('\n  📝 已写入需求描述 → specs/' + feature + '/brief.md');
-        }
+        const prdContent = await fs.readFile(path.resolve(opts.prd), 'utf-8');
+        await storage.write(`${config.specsDir}/${feature}/prd.md`, prdContent);
+        console.log('  📄 已读取 PRD：' + opts.prd + ' → specs/' + feature + '/prd.md');
       }
+      await storage.write(`${config.specsDir}/${feature}/requirement.md`, requirementDoc(requirement));
+      console.log('  📝 已记录需求原文 → specs/' + feature + '/requirement.md');
 
-      // ── 准备 explore 阶段（注入提示契约 + 创建模板）──
-      const result = await engine.prepareStage(feature, 'explore');
-      console.log('\n  已准备阶段 \'explore\'；工作流状态未推进。\n');
-      if (result.artifactsWritten.length > 0) {
-        console.log('  已写入产物：');
-        for (const a of result.artifactsWritten) {
-          console.log('    · ' + a);
-        }
-      }
-      if (result.prompt) {
-        console.log('');
-        console.log('  ── 提示契约 ──');
-        console.log(result.prompt);
-      }
-      const state = await engine.getState(feature);
-      printState(state);
-      console.log('  完成命令：sovei workflow explore ' + feature + ' --complete\n');
+      await prepareExplore(engine, feature);
     });
 
   // ── reopen ──

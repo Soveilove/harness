@@ -25,7 +25,7 @@ export interface PendingConfirmation {
 /**
  * Sub-change state — a single independently-developable unit within a Feature.
  *
- * Sub-changes share the parent Feature's load→scope stages (shared context)
+ * Sub-changes share the parent Feature's explore→scope stages (shared context)
  * but fork from plan→verify with independent cursors. After all sub-changes
  * are merged, the parent Feature advances learn→sync (aggregation).
  *

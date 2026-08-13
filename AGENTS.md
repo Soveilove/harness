@@ -13,7 +13,7 @@ This project uses [Sovei](https://github.com/sovei) for structured development w
 - `sovei workflow <stage> <feature>`: Prepare a workflow stage
 - `sovei workflow <stage> <feature> --complete`: Complete a stage and advance
 - `sovei workflow confirm <feature> --stage <stage> --role <role> --by <name> --reference <ref>`: Confirm a gate
-- `sovei workflow explore <feature> --prd <path>`: Entry stage — create feature + analyze requirements from a PRD (or `--brief "<text>"`)
+- `sovei workflow explore "<natural-language requirement>" --slug <kebab-slug>`: Single entry stage — accepts a natural-language requirement (a sentence, several questions, PRD text, or an md file path), NOT a Feature ID. AI derives the 2-4 word kebab slug; the CLI scans specs/ and prepends the next NNN sequence. Add `--prd <path>` to attach a PRD file; reuse/complete an existing Feature with `--feature <NNN-slug>`.
 - `sovei workflow bootstrap <feature>`: Start a new feature (low-level; explore is the recommended entry)
 - `sovei quick <target> --paths <path> --json`: Machine-first local change check; escalates uncertain or out-of-scope work
 - `/sovei-quick`: Claude Code thin wrapper forwarding to the same Quick contract; confirm scope before editing, then rerun verification
@@ -29,7 +29,7 @@ This project uses [Sovei](https://github.com/sovei) for structured development w
 ### Workflow Stages
 
 ```
-explore → load → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
+explore → grill → wayfind → spec → scope → plan → tasks → implement → converge → verify → learn → sync
 ```
 
 ### Confirmation Gates
@@ -68,4 +68,4 @@ This avoids serial I/O when 50+ features exist. The `_subagentContract` field te
 The quick channel (`sovei quick`) and the full Sovei workflow are **mutually exclusive alternatives** — pick one, not both:
 
 - **Quick channel**: for low-risk, well-scoped, ad-hoc changes that don't warrant a full Feature. Run `sovei quick "<description>" --paths <file>` **before** editing (exclusions auto-loaded from .gitignore) → make the change → run tests → quick records usage + verifies git diff scope.
-- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 13 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.
+- **Full workflow** (`sovei workflow`): when a change is registered as a Feature and goes through the 12 stages, code changes happen in the `implement` stage with its own governance (converge → verify gates). **Do NOT also run `sovei quick` for these changes** — the workflow stages already provide risk checks and verification.

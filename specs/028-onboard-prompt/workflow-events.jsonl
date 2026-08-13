@@ -1,2 +1,0 @@
-{"timestamp":"2026-08-05T14:18:50.392Z","revision":0,"event":{"type":"BOOTSTRAP","featureId":"002-onboard-prompt"},"actor":"cli","sourceStage":null}
-{"timestamp":"2026-08-05T14:18:59.597Z","revision":1,"event":{"type":"STAGE_COMPLETE","stage":"load","artifacts":[]},"actor":"cli","sourceStage":"load"}

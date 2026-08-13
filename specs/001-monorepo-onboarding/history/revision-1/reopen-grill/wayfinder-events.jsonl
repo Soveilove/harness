@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-03T08:52:35.856Z","revision":0,"actor":"codex","event":{"type":"MAP_SKIPPED","featureId":"001-monorepo-onboarding","reason":"Bounded scanner defect: repository evidence, compatibility constraints, and verification fixtures are resolved in decision-log.md"}}

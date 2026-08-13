@@ -145,8 +145,8 @@ test('workflow wayfind gate uses the typed map and reopen archives its projectio
   const featureId = '004-workflow';
   const path = `specs/${featureId}`;
   await events.append(path, { type: 'BOOTSTRAP', featureId });
-  await events.append(path, { type: 'STAGE_PREPARED', stage: 'load' }, 'load');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'load', artifacts: [] }, 'load');
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');
   await events.append(path, { type: 'STAGE_PREPARED', stage: 'grill' }, 'grill');
   await events.append(path, { type: 'STAGE_COMPLETE', stage: 'grill', artifacts: ['decision-log.md'] }, 'grill');
   await storage.write(`${path}/decision-log.md`, '# Decisions\n\nDestination accepted.');

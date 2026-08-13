@@ -210,14 +210,15 @@ test('old events without subChangeId replay as top-level (backward compat)', asy
   const { storage } = createEngine();
   const events = new EventStore(storage);
   const path = 'specs/070-legacy';
-  // Simulate old-style events (no subChangeId field)
-  await events.append(path, { type: 'BOOTSTRAP', featureId: '070-legacy' }, 'load');
-  await events.append(path, { type: 'STAGE_PREPARED', stage: 'load' }, 'load');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'load', artifacts: [] }, 'load');
+  // Simulate old-style events (no subChangeId field). Completing 'grill' from the
+  // explore cursor exercises forward-skip tolerance (explore is silently completed).
+  await events.append(path, { type: 'BOOTSTRAP', featureId: '070-legacy' }, 'explore');
+  await events.append(path, { type: 'STAGE_PREPARED', stage: 'grill' }, 'grill');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'grill', artifacts: [] }, 'grill');
   const state = await events.replay(path, { ...DEFAULT_WORKFLOW, version: '2.0.0' });
-  assert.deepEqual(state.completedStages, ['explore', 'load']);
+  assert.deepEqual(state.completedStages, ['explore', 'grill']);
   assert.deepEqual(state.subChanges, []);
-  assert.equal(state.currentStage, 'grill');
+  assert.equal(state.currentStage, 'wayfind');
 });
 
 test('subChanges default to empty array in createInitialState', () => {
@@ -230,7 +231,7 @@ test('YAML round-trip preserves subChanges state', async () => {
   const events = new EventStore(storage);
   const path = 'specs/090-yaml-rt';
   const now = new Date().toISOString();
-  await events.append(path, { type: 'BOOTSTRAP', featureId: '090-yaml-rt' }, 'load');
+  await events.append(path, { type: 'BOOTSTRAP', featureId: '090-yaml-rt' }, 'explore');
   await events.append(path, {
     type: 'SUBCHANGE_CREATED', subChangeId: 'SC-090-01', name: 'a', goal: 'g', dependsOn: [], createdAt: now,
   }, 'scope');

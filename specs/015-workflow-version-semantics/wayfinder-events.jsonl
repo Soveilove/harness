@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-06T15:32:18.698Z","revision":0,"actor":"agent","event":{"type":"MAP_SKIPPED","featureId":"015-workflow-version-semantics","reason":"S1 single-file enhancement, no cross-cutting decisions needed"}}

@@ -19,12 +19,13 @@ const config = {
   workflow: { version: '2.0.0', stageOrder: DEFAULT_WORKFLOW.stageOrder },
 };
 
-/** Fast-forward through explore stage (first stage) so tests can operate on load+. */
+/** Fast-forward through explore stage (sole entry) so tests can operate on grill+. */
 async function skipExplore(storage, featureId) {
   const events = new EventStore(storage);
   const path = `specs/${featureId}`;
   await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: [] }, 'explore');
+  await storage.write(`${path}/exploration.md`, '# 需求探索\n\n核心目标与代码现状。');
+  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');
   await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
 }
 
@@ -105,7 +106,7 @@ test('applying a reviewed change archives stale artifacts and reopens the earlie
   assert.equal(state.currentStage, 'spec');
   assert.equal(state.activeChangeId, request.id);
   assert.equal(state.revision, 1);
-  assert.deepEqual(state.completedStages, ['explore', 'load', 'grill', 'wayfind']);
+  assert.deepEqual(state.completedStages, ['explore', 'grill', 'wayfind']);
   assert.equal(await storage.read(`${featurePath}/spec.md`), null);
   assert.equal(await storage.read(`${featurePath}/scope.md`), null);
   assert.equal(await storage.read(`${featurePath}/decision-log.md`), '# Decisions\n\nAuthentication stays required.');
@@ -138,7 +139,7 @@ test('draft change remains blocked until all active redlines and affected surfac
 test('material change is blocked when the project has no declared redlines', async () => {
   const storage = new MemoryStorage();
   const repository = new ChangeControlRepository(storage);
-  const request = await repository.createRequest('specs/004-no-policy', '004-no-policy', 'load', 'Replace product', 'Market pivot', ['business-direction'], 0, 'load');
+  const request = await repository.createRequest('specs/004-no-policy', '004-no-policy', 'explore', 'Replace product', 'Market pivot', ['business-direction'], 0, 'explore');
   request.affectedSurfaces = ['entire product'];
   request.authorizedBy = 'business-owner';
   request.authorizedAt = new Date().toISOString();
@@ -155,7 +156,7 @@ test('change request becomes stale when workflow events advance after its review
   const engine = new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config);
   await engine.bootstrap('005-stale');
   await skipExplore(storage, '005-stale');
-  const request = await engine.prepareChange('005-stale', 'load', 'Restart design', 'Direction changed', ['business-direction']);
+  const request = await engine.prepareChange('005-stale', 'grill', 'Restart design', 'Direction changed', ['business-direction']);
   request.affectedSurfaces = ['whole feature'];
   request.authorizedBy = 'business-owner';
   request.authorizedAt = new Date().toISOString();
@@ -167,7 +168,7 @@ test('change request becomes stale when workflow events advance after its review
   };
   await repository.saveRequest('specs/005-stale', request);
   const events = new EventStore(storage);
-  await events.append('specs/005-stale', { type: 'STAGE_COMPLETE', stage: 'load', artifacts: [] }, 'load');
+  await events.append('specs/005-stale', { type: 'STAGE_COMPLETE', stage: 'grill', artifacts: [] }, 'grill');
   await assert.rejects(engine.applyChange('005-stale', request.id), /Change request is stale/);
 });
 
@@ -178,12 +179,12 @@ test('pending material change freezes ordinary workflow until applied or cancell
   const engine = new WorkflowEngine(storage, new KnowledgeStore(storage), logger, config);
   await engine.bootstrap('006-freeze');
   await skipExplore(storage, '006-freeze');
-  const request = await engine.prepareChange('006-freeze', 'load', 'Explore replacement', 'Direction may change', ['business-direction']);
-  await assert.rejects(engine.prepareStage('006-freeze', 'load'), /Workflow frozen by pending material change/);
-  await assert.rejects(engine.completeStage('006-freeze', 'load'), /Workflow frozen by pending material change/);
+  const request = await engine.prepareChange('006-freeze', 'grill', 'Explore replacement', 'Direction may change', ['business-direction']);
+  await assert.rejects(engine.prepareStage('006-freeze', 'grill'), /Workflow frozen by pending material change/);
+  await assert.rejects(engine.completeStage('006-freeze', 'grill'), /Workflow frozen by pending material change/);
   const cancelled = await engine.cancelChange('006-freeze', request.id, 'Product retained the original direction');
   assert.equal(cancelled.status, 'cancelled');
-  const prepared = await engine.prepareStage('006-freeze', 'load');
+  const prepared = await engine.prepareStage('006-freeze', 'grill');
   assert.match(prepared.prompt, /仅当前顶层 Feature 产物具有权威性/);
 });
 
