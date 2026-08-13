@@ -95,19 +95,30 @@ export function registerAdapterCommands(program: Command): void {
           }
         }
       } else {
-        // 无参数——列出可选项让用户选择
-        console.log('');
-        console.log('  可安装的 IDE 适配器：');
-        console.log('');
-        const installable = allAdapters.filter((a) => a.quickChannelDirective);
-        installable.forEach((adapter, i) => {
-          console.log(`  ${i + 1}. ${adapter.id} — ${adapter.name} (写入 ${adapter.contextFile})`);
-        });
-        console.log('');
-        console.log('  使用 --adapters <ids> 指定要安装的适配器（逗号分隔），或 --all 安装全部。');
-        console.log('  示例: sovei adapters install --adapters trae,codebuddy');
-        console.log('');
-        return;
+        // 无参数——TTY 下弹出多选器；非交互环境回落为列表提示。
+        const { selectAdapters } = await import('../adapter-selector.js');
+        const installable = allAdapters
+          .filter((a) => a.quickChannelDirective)
+          .map((a) => ({ id: a.id, name: a.name, contextFile: a.contextFile }));
+        const picked = await selectAdapters(installable);
+        if (picked === null) {
+          console.log('');
+          console.log('  可安装的 IDE 适配器：');
+          console.log('');
+          installable.forEach((adapter, i) => {
+            console.log(`  ${i + 1}. ${adapter.id} — ${adapter.name} (写入 ${adapter.contextFile})`);
+          });
+          console.log('');
+          console.log('  当前为非交互环境。使用 --adapters <ids> 指定要安装的适配器（逗号分隔），或 --all 安装全部。');
+          console.log('  示例: sovei adapters install --adapters trae,codebuddy');
+          console.log('');
+          return;
+        }
+        if (picked.length === 0) {
+          console.log('\n  未选择任何适配器，已取消。\n');
+          return;
+        }
+        selectedIds = picked;
       }
 
       const result = await installAdapters(selectedIds, storage);

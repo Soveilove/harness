@@ -32,9 +32,14 @@ test('installAdapters creates slash command for claude', async () => {
     assert.equal(result.totalInstalled, 1);
     assert.ok(result.results[0].files.includes('CLAUDE.md'));
     assert.ok(result.results[0].files.includes('.claude/commands/sovei-quick.md'));
+    assert.ok(result.results[0].files.includes('.claude/commands/sovei-onboard.md'));
 
     const slashContent = await storage.read('.claude/commands/sovei-quick.md');
     assert.ok(slashContent.includes('sovei quick'));
+
+    const onboardContent = await storage.read('.claude/commands/sovei-onboard.md');
+    assert.ok(onboardContent.includes('sovei project onboard --evidence-only'));
+    assert.ok(onboardContent.includes('description:')); // claude flavor 带 frontmatter
 
     const claudeMd = await storage.read('CLAUDE.md');
     assert.ok(claudeMd.includes('Quick Channel'));
@@ -53,9 +58,13 @@ test('installAdapters creates slash command for codebuddy', async () => {
     assert.equal(result.totalInstalled, 1);
     assert.ok(result.results[0].files.includes('AGENTS.md'));
     assert.ok(result.results[0].files.includes('.codebuddy/commands/sovei-quick.md'));
+    assert.ok(result.results[0].files.includes('.codebuddy/commands/sovei-onboard.md'));
 
     const cmdContent = await storage.read('.codebuddy/commands/sovei-quick.md');
     assert.ok(cmdContent.includes('sovei quick'));
+
+    const onboardCmd = await storage.read('.codebuddy/commands/sovei-onboard.md');
+    assert.ok(onboardCmd.includes('sovei project onboard --evidence-only'));
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -119,14 +128,19 @@ test('checkAdapterInstalled returns false before install, true after', async () 
   }
 });
 
-test('adapters without quickChannelDirective are skipped', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'sovei-adapters-skip-'));
+test('file-only adapters (gemini) install directive with quick + onboard', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'sovei-adapters-gemini-'));
   try {
     const storage = new FilesystemStorage(root);
     const result = await installAdapters(['gemini'], storage);
-    assert.equal(result.totalInstalled, 0);
-    assert.equal(result.totalSkipped, 1);
-    assert.ok(result.results[0].skipped.includes('无快速通道指令'));
+    assert.equal(result.totalInstalled, 1);
+    assert.ok(result.results[0].files.includes('GEMINI.md'));
+
+    const content = await storage.read('GEMINI.md');
+    assert.ok(content.includes('Quick Channel'));
+    assert.ok(content.includes('sovei quick'));
+    // 文件型适配器无 slash/skill，onboard 以文本指令形式挂在上下文文件里
+    assert.ok(content.includes('sovei project onboard --evidence-only'));
   } finally {
     await rm(root, { recursive: true, force: true });
   }

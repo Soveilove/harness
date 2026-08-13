@@ -329,36 +329,54 @@ export function registerProjectCommands(program: Command): void {
         console.log('  · 已创建 AGENTS.md（Sovei 声明）');
       }
 
-      // ── 安装 IDE 适配器快速通道指令 ──
-      if (opts.adapters) {
+      // ── 安装 IDE 适配器显式指令（quick / onboard / 工作流阶段） ──
+      // 门禁模型：CLI 负责初始化用户要用的显式指令；agent 是语义执行方。
+      // --adapters 显式指定时按参数安装；否则在 TTY 下弹出多选器；非交互环境回落为提示。
+      {
         const { installAdapters } = await import('../../adapters/installer.js');
         const { adapterRegistry } = await import('../../adapters/registry.js');
-        let adapterIds: string[];
-        if (opts.adapters === 'all') {
-          adapterIds = adapterRegistry.list().filter((a) => a.quickChannelDirective).map((a) => a.id);
+        const { selectAdapters, parseAdapterOption } = await import('../adapter-selector.js');
+        const installable = adapterRegistry
+          .list()
+          .filter((a) => a.quickChannelDirective)
+          .map((a) => ({ id: a.id, name: a.name, contextFile: a.contextFile }));
+
+        let adapterIds: string[] | null;
+        if (opts.adapters) {
+          adapterIds = parseAdapterOption(opts.adapters, installable);
         } else {
-          adapterIds = opts.adapters.split(',').map((id) => id.trim()).filter(Boolean);
+          adapterIds = await selectAdapters(installable);
         }
-        const installResult = await installAdapters(adapterIds, storage);
-        console.log('');
-        console.log('  ── IDE 适配器安装 ──');
-        for (const r of installResult.results) {
-          if (r.installed) {
-            console.log(`  ✓ ${r.adapterName} (${r.adapterId}) — 已安装`);
-            for (const f of r.files) {
-              console.log(`    · ${f}`);
+
+        if (adapterIds === null) {
+          // 非交互环境（无 TTY / CI），未显式指定 → 打印提示，不安装。
+          console.log('');
+          console.log('  ── IDE 适配器 ──');
+          console.log('  当前为非交互环境，未安装适配器指令。');
+          console.log('  运行 `sovei adapters install` 交互式选择，或 `sovei project init <path> --adapters trae,codebuddy` 指定安装。');
+          console.log('');
+        } else if (adapterIds.length === 0) {
+          console.log('');
+          console.log('  ── IDE 适配器 ──');
+          console.log('  未选择适配器，已跳过指令安装（仅初始化项目骨架）。');
+          console.log('  之后可运行 `sovei adapters install` 补装。');
+          console.log('');
+        } else {
+          const installResult = await installAdapters(adapterIds, storage);
+          console.log('');
+          console.log('  ── IDE 适配器安装 ──');
+          for (const r of installResult.results) {
+            if (r.installed) {
+              console.log(`  ✓ ${r.adapterName} (${r.adapterId}) — 已安装`);
+              for (const f of r.files) {
+                console.log(`    · ${f}`);
+              }
+            } else {
+              console.log(`  → ${r.adapterName} (${r.adapterId}) — ${r.skipped}`);
             }
-          } else {
-            console.log(`  → ${r.adapterName} (${r.adapterId}) — ${r.skipped}`);
           }
+          console.log('');
         }
-        console.log('');
-      } else {
-        console.log('');
-        console.log('  ── IDE 适配器 ──');
-        console.log('  运行 `sovei adapters install` 选择要安装的 IDE 快速通道指令。');
-        console.log('  或 `sovei project init <path> --adapters trae,codebuddy` 在初始化时安装。');
-        console.log('');
       }
 
       // Create knowledge files
@@ -448,6 +466,15 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
+      // 软提示（不阻断）：onboard 会自行落盘 project.config.json 与证据文件，但不会生成 init
+      // 提供的完整骨架（AGENTS.md 声明、skills 基座、IDE 指令）。若从未 init 过，先提示补齐再继续扫描。
+      const hasAgentsDeclaration = await storage.exists('AGENTS.md');
+      if (!hasAgentsDeclaration) {
+        console.log('\n  ⚠️  未检测到 AGENTS.md（项目可能尚未 init）。');
+        console.log('     onboard 会采集证据并生成候选，但不会建立完整骨架（Sovei 声明 / skills 基座 / IDE 指令）。');
+        console.log('     建议先运行 `sovei project init . --force` 再 onboard，可获得完整结构与显式指令。');
+        console.log('     （本次仍将继续扫描。）\n');
+      }
       // 写侧守卫：若存在旧版业务地图，明确告知本次将整体刷新为当前版本。
       const staleVersion = await getStaleArtifactVersion(storage, ARTIFACT_FILES.businessMap);
       if (staleVersion !== null) {
@@ -545,8 +572,11 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
         const evidence = await writeEvidenceFiles(storage, currentConfig, result);
         console.log('');
         console.log('  ================================================================');
-        console.log('  AGENT ONBOARDING GUIDE');
+        console.log('  AGENT ONBOARDING GUIDE (指令包 / instruction pack)');
         console.log('  ================================================================');
+        console.log('');
+        console.log('  这是一段给 AI agent 执行的指令包，不是给人复制的文档。');
+        console.log('  通过 /sovei-onboard 指令唤起时，agent 应读取本段并逐步执行。');
         console.log('');
         console.log('  You are an AI agent analyzing an existing codebase with Sovei.');
         console.log('  Sovei has collected evidence but CANNOT understand business semantics.');
@@ -733,8 +763,8 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
       console.log('    sovei knowledge list --lifecycle candidate');
       console.log('    sovei knowledge promote <id> --feature <feature> --description "verified"');
       console.log('');
-      console.log('  开始跟踪工作：');
-      console.log('    sovei workflow bootstrap 001-first-feature');
+      console.log('  开始跟踪工作（explore 起手，自然语言需求）：');
+      console.log('    sovei workflow explore "<需求描述>" --slug <kebab-slug>');
       console.log('');
 }
 

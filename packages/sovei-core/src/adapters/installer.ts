@@ -86,7 +86,7 @@ async function installSingleAdapter(
 ): Promise<AdapterInstallResult> {
   const files: string[] = [];
 
-  // 无指令的适配器（如 gemini/aider/windsurf）跳过
+  // 未定义快速通道指令的适配器跳过（当前所有已注册适配器都有指令）
   if (!adapter.quickChannelDirective) {
     return {
       adapterId: adapter.id,

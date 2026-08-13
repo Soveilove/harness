@@ -272,6 +272,88 @@ function generateCodebuddyStageSlashCommands(dir: string): Array<{
   }));
 }
 
+/**
+ * 生成 onboard 入口指令（Claude Code slash / CodeBuddy slash / Codex 技能）。
+ *
+ * 定位：薄封装。真正的「指令包」由 CLI 在运行 `sovei project onboard --evidence-only`
+ * 时吐出（三类证据文件 + AGENT ONBOARDING GUIDE）。本文件只负责：告诉 agent 何时唤起、
+ * 跑哪条命令、然后**读并执行 CLI 输出的指令包**——而不是让用户手动复制一段话。
+ *
+ * @param flavor claude=带 frontmatter 的 slash；codebuddy=execute_command 风格；codex=带 name/description 的技能。
+ */
+function buildOnboardCommandContent(flavor: 'claude' | 'codebuddy' | 'codex'): string {
+  const runLine =
+    flavor === 'codebuddy'
+      ? '   使用 execute_command 工具运行：'
+      : '   运行：';
+  const body = [
+    '# Sovei onboard — 已有项目接入（采集证据 → agent 分析 → 写回）',
+    '',
+    '> 用于把一个**已有代码库**接入 Sovei：CLI 采集机械证据（目录/import/正则命中），',
+    '> 你（agent）负责读代码、判断业务语义、把确认的红线与知识写回 CLI。',
+    '',
+    '## 何时唤起',
+    '',
+    '- 需要为一个还没接入 Sovei 的现有项目建立业务基线（业务能力地图 + 红线 + 知识）。',
+    '- 不用于：新项目初始化（用 `sovei project init`）；单个 Feature 开发（用 explore 入口）。',
+    '',
+    '## 执行步骤',
+    '',
+    '1. 若项目尚未初始化 Sovei（无 AGENTS.md / sovei-flow/），先初始化骨架：',
+    '   ```bash',
+    '   sovei project init . --force',
+    '   ```',
+    '2. 采集证据并获取指令包：',
+    runLine,
+    '   ```bash',
+    '   sovei project onboard --evidence-only',
+    '   ```',
+    '   CLI 会落盘三类证据文件（业务地图 / 红线候选 / 知识条目），并输出一段',
+    '   **AGENT ONBOARDING GUIDE 指令包**。',
+    '3. **读取并执行该指令包**——它是你本次要做的事的权威说明，不要只复制文字：',
+    '   - 读 `sovei-flow/project/codegraph/business-map.json`，对照真实源码逐项',
+    '     CONFIRM / REJECT / MERGE / SPLIT（测试文件、单字母名、无真实逻辑一律 REJECT）。',
+    '   - 读真实源码识别业务红线（认证 / 计费 / 数据完整性 / API 契约 / 合规）。',
+    '   - 通过 CLI 写回确认项：',
+    '     ```bash',
+    '     sovei governance redline add <ID> --title "..." --rule "..." --enforcement absolute --rationale "..."',
+    '     sovei knowledge add --type <type> --title "..." --content "..." --feature onboard',
+    '     ```',
+    '   - 精炼规则候选（读 `sovei-flow/project/rules/adapted.rules.json`）：',
+    '     ```bash',
+    '     sovei rules refine --reviewer <agent> --reason "<finding>" --discard <ID,逗号分隔>',
+    '     ```',
+    '   - 写 `sovei-flow/project/onboard-report.md` 与 `business-coverage.md`（业务视角，供 explore 阶段消费）。',
+    '4. 全部为候选，绝不自动激活；完成后交人工审核：',
+    '   ```bash',
+    '   sovei governance redline list',
+    '   sovei knowledge list --lifecycle candidate',
+    '   sovei rules list --lifecycle candidate',
+    '   ```',
+    '',
+    '> 边界：CLI 只产机械证据与门禁，业务语义判断由你完成；激活由人工决定。',
+    '',
+  ];
+  if (flavor === 'claude') {
+    return [
+      '---',
+      'description: Sovei onboard — 已有项目接入（采集证据 + 按 CLI 指令包分析写回）',
+      '---',
+      '',
+      ...body,
+    ].join('\n');
+  }
+  return body.join('\n');
+}
+
+/** Claude Code / CodeBuddy 的 onboard slash 入口文件。 */
+function generateOnboardSlashCommand(
+  dir: string,
+  flavor: 'claude' | 'codebuddy',
+): { dir: string; filename: string; content: string } {
+  return { dir, filename: 'sovei-onboard.md', content: buildOnboardCommandContent(flavor) };
+}
+
 const codexAdapter: IDEAdapter = {
   id: 'codex',
   name: 'Codex',
@@ -386,6 +468,17 @@ const codexAdapter: IDEAdapter = {
           '',
         ].join('\n'),
       },
+      {
+        filename: 'sovei-onboard.md',
+        content: [
+          '---',
+          'name: sovei-onboard',
+          'description: Sovei 已有项目接入。当需要把一个还没接入 Sovei 的现有代码库建立业务基线（业务能力地图 + 业务红线 + 项目知识）时唤起。CLI 采集机械证据，你读代码判断业务语义并写回。不用于新项目初始化或单个 Feature 开发。',
+          '---',
+          '',
+          buildOnboardCommandContent('codex'),
+        ].join('\n'),
+      },
     ],
   },
 };
@@ -441,7 +534,11 @@ const claudeAdapter: IDEAdapter = {
     ].join('\n'),
   },
   // P0-B: 12 阶段 slash command，让 agent 用 /sovei-explore、/sovei-spec 等触发工作流节点
-  slashCommands: generateClaudeStageSlashCommands('.claude/commands'),
+  // 外加 onboard 入口（已有项目接入），与 quick 一样属于「每个 agent 都应具备的基础指令」。
+  slashCommands: [
+    ...generateClaudeStageSlashCommands('.claude/commands'),
+    generateOnboardSlashCommand('.claude/commands', 'claude'),
+  ],
 };
 
 const codebuddyAdapter: IDEAdapter = {
@@ -492,8 +589,11 @@ const codebuddyAdapter: IDEAdapter = {
       '编辑完成后运行测试，快速通道会记录 usage 并验证 git diff 范围。',
     ].join('\n'),
   },
-  // P0-B: 12 阶段 slash command
-  slashCommands: generateCodebuddyStageSlashCommands('.codebuddy/commands'),
+  // P0-B: 12 阶段 slash command + onboard 入口（已有项目接入）
+  slashCommands: [
+    ...generateCodebuddyStageSlashCommands('.codebuddy/commands'),
+    generateOnboardSlashCommand('.codebuddy/commands', 'codebuddy'),
+  ],
 };
 
 const traeAdapter: IDEAdapter = {
@@ -543,8 +643,50 @@ const traeAdapter: IDEAdapter = {
     '> 完整步骤：`sovei workflow <stage> <feature>` 准备阶段 → 阅读提示契约 → 填写产物 → `sovei workflow <stage> <feature> --complete` 推进。',
     '> scope 完成后可运行 `sovei feature split <feature> --json` 获取拆分提议。',
     '',
+    '### Onboard 已有项目接入 (Trae)',
+    '',
+    '接入一个已有代码库时（本平台以文件+CLI 驱动）：',
+    '',
+    '1. 未初始化则先建骨架：`sovei project init . --force`',
+    '2. 采集证据并取指令包：`sovei project onboard --evidence-only`',
+    '3. 读取输出的 AGENT ONBOARDING GUIDE 指令包并逐步执行：对照真实源码 CONFIRM/REJECT 业务地图条目，',
+    '   识别业务红线，通过 `sovei governance redline add` / `sovei knowledge add` / `sovei rules refine` 写回，',
+    '   并写 `sovei-flow/project/onboard-report.md` 与 `business-coverage.md`。',
+    '4. 全部为候选，交人工审核激活。',
+    '',
   ].join('\n'),
 };
+
+/**
+ * 面向仅文件交付、无 slash / skill 通道的 CLI-first 适配器（Gemini / Aider / Windsurf）：
+ * 在上下文文件里写入一段「快速通道 + onboard 入口」文本指令。
+ *
+ * 这些平台没有 slash command 也没有 skill 包，onboard 只能以自然语言指令形式挂在
+ * 上下文文件里，由 agent 读取后按步骤驱动 CLI。
+ */
+function buildFileOnlyDirective(label: string): string {
+  return [
+    '',
+    `### Quick Channel (${label})`,
+    '',
+    '快速通道与完整 Sovei 工作流是**二选一关系**，不叠加：',
+    '',
+    '- **快速通道**：低风险、范围明确的临时代码变更（不在正式 Feature 工作流内）。运行 `sovei quick "<变更描述>" --paths <文件>` → 完成编辑 → 运行测试。',
+    '- **完整工作流**：已注册 Feature 并走 12 阶段流程时，代码在 `implement` 阶段完成，由 converge/verify 门禁治理，**不需要再跑 quick**。',
+    '',
+    `### Onboard 已有项目接入 (${label})`,
+    '',
+    '接入一个已有代码库时，按以下步骤驱动 CLI（本平台无 slash/skill，直接读本段执行）：',
+    '',
+    '1. 未初始化则先建骨架：`sovei project init . --force`',
+    '2. 采集证据并取指令包：`sovei project onboard --evidence-only`',
+    '3. 读取输出的 AGENT ONBOARDING GUIDE 指令包并逐步执行：对照真实源码 CONFIRM/REJECT 业务地图条目，',
+    '   识别业务红线，通过 `sovei governance redline add` / `sovei knowledge add` / `sovei rules refine` 写回，',
+    '   并写 `sovei-flow/project/onboard-report.md` 与 `business-coverage.md`。',
+    '4. 全部为候选，交人工审核激活；CLI 只产机械证据与门禁，业务语义判断由你完成。',
+    '',
+  ].join('\n');
+}
 
 const geminiAdapter: IDEAdapter = {
   id: 'gemini',
@@ -562,7 +704,7 @@ const geminiAdapter: IDEAdapter = {
   },
   contextFile: 'GEMINI.md',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
-  quickChannelDirective: '',
+  quickChannelDirective: buildFileOnlyDirective('Gemini CLI'),
 };
 
 const aiderAdapter: IDEAdapter = {
@@ -581,7 +723,7 @@ const aiderAdapter: IDEAdapter = {
   },
   contextFile: '.aiderrules',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
-  quickChannelDirective: '',
+  quickChannelDirective: buildFileOnlyDirective('Aider'),
 };
 
 const windsurfAdapter: IDEAdapter = {
@@ -600,7 +742,7 @@ const windsurfAdapter: IDEAdapter = {
   },
   contextFile: '.windsurfrules',
   renderSkillDirectives: (bindings) => renderCliSkillDirectives(bindings),
-  quickChannelDirective: '',
+  quickChannelDirective: buildFileOnlyDirective('Windsurf'),
 };
 
 /**

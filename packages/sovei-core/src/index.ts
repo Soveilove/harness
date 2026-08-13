@@ -86,6 +86,8 @@ export { adapterRegistry } from './adapters/registry.js';
 export type { IDEAdapter, AdapterCapabilities } from './adapters/registry.js';
 export { installAdapters, checkAdapterInstalled } from './adapters/installer.js';
 export type { InstallResult, AdapterInstallResult } from './adapters/installer.js';
+export { parseAdapterOption, selectAdapters } from './cli/adapter-selector.js';
+export type { SelectableAdapter } from './cli/adapter-selector.js';
 export type { EmbeddingProvider, LLMProvider, ScoredItem } from './providers/contracts.js';
 
 // Quick Channel
