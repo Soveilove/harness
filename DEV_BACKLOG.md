@@ -1,7 +1,7 @@
 # Sovei 待办总清单（缺陷 + 待开发 + 使用方式）
 
 > 生成日期：2026-08-11（全面重整，含 spec 治理讨论结论 + web-plugins 吸收清单）
-> 最新追加：2026-08-13 —— Feature 030 拆分能力完成（12 阶段全闭合，205/205 测试通过），进入 Phase 2：用拆分能力承载 N1~N6。
+> 最新追加：2026-08-13 —— Feature 030 拆分能力完成（12 阶段全闭合）；**七大重大更新 N1~N7 全部完成并发布 v2.6.1**；新增「架构信号注入工作流阶段」闭环待办。
 > 依据：全面扫描 `specs/` 下全部 Feature、`design-docs/` 设计文档、源码与 npm 发布状态。
 > 目的：给出一张可判断方向的**开发总清单**，供人工排期。本文件不替代 Sovei 工作流，实际开发仍走 `load → … → sync` 12 阶段。
 
@@ -11,17 +11,20 @@
 
 | 项 | 值 |
 |---|---|
-| 最新发布版本 | **2.5.9**（npm `latest`，2026-08-10） |
-| 测试基线 | 179 / 179 通过（构建后） |
+| 最新发布版本 | **2.6.1**（npm `latest`，2026-08-13，13 阶段闭环 + 七大重大更新） |
+| 测试基线 | 214 / 214 通过（构建后） |
 | Node 兼容 | CommonJS，`engines >= 14.18.0`（Node 14 可用） |
 | 知识库 | 1 stable + 若干 candidate/pending |
-| Skills | 8 阶段绑定，7 个第三方 skill 锁定 |
-| P0 缺陷 | **全部清零** |
+| Skills | 8 阶段绑定，7 个第三方 skill 锁定 + 6 个基座模板（vue2/vue3/react/cli/python/quant） |
+| P0 缺陷 | **全部清零**（含场景二 P0-1/P0-2、工作流 P0-1/P0-2） |
 | 快速通道（S0） | ✅ 已实现（Feature 020/021/023/P2-7） |
-| Merge Preflight | ✅ 已实现（未发布） |
+| Merge Preflight | ✅ 已实现（preflight 模块） |
 | 过期感知 L1 | ✅ 已实现（Feature 024） |
 | load 阶段增强 | ✅ 已实现（Feature 025） |
 | 上下文包膨胀 | ✅ 已解决（Feature 022） |
+| Feature 拆分 | ✅ 已实现（Feature 030，含 P0-A 引擎自主拆分提示） |
+| 七大重大更新 N1~N7 | ✅ 全部完成（2026-08-13） |
+| 演进式架构治理 | ⚠️ **scan/status/inspect/accept/dismiss/check 已实现，但未接入工作流运行时**（见 P2-12） |
 | 战略级缺口 | 问题四（统一关系模型）未实现；问题三（Drift Detection）第一期不做 |
 
 ---
@@ -47,6 +50,16 @@
 | 2026-08-10 | _subagentContract 契约提示 | Feature 022 后修 |
 | 2026-08-11 | quick 通道过度防御修复（P2-7） | Feature P2-7 |
 | 2026-08-11 | Feature 流程遗留清理（4 个卡住 Feature 归档） | 人工确认 |
+| 2026-08-12 | Feature 029 聚合视图命令（P1-2） | Feature 029 |
+| 2026-08-13 | **Feature 030 拆分能力**（Feature 拆子变更并行开发 + P0-A 引擎自主拆分提示） | Feature 030 |
+| 2026-08-13 | **N7 引擎 Feature 拆分能力** | Feature 030 |
+| 2026-08-13 | **N1 12 节点 skills 分开存放**（init 新增 `sovei-flow/agents/`） | 重大更新 N1 |
+| 2026-08-13 | **N2 Skills 基座**（init 预置 6 个技能模板） | 重大更新 N2 |
+| 2026-08-13 | **N3 Codex 独立适配**（12 节点按钮 + skillPackage 技能包） | 重大更新 N3 |
+| 2026-08-13 | **N4 init 产物改名 harness → sovei-flow**（`project migrate` 迁移脚本） | 重大更新 N4 |
+| 2026-08-13 | **N5 开源 + MIT + README 全面重写 + npm 包路径调整** | 重大更新 N5 |
+| 2026-08-13 | **N6 版本更新提示机制**（version-check.ts，零依赖 registry 检查） | 重大更新 N6 |
+| 2026-08-13 | **P0-B 工作流节点调用层**（slash command / Codex skill / 文本三层） | P0-B |
 
 ---
 
@@ -78,6 +91,7 @@
 | **P2-9** | **013 O2 sentinel upsert 晋升** | 已覆盖 3 Feature，第 4 个复用则晋升 stable。被动等待，不需主动开发 | — |
 | **P2-10** | **Cursor Adapter** | `adapters/registry.ts` 中 `cursor: pending`。其他 4 个 IDE（Codex/Claude/CodeBuddy/Trae）已完成 | 有无实际需求 |
 | **P2-11** | **architecture scan 支持 Python（`.py`）** | 默认 `includeExtensions` 是 TS/JS 家族（`.ts/.tsx/.js/.jsx/.vue/.svelte/.mjs/.cjs`，见 `policy.ts`），不含 `.py`。需：① includeExtensions 加 `.py`（或按项目类型扩展）；② analyzer 的依赖解析（fanIn/fanOut）适配 Python `import`/`from ... import` 语法；③ branch/function 度量适配 Python 缩进块。**备注**：Sovei 核心（workflow/quick/governance/knowledge/context）与语言无关、正常在用；scan 仅是不支持 Python 的附带辅助功能，当前已有 `test_arch_layers.py` 替代，不阻塞任何实际开发。**来源**：别人 AI 引入的待办 | 有 Python 项目时 |
+| **P2-12** | **架构信号注入工作流阶段（"随开发自动治理"闭环）** | 演进式架构治理目前是**独立手动命令**（scan/status/inspect/accept/dismiss/check），**未接入 12 阶段工作流运行时**。核查证据：`workflow-engine.ts:614` 装配上下文时加载的是 `context/snapshot.ts` 的**知识库快照**（`knowledge/.snapshot.json`），`src/context/` 对 `module-metrics.json`/`debt-register.json` 引用为 **0**；scope/converge/learn 阶段 prompt 虽写有"最新架构健康快照"字样，但引擎并未真正注入架构数据，只停留在让 AI 自行感知的文本提示层。需实现四步闭环：①**上下文注入**——`workflow-engine` 装配阶段上下文时读 `architecture/module-metrics.json` + `debt-register.json`，把涉及模块的信号/债务注入 scope/plan/converge；②**converge 门禁**——converge 后对比 baseline 与当前扫描，新增 refactor-required 热点时在报告提示；③**learn 自动登记**——多 Feature 反复触同一热点时自动调 `repository.accept` 生成债务条目（当前仅 prompt 建议未自动执行）；④**CI 挂接**——verify/complete 门禁可选 `architecture check --fail-on required`。**目标**：跑工作流时架构治理随开发自动发生，而非靠人手动敲 `sovei architecture` | 1 Feature |
 | **SA-2** | **子 Agent：context build 组装** | 分组并行加载 required 项 | — |
 | **SA-3** | **子 Agent：converge/verify 代码审查** | 分维度并行审查（类型安全/测试覆盖/规则合规/架构合规） | — |
 | **SA-5** | **子 Agent：preflight 并行检测** | 三类冲突检测并行。当前数据量小收益有限 | — |
@@ -161,13 +175,14 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 | 2 | `sovei feature summary <id>` — 聚合人可读视图 | P1 | ✅ 已完成（Feature 029，2026-08-12） |
 | 3 | README 版本同步 | P1 | ✅ 已完成 |
 | 4 | 知识提取复用价值阈值 | P1 | ⬅️ 下一个 P1 待开发 |
-| 5 | `--json` 全覆盖 | P2 | ❌ 待开发 |
-| 6 | `context build --paths` 语义修正 | P2 | ❌ 待开发 |
-| 7 | WP-1 / P2-6 Skill reference 加载策略 | P2 | ❌ 待开发 |
-| 8 | WP-2 verify 结构化审查 skill | P2 | ❌ 待开发 |
-| 9 | CI/CD 集成模板 | P2 | ❌ 待开发 |
-| 10 | 子 Agent 强化 SA-2/3/5/6 | P2 | ❌ 待评估 |
-| 11 | 其余 P2（usage export / 多 binding / 预算值 / Cursor / O2 晋升 / **architecture scan 支持 Python P2-11**） | P2 | ❌ 待开发 |
+| 5 | **架构信号注入工作流阶段（P2-12，"随开发自动治理"闭环）** | P2 | ⬅️ 高价值待开发（用户确认） |
+| 6 | `--json` 全覆盖 | P2 | ❌ 待开发 |
+| 7 | `context build --paths` 语义修正 | P2 | ❌ 待开发 |
+| 8 | WP-1 / P2-6 Skill reference 加载策略 | P2 | ❌ 待开发 |
+| 9 | WP-2 verify 结构化审查 skill | P2 | ❌ 待开发 |
+| 10 | CI/CD 集成模板 | P2 | ❌ 待开发 |
+| 11 | 子 Agent 强化 SA-2/3/5/6 | P2 | ❌ 待评估 |
+| 12 | 其余 P2（usage export / 多 binding / 预算值 / Cursor / O2 晋升 / **architecture scan 支持 Python P2-11**） | P2 | ❌ 待开发 |
 | 12 | 统一关系模型（问题四） | P3 | ❌ 待决策 |
 | 13 | 联邦星型 / Phase 4 / Phase 2 回放验证 | P3 | ❌ 待决策 |
 | 14 | 本地使用优化（use-local.ps1 + README 补充） | 低 | ❌ 待开发 |
@@ -186,8 +201,8 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 ## 6. 发布说明校对（大版本更新时必做）
 
 - **`packages/sovei-core/README.md` 是发布说明文件**，每次大版本更新需校对：
-  - 「版本与发布」章节版本号（当前 README 写 2.5.7，实际已发 2.5.9，**需同步**）
-  - 命令速查表是否覆盖全部新增命令（`workspace preflight`、`context cross-feature-index`、`context expand`、`adapters install/list` 等）
+  - 「版本与发布」章节版本号。**已同步至 2.6.1**（2026-08-13 发布，含 13 阶段闭环 + 七大重大更新）。⚠️ 本 DEV_BACKLOG 之前写 2.5.9 已过期，现已修正。
+  - 命令速查表是否覆盖全部新增命令（`workspace preflight`、`context cross-feature-index`、`context expand`、`adapters install/list`、`feature split/sub-change`、`project migrate`、`architecture scan/status/inspect/accept/dismiss/check` 等）
   - 能力概览表、外部 Skills 绑定表、安装/上手示例
   - 环境要求（Node >= 14.18）、发布产物 `sovei.cjs`、零运行时依赖描述
 
@@ -442,12 +457,16 @@ sovei --version        # 本机任何目录都能敲 sovei，改代码后重新 
 ```
 Phase 1（已完成 2026-08-13）：N7 — Feature 030 拆分能力（完整 12 阶段工作流）
   └─ ✅ 含 P0-A：引擎自主拆分的 agent 提示（scope 阶段"拆分评估"段）
-Phase 2（当前）：用拆分能力承载 N1~N6
+Phase 2（已完成 2026-08-13）：用拆分能力承载 N1~N6（七大重大更新全部落地，发布 v2.6.1）
   ├─ N4（改名 sovei-flow + 迁移脚本）——影响面最大，先做
   ├─ N1（skills 分开存放）+ N2（skills 基座）——内容层
   ├─ N3（codex 适配）+ N6（版本提示）——接口层
   └─ N5（开源 + npm 路径）——收尾
+Phase 3（待启动）：P2-12 — 架构信号注入工作流阶段（"随开发自动治理"闭环）
+  └─ 当前架构治理是独立手动命令，未接入 12 阶段运行时（详见 §2 P2-12）
 ```
+
+> **Phase 3 说明**：用户确认要做"跑工作流时架构治理随开发自动发生"。架构治理核心模块（analyzer/policy/repository）已随 v2.6.1 交付，但 engine 未注入架构数据到阶段上下文（scope/converge/learn 的 prompt 提到架构，实际运行时没喂数据）。P2-12 把这块补成真正的闭环，不改变原有 12 阶段工作流结构。
 
 ---
 

@@ -3,7 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](packages/sovei-core/LICENSE.md)
 [![npm version](https://img.shields.io/npm/v/@soveilove/sovei.svg)](https://www.npmjs.com/package/@soveilove/sovei)
 
+> 🚀 **v2.6.1 重大更新**：已实现企业级 13 阶段 SOP 工作流闭环。新增 `explore` 需求入口（`/sovei-explore --prd` 一条指令搞定 PRD→需求分析→拆分提议）、Feature 子变更并行开发、Skills 基座、IDE 全适配。**建议立即升级：`npm install -g @soveilove/sovei@latest`**
+
 Sovei 是一个便携式 TypeScript 工作流引擎，提供开发 SOP、类型化项目知识、决策地图、重大变更控制和演进式架构治理。它定义"怎么沉淀知识"（工作流 + 知识生命周期），不定义"知识是什么"（那是项目专属内容）。
+
+> 仓库：[github.com/Soveilove/harness](https://github.com/Soveilove/harness)
 
 > **当前状态**：开源项目（MIT License）。13 阶段完整工作流（含 explore 需求入口）、Feature 拆分、Skills 基座、Codex 技能包适配、版本更新提示等能力已就绪。CLI 启动时自动检测新版本并提示。
 
