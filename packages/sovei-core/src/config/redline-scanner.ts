@@ -116,7 +116,11 @@ const DOC_LINE_PATTERNS = [
 export class RedlineScanner {
   constructor(private storage: StorageBackend) {}
 
-  async scan(directoryMap: DirectoryNode[]): Promise<CandidateRedline[]> {
+  /**
+   * @param changedFiles 可选。增量 rescan 时仅重扫这些文件（用于代码面 pattern 检测），
+   *   未列出的表面文件不重复读取，避免全量重扫。
+   */
+  async scan(directoryMap: DirectoryNode[], changedFiles?: string[]): Promise<CandidateRedline[]> {
     const candidates: CandidateRedline[] = [];
     const seen = new Set<string>();
 
@@ -129,7 +133,7 @@ export class RedlineScanner {
 
     await this.scanGovernanceDocs(add);
     await this.scanSpecFiles(add);
-    await this.scanCodeSurfaces(directoryMap, add);
+    await this.scanCodeSurfaces(directoryMap, add, changedFiles);
 
     return candidates.sort((a, b) => {
       const byConfidence: Record<RedlineConfidence, number> = { high: 0, medium: 1, low: 2 };
@@ -278,6 +282,7 @@ export class RedlineScanner {
   private async scanCodeSurfaces(
     directoryMap: DirectoryNode[],
     add: (rl: Omit<CandidateRedline, "id">) => void,
+    changedFiles?: string[],
   ): Promise<void> {
     // Step 1: Identify business-critical files from directory structure
     const surfaceFiles: { path: string; category: RedlineCategory }[] = [];
@@ -340,25 +345,44 @@ export class RedlineScanner {
       });
     }
 
-    // Step 3: Read business-critical files and detect code-level patterns
-    const toScan = surfaceFiles.slice(0, 60);
+    // Step 3: Read business-critical files and detect code-level patterns.
+    // Aggregate by pattern (not per-file) so the same logical redline detected in
+    // N files yields ONE candidate with a stable ID and all hit files in `source`.
+    // Per-file titles used to embed the filename, producing N near-duplicate
+    // candidates (one ID per file) that polluted redlines-seed.json and churned
+    // across rescans as files were renamed/added/removed.
+    const patternHits: Map<number, string[]> = new Map();
+    // 增量 rescan 时仅重扫变更的表面文件；未列出文件复用既有候选（M2 稳定 ID），
+    // 避免对全仓表面文件重复读取。
+    let toScan = surfaceFiles.slice(0, 60);
+    if (changedFiles && changedFiles.length) {
+      const changed = new Set(changedFiles);
+      toScan = toScan.filter((file) => changed.has(file.path));
+    }
     for (const file of toScan) {
       let content: string | null = null;
       try { content = await this.storage.read(file.path); } catch { continue; }
       if (!content) continue;
 
-      for (const pattern of CODE_PATTERNS) {
-        if (pattern.regex.test(content)) {
-          add({
-            title: pattern.title + ' (' + file.path.split('/').pop() + ')',
-            rule: pattern.rule,
-            enforcement: pattern.enforcement,
-            source: file.path,
-            category: pattern.category,
-            confidence: 'medium',
-          });
+      for (let i = 0; i < CODE_PATTERNS.length; i++) {
+        if (CODE_PATTERNS[i].regex.test(content)) {
+          const sources = patternHits.get(i) ?? [];
+          sources.push(file.path);
+          patternHits.set(i, sources);
         }
       }
+    }
+
+    for (const [index, sources] of patternHits) {
+      const pattern = CODE_PATTERNS[index];
+      add({
+        title: pattern.title,
+        rule: pattern.rule,
+        enforcement: pattern.enforcement,
+        source: sources.join(', '),
+        category: pattern.category,
+        confidence: 'medium',
+      });
     }
   }
 

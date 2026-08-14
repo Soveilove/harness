@@ -25,8 +25,8 @@ export interface PendingConfirmation {
 /**
  * Sub-change state — a single independently-developable unit within a Feature.
  *
- * Sub-changes share the parent Feature's explore→scope stages (shared context)
- * but fork from plan→verify with independent cursors. After all sub-changes
+ * Sub-changes share the parent Feature's explore→grill stages (shared context)
+ * but fork from spec→verify with independent cursors. After all sub-changes
  * are merged, the parent Feature advances learn→sync (aggregation).
  *
  * One level of nesting only — sub-changes cannot themselves be split.
@@ -40,7 +40,7 @@ export interface SubChangeState {
   goal: string;
   /** IDs of sub-changes that must be merged before this one can enter plan */
   dependsOn: string[];
-  /** Current stage cursor (plan|tasks|implement|converge|verify) or null before first prepare */
+  /** Current stage cursor (spec|scope|plan|tasks|implement|converge|verify) or null before first prepare */
   currentStage: string | null;
   /** Stages completed for this sub-change */
   completedStages: string[];
@@ -81,7 +81,7 @@ export type WorkflowEvent =
   | { type: 'BOOTSTRAP'; featureId: string }
   | { type: 'STAGE_PREPARED'; stage: string }
   | { type: 'STAGE_COMPLETE'; stage: string; artifacts: string[] }
-  | { type: 'TASK_COMPLETE'; taskId: string; artifact: string }
+  | { type: 'TASK_COMPLETE'; taskId: string; artifact: string; subChangeId?: string }
   | { type: 'CHANGE_DECLARED'; changeId: string; target: string; summary: string }
   | { type: 'REOPEN'; target: string; reason: string }
   | { type: 'BLOCK'; reason: string }

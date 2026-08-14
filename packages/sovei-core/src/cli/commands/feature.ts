@@ -591,19 +591,21 @@ export function registerFeatureCommands(program: Command): void {
       try {
         if (opts.json) {
           // 输出拆分提议提示契约，供 AI 读取后填充 sub-change-map.md 草稿。
-          // 前置条件：explore 完成后即可拆分（exploration.md 存在）；
-          // 若 exploration.md 不存在（老 Feature 或未走 explore），回退到 spec.md + scope.md。
+          // 前置条件（方向 C）：explore + grill 完成后拆分（exploration.md + decision-log.md 存在）。
+          // 老 Feature（未走 explore）回退到 spec.md + scope.md。
           const storage = getStorage();
           const explorationExists = await storage.exists(`${featurePath}/exploration.md`);
+          const decisionLogExists = await storage.exists(`${featurePath}/decision-log.md`);
           const specExists = await storage.exists(`${featurePath}/spec.md`);
           const scopeExists = await storage.exists(`${featurePath}/scope.md`);
-          if (!explorationExists && (!specExists || !scopeExists)) {
+          const canSplitFromFront = explorationExists && decisionLogExists;
+          if (!canSplitFromFront && (!specExists || !scopeExists)) {
             throw new Error(
-              `Cannot split: exploration.md must exist (complete explore stage first), or spec.md and scope.md must exist (complete spec and scope stages first).`,
+              `Cannot split: exploration.md + decision-log.md must exist (complete explore + grill stages first), or spec.md + scope.md must exist (legacy Feature).`,
             );
           }
-          const instruction = explorationExists
-            ? 'Read exploration.md (and sub-change-map.md if explore already proposed), then propose/refine sub-change divisions.'
+          const instruction = canSplitFromFront
+            ? 'Read exploration.md + decision-log.md (and sub-change-map.md if explore already proposed), then propose/refine sub-change divisions.'
             : 'Read spec.md and scope.md, then propose sub-change divisions.';
           const contract = {
             action: 'feature-split-proposal',

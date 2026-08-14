@@ -156,7 +156,7 @@ export class WorkflowEngine {
     const stageDef = stageRegistry.get(stageName);
 
     // Create context
-    const artifacts = new ArtifactRepository(this.storage, artifactRoot);
+    const artifacts = new ArtifactRepository(this.storage, artifactRoot, subChangeId ? featurePath : undefined);
     const ctx: StageContext = {
       featureId,
       featurePath,
@@ -358,7 +358,10 @@ export class WorkflowEngine {
     }
     if (stageName === 'implement') {
       const requiredTasks = await this.readTaskIds(artifacts);
-      const remaining = requiredTasks.filter((taskId) => !state.completedTaskIds.includes(taskId));
+      const completedTaskIds = subChangeId
+        ? state.subChanges.find((sc) => sc.id === subChangeId)?.completedTaskIds ?? []
+        : state.completedTaskIds;
+      const remaining = requiredTasks.filter((taskId) => !completedTaskIds.includes(taskId));
       if (remaining.length) {
         throw new Error(`Cannot complete implement; unfinished tasks: ${remaining.join(', ')}`);
       }
@@ -410,6 +413,15 @@ export class WorkflowEngine {
         { type: 'SUBCHANGE_MERGED', subChangeId, mergedAt: new Date().toISOString() },
         stageName,
       );
+      const mergedState = await this.eventStore.replay(featurePath, this.workflow);
+      if (mergedState.subChanges.length > 0 && mergedState.subChanges.every((sc) => sc.status === 'merged')) {
+        const evidenceParts: string[] = ['# 聚合验证证据', '', `> Feature：${featureId}`, ''];
+        for (const sc of mergedState.subChanges) {
+          const evidence = await this.storage.read(`${getSubChangePath(featurePath, sc.id)}/evidence.md`);
+          if (evidence) evidenceParts.push(`## ${sc.id}`, '', evidence, '');
+        }
+        await this.storage.write(`${featurePath}/evidence.md`, evidenceParts.join('\n'));
+      }
     }
 
     const newState = await this.eventStore.replay(featurePath, this.workflow);
@@ -423,8 +435,9 @@ export class WorkflowEngine {
   }
 
   /** Record one implementation task without advancing the implement stage. */
-  async completeTask(featureId: string, taskId: string): Promise<WorkflowState> {
-    const { featurePath, state, artifacts } = await this.createStageContext(featureId, 'implement');
+  async completeTask(featureId: string, taskId: string, options?: { subChangeId?: string }): Promise<WorkflowState> {
+    const subChangeId = options?.subChangeId;
+    const { featurePath, state, artifacts } = await this.createStageContext(featureId, 'implement', subChangeId);
     const requiredTasks = await this.readTaskIds(artifacts);
     if (!requiredTasks.includes(taskId)) throw new Error(`Unknown task '${taskId}' in tasks.md`);
     if (state.completedTaskIds.includes(taskId)) return state;
@@ -435,7 +448,10 @@ export class WorkflowEngine {
     if (!manifest.includes(taskId)) {
       throw new Error(`Cannot complete task: change-manifest.md does not reference '${taskId}'`);
     }
-    await this.eventStore.append(featurePath, { type: 'TASK_COMPLETE', taskId, artifact: 'change-manifest.md' }, 'implement');
+    const event = subChangeId
+      ? { type: 'TASK_COMPLETE' as const, taskId, artifact: 'change-manifest.md', subChangeId }
+      : { type: 'TASK_COMPLETE' as const, taskId, artifact: 'change-manifest.md' };
+    await this.eventStore.append(featurePath, event, 'implement');
     const newState = await this.eventStore.replay(featurePath, this.workflow);
     await this.eventStore.persistState(featurePath, newState);
     return newState;
@@ -696,7 +712,7 @@ export class WorkflowEngine {
     const check = canExecuteStage(state, stageName, this.workflow, subChangeId ? { subChangeId } : undefined);
     if (!check.valid) throw new Error(check.reason);
     const stageDef = stageRegistry.get(stageName);
-    const artifacts = new ArtifactRepository(this.storage, artifactRoot);
+    const artifacts = new ArtifactRepository(this.storage, artifactRoot, subChangeId ? featurePath : undefined);
     const ctx: StageContext = { featureId, featurePath, workflowState: state, knowledge: this.knowledgeStore, artifacts, logger: this.logger };
     const { missing } = await artifacts.checkRequired(stageDef.contract.requiredArtifacts);
     if (missing.length) throw new Error(`Missing required artifacts for ${stageName}: ${missing.join(', ')}`);
@@ -851,6 +867,8 @@ export class WorkflowEngine {
 
     const now = new Date().toISOString();
     // Append events in declaration order (dependsOn must exist before dependents).
+    // 方向 C：拆分在 grill 完成后发生（父 Feature 共享 explore→grill），
+    // 每个子变更从 spec 起独立推进。
     for (const sc of subChanges) {
       await this.eventStore.append(
         featurePath,
@@ -862,20 +880,31 @@ export class WorkflowEngine {
           dependsOn: sc.dependsOn,
           createdAt: now,
         },
-        'scope',
+        'grill',
       );
     }
 
-    // Create scaffold directories for each sub-change.
+    // Create scaffold directories for each sub-change, seeding the spec.md
+    // template so the sub-change directory has real content from the split
+    // point onward (avoids the "empty SC dir during shared stages" confusion).
     for (const sc of subChanges) {
       const scPath = getSubChangePath(featurePath, sc.id);
-      // Write a placeholder so the directory exists (storage backends are file-based).
       await this.storage.write(`${scPath}/.gitkeep`, '');
+      const specTemplate = this.buildSubChangeSpecTemplate(featureId, sc);
+      await this.storage.write(`${scPath}/spec.md`, specTemplate);
     }
 
     // Write sub-change-map.md (human-readable manifest, persistent file).
     const mapContent = this.renderSubChangeMap(featureId, subChanges, now);
     await this.storage.write(`${featurePath}/sub-change-map.md`, mapContent);
+
+    // 方向 C 聚合：拆分后父层前向跳过直达 learn（等子变更全部 merged）。reducer 的
+    // STAGE_COMPLETE learn 检测未 merged 子变更，使父层停在 learn 等待聚合而非 completed。
+    await this.eventStore.append(
+      featurePath,
+      { type: 'STAGE_COMPLETE', stage: 'learn', artifacts: ['learn'] },
+      'grill',
+    );
 
     const newState = await this.eventStore.replay(featurePath, this.workflow);
     await this.eventStore.persistState(featurePath, newState);
@@ -897,6 +926,32 @@ export class WorkflowEngine {
         blockedBy,
       };
     });
+  }
+
+  /** Build a seeded spec.md template for a sub-change (方向 C：从 spec 分叉). */
+  private buildSubChangeSpecTemplate(
+    featureId: string,
+    sc: { id: string; name: string; goal: string; dependsOn: string[] },
+  ): string {
+    return [
+      `# Spec：${sc.id} ${sc.name}`,
+      '',
+      `> 由 Sovei 阶段生成：split（方向 C 子变更种子模板）`,
+      `> Feature：${featureId}`,
+      `> 目标：${sc.goal}`,
+      `> 依赖：${sc.dependsOn.join(', ') || '无'}`,
+      '',
+      '> AI 代理：请依据 spec 阶段提示契约，将本模板替换为该子变更的真实规格内容',
+      '> （问题定义、用户可见行为、边界、验收标准）。父 Feature 的需求理解见',
+      '> `exploration.md`，决策见 `decision-log.md`（父顶层共享）。',
+      '',
+      '<!-- SOVEI_TEMPLATE_PLACEHOLDER -->',
+      '',
+      '## 子变更范围',
+      '',
+      '## 验收标准',
+      '',
+    ].join('\n');
   }
 
   /** Render sub-change-map.md content. */
@@ -922,9 +977,9 @@ export class WorkflowEngine {
     lines.push('');
     lines.push('## 推进规则');
     lines.push('');
-    lines.push('- 无依赖的子变更可立即开始：`sovei workflow plan <feature> --sub-change <id>`');
-    lines.push('- 有依赖的子变更需等依赖全部 merged 后才能进入 plan');
-    lines.push('- 每个子变更独立走 plan→tasks→implement→converge→verify')
+    lines.push('- 无依赖的子变更可立即开始：`sovei workflow spec <feature> --sub-change <id>`');
+    lines.push('- 有依赖的子变更需等依赖全部 merged 后才能进入 spec');
+    lines.push('- 每个子变更独立走 spec→scope→plan→tasks→implement→converge→verify')
     lines.push('- verify 完成后自动 merged');
     lines.push('- 全部 merged 后父 Feature 推进 learn→sync');
     lines.push('');

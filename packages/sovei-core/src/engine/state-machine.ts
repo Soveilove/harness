@@ -42,7 +42,9 @@ export function createInitialState(
 }
 
 /** Sub-change stage range (plan → verify). explore→scope and learn→sync are shared/parent-only. */
-const SUB_CHANGE_STAGE_RANGE = ['plan', 'tasks', 'implement', 'converge', 'verify'];
+/** 子变更独立推进的阶段范围（方向 C：从 spec 分叉）。父 Feature 共享 explore→grill，
+ * 拆分后每个子变更从 spec 起独立走 spec→scope→plan→tasks→implement→converge→verify。 */
+const SUB_CHANGE_STAGE_RANGE = ['spec', 'scope', 'plan', 'tasks', 'implement', 'converge', 'verify'];
 
 /** Locate a sub-change by id; throws if missing (fail-fast, no silent corruption). */
 function findSubChange(state: WorkflowState, subChangeId: string): SubChangeState {
@@ -122,6 +124,8 @@ export function workflowReducer(
       const next = workflow.stageOrder[eventIndex + 1] ?? null;
       const nextAfter = next ? workflow.stageOrder[workflow.stageOrder.indexOf(next) + 1] ?? null : null;
 
+      // 方向 C 聚合：父 Feature 拆分后经前向跳过直达 learn。若仍存在未 merged 的子变更，
+      // 父层停留在 learn 阶段等待聚合（不标记 completed），直到所有子变更 merged。
       const baseState: WorkflowState = {
         ...state,
         completedStages: completed,
@@ -133,6 +137,24 @@ export function workflowReducer(
         preparedStages: state.preparedStages.filter((s) => s !== event.stage),
         updatedAt: new Date().toISOString(),
       };
+
+      if (event.stage === 'learn') {
+        const unfinished = state.subChanges.filter((sc) => sc.status !== 'merged').map((sc) => sc.id);
+        if (unfinished.length > 0) {
+          // 到达 learn 但子变更未全部 merged：停在 learn，等待聚合。
+          return {
+            ...state,
+            completedStages: completed,
+            currentStage: 'learn',
+            nextStage: 'sync',
+            status: 'blocked' as const,
+            blockers: [`learn: waiting for sub-changes to merge: ${unfinished.join(', ')}`],
+            pendingConfirmations: [],
+            preparedStages: state.preparedStages.filter((s) => s !== event.stage),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
 
       // Confirmation gates: spec (S2/S3 only) and verify (always)
       const needsSpecGate = event.stage === 'spec' && (state.riskLevel === 'S2' || state.riskLevel === 'S3');
@@ -156,6 +178,17 @@ export function workflowReducer(
     }
 
     case 'TASK_COMPLETE': {
+      if (event.subChangeId) {
+        const sc = findSubChange(state, event.subChangeId);
+        if (sc.currentStage !== 'implement') {
+          throw new Error(`Tasks can only complete during sub-change implement, current stage is '${sc.currentStage}'`);
+        }
+        if (sc.completedTaskIds.includes(event.taskId)) return state;
+        return updateSubChange(state, event.subChangeId, (current) => ({
+          ...current,
+          completedTaskIds: [...current.completedTaskIds, event.taskId],
+        }));
+      }
       if (state.currentStage !== 'implement') {
         throw new Error(`Tasks can only complete during implement, current stage is '${state.currentStage}'`);
       }
@@ -333,8 +366,8 @@ export function workflowReducer(
           + `Allowed: ${SUB_CHANGE_STAGE_RANGE.join(', ')}.`,
         );
       }
-      // Guard: if entering plan for the first time, all dependencies must be merged.
-      if (event.stage === 'plan' && sc.currentStage === null) {
+      // Guard: if entering spec for the first time, all dependencies must be merged.
+      if (event.stage === 'spec' && sc.currentStage === null) {
         const unmerged = sc.dependsOn.filter((depId) => {
           const dep = state.subChanges.find((s) => s.id === depId);
           return !dep || dep.status !== 'merged';
@@ -383,12 +416,22 @@ export function workflowReducer(
       const next = SUB_CHANGE_STAGE_RANGE[idx + 1] ?? null;
       // verify completion auto-merges the sub-change.
       const merged = event.stage === 'verify';
-      return updateSubChange(state, event.subChangeId, (s) => ({
+      const updated = updateSubChange(state, event.subChangeId, (s) => ({
         ...s,
         completedStages: completed,
         currentStage: merged ? null : next,
         status: merged ? 'merged' as const : s.status,
       }));
+      if (merged && updated.subChanges.every((item) => item.status === 'merged')) {
+        const aggregationBlocker = 'learn: waiting for sub-changes to merge:';
+        return {
+          ...updated,
+          status: 'in_progress',
+          blockers: updated.blockers.filter((blocker) => !blocker.startsWith(aggregationBlocker)),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return updated;
     }
 
     case 'SUBCHANGE_MERGED': {
@@ -432,7 +475,14 @@ export function canExecuteStage(
   options?: CanExecuteStageOptions,
 ): { valid: boolean; reason?: string } {
   if (state.status === 'blocked') {
-    return { valid: false, reason: `Workflow is blocked: ${state.blockers.join(', ')}` };
+    // Direction C: the parent is intentionally blocked at learn while child
+    // changes are still running. That aggregation blocker must not prevent a
+    // child from entering its own spec→verify pipeline. Other blockers (gates,
+    // explicit workflow failures) still block child execution.
+    const aggregationWait = state.blockers.some((blocker) => blocker.startsWith('learn: waiting for sub-changes to merge:'));
+    if (!options?.subChangeId || !aggregationWait) {
+      return { valid: false, reason: `Workflow is blocked: ${state.blockers.join(', ')}` };
+    }
   }
   // ── Sub-change context ──
   if (options?.subChangeId) {
@@ -449,16 +499,16 @@ export function canExecuteStage(
         reason: `Sub-change stage '${stage}' is out of range. Allowed: ${SUB_CHANGE_STAGE_RANGE.join(', ')}.`,
       };
     }
-    // First prepare (currentStage === null) is allowed only for 'plan' (after dependency check).
+    // First prepare (currentStage === null) is allowed only for 'spec' (after dependency check).
     // Subsequent prepares must match the cursor or be the next stage in range.
     if (sc.currentStage === null) {
-      if (stage !== 'plan') {
+      if (stage !== 'spec') {
         return {
           valid: false,
-          reason: `Sub-change '${options.subChangeId}' has not started; first stage must be 'plan'`,
+          reason: `Sub-change '${options.subChangeId}' has not started; first stage must be 'spec'`,
         };
       }
-      // Dependency gate: entering plan requires all deps merged.
+      // Dependency gate: entering spec requires all deps merged.
       const unmerged = sc.dependsOn.filter((depId) => {
         const dep = state.subChanges.find((s) => s.id === depId);
         return !dep || dep.status !== 'merged';

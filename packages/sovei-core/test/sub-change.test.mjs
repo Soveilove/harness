@@ -98,7 +98,7 @@ test('SUBCHANGE_STAGE_PREPARE sets currentStage and transitions status', () => {
   assert.equal(state.subChanges[0].status, 'planning');
 });
 
-test('SUBCHANGE_STAGE_PREPARE blocks plan when dependency unmerged', () => {
+test('SUBCHANGE_STAGE_PREPARE blocks spec when dependency unmerged', () => {
   let state = createInitialState('050-test');
   const now = new Date().toISOString();
   // Create SC-01 first, then SC-02 depending on SC-01
@@ -108,10 +108,10 @@ test('SUBCHANGE_STAGE_PREPARE blocks plan when dependency unmerged', () => {
   state = workflowReducer(state, {
     type: 'SUBCHANGE_CREATED', subChangeId: 'SC-050-02', name: 'b', goal: 'g2', dependsOn: ['SC-050-01'], createdAt: now,
   });
-  // SC-02 cannot enter plan because SC-01 is not merged
+  // SC-02 cannot enter spec because SC-01 is not merged
   assert.throws(
     () => workflowReducer(state, {
-      type: 'SUBCHANGE_STAGE_PREPARE', subChangeId: 'SC-050-02', stage: 'plan',
+      type: 'SUBCHANGE_STAGE_PREPARE', subChangeId: 'SC-050-02', stage: 'spec',
     }),
     /blocked by unmerged dependencies: SC-050-01/,
   );
@@ -186,6 +186,44 @@ test('splitFeature rejects re-splitting', async () => {
     ]),
     /already split/,
   );
+});
+
+test('splitFeature seeds spec.md per sub-change and parent awaits aggregation at learn (方向 C)', async () => {
+  const { storage, engine } = createEngine();
+  await engine.bootstrap('063-csplit');
+  const state = await engine.splitFeature('063-csplit', [
+    { id: 'SC-063-01', name: 'sc-a', goal: 'A', dependsOn: [] },
+    { id: 'SC-063-02', name: 'sc-b', goal: 'B', dependsOn: ['SC-063-01'] },
+  ]);
+  // 每个 SC 目录预生成 spec.md 种子模板（不再只有 .gitkeep）
+  for (const id of ['SC-063-01', 'SC-063-02']) {
+    const spec = await storage.read(`specs/063-csplit/sub-changes/${id}/spec.md`);
+    assert.ok(spec && spec.includes('SOVEI_TEMPLATE_PLACEHOLDER'), `SC ${id} spec.md should be seeded`);
+    assert.match(spec, new RegExp(id));
+  }
+  // 父层拆分后停在 learn 等待聚合（所有 SC 未 merged）
+  assert.equal(state.currentStage, 'learn');
+  assert.equal(state.status, 'blocked');
+  assert.match(state.blockers.join(' '), /waiting for sub-changes to merge/);
+  // 依赖门在 spec 而非 plan：SC-02 依赖未 merged 的 SC-01，不能先进 spec
+  assert.throws(
+    () => workflowReducer(state, {
+      type: 'SUBCHANGE_STAGE_PREPARE', subChangeId: 'SC-063-02', stage: 'spec',
+    }),
+    /blocked by unmerged dependencies: SC-063-01/,
+  );
+});
+
+test('blocked parent still allows child spec preparation while awaiting aggregation', async () => {
+  const { storage, engine } = createEngine();
+  await engine.bootstrap('064-child-spec');
+  await storage.write('specs/064-child-spec/decision-log.md', '# Decisions\n');
+  const state = await engine.splitFeature('064-child-spec', [
+    { id: 'SC-064-01', name: 'sc-a', goal: 'A', dependsOn: [] },
+  ]);
+  assert.equal(state.status, 'blocked');
+  await engine.prepareStage('064-child-spec', 'spec', { subChangeId: 'SC-064-01' });
+  assert.equal((await engine.getState('064-child-spec')).subChanges[0].currentStage, 'spec');
 });
 
 test('listSubChanges reports blocked state for unmerged deps', async () => {

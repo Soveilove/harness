@@ -67,10 +67,9 @@ export function registerContextCommands(program: Command): void {
 
       // Load Feature artifacts.
       // When --sub-change is set, load the parent Feature's shared front-stages
-      // (explore→scope) PLUS the sub-change's plan→verify artifacts.
+      // (explore→grill) PLUS the sub-change's spec→verify artifacts.
       const SHARED_FRONT_ARTIFACTS = new Set([
-        'exploration.md', 'requirement.md', 'decision-log.md', 'wayfinder.md',
-        'spec.md', 'reconciliation.md', 'scope.md', 'coverage-matrix.md',
+        'exploration.md', 'requirement.md', 'decision-log.md',
         'sub-change-map.md',
       ]);
       const artifacts = new ArtifactRepository(storage, featurePath);
@@ -86,7 +85,7 @@ export function registerContextCommands(program: Command): void {
         }
       }
 
-      // Load sub-change-specific artifacts (plan→verify) when --sub-change is set.
+      // Load sub-change-specific artifacts (spec→verify) when --sub-change is set.
       if (subChangeId && subChangePath) {
         const subArtifacts = new ArtifactRepository(storage, subChangePath);
         const subNames = await subArtifacts.list();

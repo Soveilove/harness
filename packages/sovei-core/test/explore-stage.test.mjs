@@ -178,9 +178,9 @@ test('AC-3: `workflow explore --feature <id> --complete` validates artifacts and
   }
 });
 
-// ── AC-5：feature split 前置条件（exploration.md 存在即可）──
+// ── AC-5：feature split 前置条件（方向 C：explore + grill 完成，即 exploration.md + decision-log.md 存在）──
 
-test('AC-5: feature split --json works after explore (exploration.md exists)', async () => {
+test('AC-5: feature split --json works after explore + grill (exploration.md + decision-log.md exist)', async () => {
   const root = await mkdtemp(join(tmpdir(), 'sovei-explore-split-'));
   try {
     await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank']);
@@ -188,6 +188,8 @@ test('AC-5: feature split --json works after explore (exploration.md exists)', a
       cli, '--root', root, 'workflow', 'explore', 'multi-domain requirement', '--slug', 'multi-domain',
     ]);
     await writeFile(join(root, 'specs', '001-multi-domain', 'exploration.md'), '# 探索\n\n需求理解。', 'utf8');
+    // 方向 C：拆分发生在 grill 之后，需 decision-log.md 作为共享决策上下文
+    await writeFile(join(root, 'specs', '001-multi-domain', 'decision-log.md'), '# 决策日志\n\n已决事项。', 'utf8');
     await writeFile(
       join(root, 'specs', '001-multi-domain', 'sub-change-map.md'),
       '# Sub-Change Map\n\n| SC-ID | 名称 | 目标 | 依赖 |\n|---|---|---|---|\n| SC-001 | 子变更A | 目标A | - |\n',
@@ -198,6 +200,26 @@ test('AC-5: feature split --json works after explore (exploration.md exists)', a
     ]);
     const parsed = JSON.parse(stdout);
     assert.ok(parsed.featureId || parsed.parentFeatureId || parsed.subChanges || parsed.proposal || parsed.contract);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('AC-5: feature split --json rejects when grill not completed (no decision-log.md)', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'sovei-explore-split-nogrill-'));
+  try {
+    await execFileAsync(process.execPath, [cli, '--root', root, 'project', 'init', root, '--blank']);
+    await execFileAsync(process.execPath, [
+      cli, '--root', root, 'workflow', 'explore', 'single requirement', '--slug', 'no-grill',
+    ]);
+    await writeFile(join(root, 'specs', '001-no-grill', 'exploration.md'), '# 探索\n\n需求理解。', 'utf8');
+    // 缺少 decision-log.md → 拆分应被拒绝
+    await assert.rejects(
+      execFileAsync(process.execPath, [
+        cli, '--root', root, 'feature', 'split', '001-no-grill', '--json',
+      ]),
+      /decision-log\.md|Cannot split/,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

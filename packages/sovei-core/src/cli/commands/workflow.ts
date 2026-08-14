@@ -140,15 +140,15 @@ export function registerWorkflowCommands(program: Command): void {
       .argument('<feature>', 'Feature ID')
       .option('--complete', '校验产物并完成该阶段')
       .option('--task <id>', 'implement 阶段选择的任务 ID')
-      .option('--sub-change <id>', '子变更 ID（仅 plan→verify 阶段可用）')
+      .option('--sub-change <id>', '子变更 ID（仅 spec→verify 阶段可用）')
       .description(stage.description)
       .action(async (feature: string, opts: { complete?: boolean; task?: string; subChange?: string }) => {
         const engine = getEngine();
         if (stageName !== 'implement' && opts.task) {
           throw new Error('--task is only valid for the implement stage');
         }
-        // Sub-change constraint: only plan→verify stages allow --sub-change
-        const SUB_CHANGE_STAGES = ['plan', 'tasks', 'implement', 'converge', 'verify'];
+        // Sub-change constraint: direction C allows independent spec→verify stages.
+        const SUB_CHANGE_STAGES = ['spec', 'scope', 'plan', 'tasks', 'implement', 'converge', 'verify'];
         if (opts.subChange && !SUB_CHANGE_STAGES.includes(stageName)) {
           throw new Error(
             `--sub-change is only valid for stages: ${SUB_CHANGE_STAGES.join(', ')}. `
@@ -158,7 +158,7 @@ export function registerWorkflowCommands(program: Command): void {
         const subChangeOpts = opts.subChange ? { subChangeId: opts.subChange } : undefined;
         if (opts.complete) {
           const state = stageName === 'implement' && opts.task
-            ? await engine.completeTask(feature, opts.task)
+            ? await engine.completeTask(feature, opts.task, subChangeOpts)
             : await engine.completeStage(feature, stageName, subChangeOpts);
           const message = stageName === 'implement' && opts.task
             ? `任务 '${opts.task}' 已完成；implement 阶段继续保持活动。`

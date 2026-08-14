@@ -224,7 +224,9 @@ export const specStage = defineStage({
   name: 'spec',
   description: '定义问题、用户可见行为、边界和验收场景',
   contract: {
-    requiredArtifacts: ['decision-log.md', 'wayfinder.md'],
+    // Direction C: each sub-change enters spec after the parent grill; wayfind is optional
+    // and is no longer a required shared parent artifact.
+    requiredArtifacts: ['decision-log.md'],
     producesArtifacts: ['spec.md', 'reconciliation.md'],
   },
   async preExecute(ctx) {

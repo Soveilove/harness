@@ -93,11 +93,16 @@ export class BusinessMapScanner {
     private readonly scannerVersion: string,
   ) {}
 
+  /**
+   * @param changedFiles 可选。增量 rescan 时仅重读这些文件的内容（import/API 契约），
+   *   能力发现仍基于全量文件路径，保证能力集合完整；内容证据仅对变更文件刷新。
+   */
   async scan(
     directoryMap: DirectoryNode[],
     redlines: CandidateRedline[],
     repositoryCoverage: ScanCoverage,
     maxContentFiles = 500,
+    changedFiles?: string[],
   ): Promise<BusinessMap> {
     const sourceFiles = directoryMap
       .filter((node) => node.type === 'file' && SOURCE_FILE.test(node.path))
@@ -121,7 +126,14 @@ export class BusinessMapScanner {
       if (CONTRACT_SURFACE.test(filePath)) capability.contracts.add(filePath);
     }
 
-    for (const filePath of selectedFiles) {
+    // 增量 rescan：仅重读变更文件内容，未变更文件的内容证据沿用前次结果（能力集合已由
+    // 上方全量文件路径构建，保持完整）。全量扫描时 changedFiles 为空，等价于原有行为。
+    let contentFiles = selectedFiles;
+    if (changedFiles && changedFiles.length) {
+      const changed = new Set(changedFiles);
+      contentFiles = selectedFiles.filter((filePath) => changed.has(filePath));
+    }
+    for (const filePath of contentFiles) {
       const sourceKey = fileCapabilities.get(filePath);
       if (!sourceKey) continue;
       const source = capabilities.get(sourceKey)!;

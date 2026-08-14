@@ -25,6 +25,7 @@ import { emptyRulesDocument, ProjectRulesRepository, DEFAULT_RULES_FILE } from '
 import { adaptProjectRules } from '../../rules/adaptation.js';
 import { SkillManager } from '../../skills/manager.js';
 import { DEFAULT_WORKFLOW } from '../../engine/workflow-engine.js';
+import { verifyGitChanges } from '../../quick/git-verifier.js';
 
 function getStorage(): StorageBackend {
   return container.inject<StorageBackend>(TOKENS.Storage);
@@ -449,20 +450,24 @@ export function registerProjectCommands(program: Command): void {
     });
 
   // ── rescan (refresh stale onboarding artifacts) ──
+  // 增量：默认只重扫 git 变更文件并复用既有稳定候选；--full 强制全量重扫。
   project
     .command('rescan')
-    .description('刷新旧版 onboarding 产物并重新扫描（等价于 onboard）')
+    .description('增量刷新 onboarding 产物（按 git diff 裁剪，复用稳定候选；--full 强制全量）')
     .option('--depth <n>', '最大扫描深度', '20')
     .option('--max-entries <n>', '目录扫描最大条目数', '50000')
     .option('--max-business-files <n>', '业务地图最大源码读取数', '3000')
     .option('--evidence-only', 'collect evidence without generating candidates')
     .option('--dry-run', '只扫描并打印报告，不写盘')
-    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }) => {
-      await runOnboardScan(opts);
+    .option('--full', '强制全量重扫（忽略增量）')
+    .action(async (opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean; full?: boolean }) => {
+      await runOnboardScan({ ...opts, rescanMode: true });
     });
 
 // Shared onboard/rescan handler.
-async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean }): Promise<void> {
+// opts.rescanMode=true 时按 git diff 裁剪重扫范围，复用既有稳定候选（增量）。
+// opts.full 会覆盖 rescanMode，强制全量（等价于 onboard）。
+async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusinessFiles: string; dryRun?: boolean; evidenceOnly?: boolean; full?: boolean; rescanMode?: boolean }): Promise<void> {
       const storage = getStorage();
       const currentConfig = getConfig();
       const logger = getLogger();
@@ -494,9 +499,22 @@ async function runOnboardScan(opts: { depth: string; maxEntries: string; maxBusi
 
       console.log('\n  正在扫描项目以完成初始化……\n');
 
-      // Run scanner
+      // Run scanner. rescan 模式下按 git diff 计算变更文件做增量；非增量（onboard 或 --full）
+      // 时 changedFiles 为空，等价于全量扫描。
+      const incremental = opts.rescanMode && !opts.full;
+      let changedFiles: string[] | undefined;
+      if (incremental) {
+        const root = currentConfig.rootPath;
+        const diff = await verifyGitChanges({ workspaceRoot: root, declaredPaths: ['.'], exclusions: [] });
+        if (diff.status === 'verified' && diff.changedFiles.length) {
+          changedFiles = diff.changedFiles.filter((f) => f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.mjs') || f.endsWith('.vue') || f.endsWith('.tsx'));
+          console.log('  · 增量 rescan：检测到 ' + changedFiles.length + ' 个变更源码文件（git diff）');
+        } else {
+          console.log('  · 增量 rescan：未检测到变更源码文件，复用既有产物（跳过全量重扫）');
+        }
+      }
       const scanner = new ProjectScanner(storage);
-      const result = await scanner.scan(maxDepth, maxEntries, maxBusinessFiles);
+      const result = await scanner.scan(maxDepth, maxEntries, maxBusinessFiles, incremental ? changedFiles : undefined);
 
       // Print detected info
       console.log('  ── 检测到的技术栈 ──');

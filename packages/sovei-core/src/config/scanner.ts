@@ -6,6 +6,8 @@
  */
 
 import type { StorageBackend } from '../storage/types.js';
+import { minimatch } from 'minimatch';
+import { parse as parseYaml } from 'yaml';
 import { detectTechStack, generateSeeds, seedsToEntries, type DetectedStack } from './tech-stack.js';
 import { RedlineScanner, type CandidateRedline } from './redline-scanner.js';
 import { BusinessMapScanner, type BusinessMap } from './business-map-scanner.js';
@@ -85,6 +87,12 @@ const BUILD_CHUNK_RE = /(?:^|\/)[\w.-]+(?:[-_])[A-Fa-f0-9]{7,}(?:\.[\w-]+)?\.(?:
 /** 静态资源 / 配置文件 / 类型声明产物，不参与业务能力与红线候选 */
 const NON_BUSINESS_FILE_RE = /\.(?:map|min\.js|min\.css|css|scss|less|sass|d\.ts|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|otf|pdf|zip|tar|gz|lock|log)$/i;
 
+/**
+ * 常见 monorepo 包目录。`discoverPackages` 除了读取 workspace 配置声明外，
+ * 也把这些顶层目录作为兜底扫描，保证无 workspace 配置的项目仍能发现包。
+ */
+const STANDARD_PACKAGE_DIRS = ['packages', 'apps', 'libs', 'modules', 'services', 'components'];
+
 const KEY_FILES: Record<string, string> = {
   'package.json': 'Node.js package manifest',
   'tsconfig.json': 'TypeScript configuration',
@@ -104,7 +112,10 @@ const KEY_FILES: Record<string, string> = {
 export class ProjectScanner {
   constructor(private storage: StorageBackend) {}
 
-  async scan(maxDepth = 20, maxEntries = 50_000, maxBusinessFiles = 3000): Promise<ScanResult> {
+  /**
+   * @param changedFiles 可选。增量 rescan 时仅重扫这些文件，复用既有候选（需稳定 ID）。
+   */
+  async scan(maxDepth = 20, maxEntries = 50_000, maxBusinessFiles = 3000, changedFiles?: string[]): Promise<ScanResult> {
     const pkgContent = await this.storage.read('package.json');
     let packageJson: any = null;
     if (pkgContent) {
@@ -199,9 +210,9 @@ export class ProjectScanner {
 
     // Multi-source redline scan: governance docs, spec files, code surfaces
     const redlineScanner = new RedlineScanner(this.storage);
-    const candidateRedlines = await redlineScanner.scan(directoryMap);
+    const candidateRedlines = await redlineScanner.scan(directoryMap, changedFiles);
     const businessMap = await new BusinessMapScanner(this.storage, PROJECT_SCANNER_VERSION)
-      .scan(directoryMap, candidateRedlines, coverage, maxBusinessFiles);
+      .scan(directoryMap, candidateRedlines, coverage, maxBusinessFiles, changedFiles);
     return {
       techStack, projectRoot: '.', packageJson, packages, entryPoints, directoryMap,
       detectedPatterns, generatedKnowledge, candidateRedlines, businessMap, coverage,
@@ -261,8 +272,17 @@ export class ProjectScanner {
   }
 
   private async discoverPackages(directoryMap: DirectoryNode[]): Promise<DiscoveredPackage[]> {
+    const globs = await this.collectWorkspaceGlobs();
+    const matches = (path: string): boolean => {
+      if (globs.some((glob) => minimatch(path, glob))) return true;
+      // 兜底：标准包目录下的任意 package.json（支持一层或多层嵌套）
+      return STANDARD_PACKAGE_DIRS.some((dir) => {
+        const prefix = dir + '/';
+        return path.startsWith(prefix) && path.endsWith('/package.json') && path !== dir + '/package.json';
+      });
+    };
     const manifestPaths = directoryMap
-      .filter((node) => node.type === 'file' && /^packages\/[^/]+\/package\.json$/.test(node.path))
+      .filter((node) => node.type === 'file' && node.path.endsWith('/package.json') && matches(node.path))
       .map((node) => node.path)
       .sort();
     const packages: DiscoveredPackage[] = [];
@@ -292,6 +312,54 @@ export class ProjectScanner {
     }
 
     return packages;
+  }
+
+  /**
+   * 收集 workspace 包 glob 模式，来源按优先级：
+   *   1. 根 package.json 的 workspaces 字段（npm/yarn）
+   *   2. pnpm-workspace.yaml 的 packages 列表
+   *   3. lerna.json 的 packages 列表
+   * 每个模式都追加 '/package.json' 以便直接匹配 manifest 路径。
+   */
+  private async collectWorkspaceGlobs(): Promise<string[]> {
+    const globs = new Set<string>();
+    const addGlobs = (patterns: unknown): void => {
+      if (!Array.isArray(patterns)) return;
+      for (const p of patterns) {
+        if (typeof p !== 'string' || !p.trim()) continue;
+        const normalized = p.replace(/\/+$/, '');
+        globs.add(normalized + '/package.json');
+      }
+    };
+
+    // 1. 根 package.json workspaces
+    const rootPkg = await this.storage.read('package.json');
+    if (rootPkg) {
+      try {
+        const parsed = parseProjectJson<{ workspaces?: unknown }>(rootPkg, 'package.json');
+        if (parsed?.workspaces) addGlobs(parsed.workspaces);
+      } catch { /* ignore malformed root manifest */ }
+    }
+
+    // 2. pnpm-workspace.yaml
+    try {
+      const pnpmWs = await this.storage.read('pnpm-workspace.yaml');
+      if (pnpmWs) {
+        const parsed = parseYaml(pnpmWs) as { packages?: unknown };
+        if (parsed?.packages) addGlobs(parsed.packages);
+      }
+    } catch { /* ignore */ }
+
+    // 3. lerna.json
+    try {
+      const lerna = await this.storage.read('lerna.json');
+      if (lerna) {
+        const parsed = parseProjectJson<{ packages?: unknown }>(lerna, 'lerna.json');
+        if (parsed?.packages) addGlobs(parsed.packages);
+      }
+    } catch { /* ignore */ }
+
+    return [...globs];
   }
 
   private mergeTechStacks(stacks: DetectedStack[]): DetectedStack {

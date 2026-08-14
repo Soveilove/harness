@@ -15,24 +15,36 @@ export function getSubChangePath(featurePath: string, subChangeId: string): stri
 }
 
 export class ArtifactRepository {
+  /**
+   * Optional parent artifact root. When set (sub-change context), read/exists
+   * fall back to the parent root for shared front-stage artifacts (spec.md,
+   * scope.md, ...) that live at the Feature top level, not in the sub-change
+   * directory. Writes always target the primary featurePath (sub-change dir).
+   */
   constructor(
     private storage: StorageBackend,
     private featurePath: string,
+    private parentPath?: string,
   ) {}
 
-  /** Read an artifact by name */
+  /** Read an artifact by name (falls back to parent root in sub-change context) */
   async read(name: string): Promise<string | null> {
-    return this.storage.read(`${this.featurePath}/${name}`);
+    const primary = await this.storage.read(`${this.featurePath}/${name}`);
+    if (primary !== null) return primary;
+    if (this.parentPath) return this.storage.read(`${this.parentPath}/${name}`);
+    return null;
   }
 
-  /** Write an artifact */
+  /** Write an artifact (always to the primary featurePath, never to parent) */
   async write(name: string, content: string): Promise<void> {
     await this.storage.write(`${this.featurePath}/${name}`, content);
   }
 
-  /** Check if an artifact exists */
+  /** Check if an artifact exists (falls back to parent root in sub-change context) */
   async exists(name: string): Promise<boolean> {
-    return this.storage.exists(`${this.featurePath}/${name}`);
+    if (await this.storage.exists(`${this.featurePath}/${name}`)) return true;
+    if (this.parentPath) return this.storage.exists(`${this.parentPath}/${name}`);
+    return false;
   }
 
   /** List all artifacts in the feature directory */
