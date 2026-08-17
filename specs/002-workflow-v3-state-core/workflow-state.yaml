@@ -1,0 +1,24 @@
+featureId: "002-workflow-v3-state-core"
+status: in_progress
+currentStage: "implement"
+nextStage: "converge"
+completedStages:
+  - "explore"
+  - "grill"
+  - "wayfind"
+  - "spec"
+  - "scope"
+  - "plan"
+  - "tasks"
+reopenedStages:
+  []
+completedTaskIds:
+  - "TASK-001"
+activeChangeId: null
+revision: 0
+riskLevel: S1
+blockers:
+  []
+subChanges:
+  []
+updatedAt: "2026-08-17T04:16:07.773Z"

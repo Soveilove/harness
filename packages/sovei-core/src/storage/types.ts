@@ -8,7 +8,7 @@ export interface StorageBackend {
   /** Read file content as string. Returns null if not exists. */
   read(filePath: string): Promise<string | null>;
 
-  /** Write string content to file (creates dirs). */
+  /** Atomically replace a file with string content (creates dirs). */
   write(filePath: string, content: string): Promise<void>;
 
   /** Atomically create a file only when it does not exist. */

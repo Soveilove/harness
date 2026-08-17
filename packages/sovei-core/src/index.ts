@@ -13,6 +13,18 @@
 // Engine
 export { WorkflowEngine, DEFAULT_WORKFLOW } from './engine/workflow-engine.js';
 export { workflowReducer, createInitialState, canExecuteStage, aggregationGate } from './engine/state-machine.js';
+export {
+  WORKFLOW_STATE_SCHEMA_VERSION,
+  WorkflowHistoryEntrySchema,
+  WorkflowStateV3Schema,
+  createWorkflowStateV3,
+  parseWorkflowStateV3,
+} from './engine/state-v3.js';
+export type { WorkflowStateV3, WorkflowHistoryEntry } from './engine/state-v3.js';
+export { WorkflowStateStore } from './engine/state-store.js';
+export type { WorkflowStateUpdater } from './engine/state-store.js';
+export { transitionWorkflowStateV3 } from './engine/transitions-v3.js';
+export type { WorkflowTransition } from './engine/transitions-v3.js';
 export { EventStore } from './engine/event-store.js';
 export type * from './engine/types.js';
 
@@ -30,6 +42,7 @@ export * from './knowledge/reconcile.js';
 
 // Storage
 export { FilesystemStorage } from './storage/filesystem.js';
+export type { FilesystemStorageOptions } from './storage/filesystem.js';
 export { MemoryStorage } from './storage/memory.js';
 export type { StorageBackend } from './storage/types.js';
 

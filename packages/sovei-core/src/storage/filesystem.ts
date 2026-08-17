@@ -3,13 +3,28 @@
  * Default implementation using Node.js fs/promises
  */
 
-import { readFile, writeFile, appendFile, mkdir, unlink, readdir, stat, access, open, rename } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, unlink, readdir, stat, access, open, rename, link } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { dirname, join, relative, resolve as pathResolve, sep } from 'node:path';
 import type { StorageBackend } from './types.js';
 
+export interface FilesystemStorageOptions {
+  lockTimeoutMs?: number;
+  lockRetryMs?: number;
+  openFile?: (filePath: string, flags: string) => Promise<FileHandle>;
+}
+
 export class FilesystemStorage implements StorageBackend {
-  constructor(private rootPath: string) {}
+  private readonly lockTimeoutMs: number;
+  private readonly lockRetryMs: number;
+  private readonly openFile: (filePath: string, flags: string) => Promise<FileHandle>;
+
+  constructor(private rootPath: string, options: FilesystemStorageOptions = {}) {
+    this.lockTimeoutMs = options.lockTimeoutMs ?? 10_000;
+    this.lockRetryMs = options.lockRetryMs ?? 100;
+    this.openFile = options.openFile ?? ((filePath, flags) => open(filePath, flags));
+  }
 
   /**
    * Resolve a project-relative path against the storage root.
@@ -50,7 +65,7 @@ export class FilesystemStorage implements StorageBackend {
     await mkdir(dirname(full), { recursive: true });
     // Atomic write: stage to a temp file then rename, so a crash mid-write
     // never leaves a truncated/corrupt file at the target path.
-    const tmp = `${full}.tmp-${process.pid}-${Date.now()}`;
+    const tmp = `${full}.tmp-${process.pid}-${randomUUID()}`;
     try {
       await writeFile(tmp, content, 'utf8');
       await rename(tmp, full);
@@ -63,15 +78,19 @@ export class FilesystemStorage implements StorageBackend {
   async writeIfAbsent(filePath: string, content: string): Promise<boolean> {
     const full = this.resolve(filePath);
     await mkdir(dirname(full), { recursive: true });
+    const tmp = `${full}.tmp-${process.pid}-${randomUUID()}`;
+    let tmpHandle: FileHandle | undefined;
     try {
-      const handle = await open(full, 'wx');
-      try {
-        await handle.writeFile(content, 'utf8');
-      } finally {
-        await handle.close();
-      }
+      tmpHandle = await this.openFile(tmp, 'wx');
+      await tmpHandle.writeFile(content, 'utf8');
+      await tmpHandle.close();
+      tmpHandle = undefined;
+      await link(tmp, full);
+      await unlink(tmp).catch(() => {});
       return true;
     } catch (error) {
+      await tmpHandle?.close().catch(() => {});
+      await unlink(tmp).catch(() => {});
       if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
       throw error;
     }
@@ -158,39 +177,52 @@ export class FilesystemStorage implements StorageBackend {
   /**
    * Run fn while holding an exclusive lock on `key`, preventing concurrent
    * read-modify-write races across processes. Uses a sibling `<key>.lock` file
-   * acquired via O_EXCL (open 'wx'); stale locks older than 30s are reclaimed.
+   * acquired via O_EXCL (open 'wx'). Locks are never reclaimed by age;
+   * callers receive a timeout and must explicitly recover abandoned locks.
    */
   async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
     const lockPath = this.resolve(`${key}.lock`);
     await mkdir(dirname(lockPath), { recursive: true });
-    const STALE_MS = 30_000;
-    const deadline = Date.now() + 10_000;
+    const deadline = Date.now() + this.lockTimeoutMs;
+    const owner = randomUUID();
     let handle: FileHandle | undefined;
     while (true) {
+      const tempLockPath = `${lockPath}.tmp-${process.pid}-${randomUUID()}`;
+      let tempHandle: FileHandle | undefined;
       try {
-        handle = await open(lockPath, 'wx');
+        tempHandle = await this.openFile(tempLockPath, 'wx');
+        await tempHandle.writeFile(owner, 'utf8');
+        await tempHandle.close();
+        tempHandle = undefined;
+        await link(tempLockPath, lockPath);
+        await unlink(tempLockPath).catch(() => {});
+        handle = await this.openFile(lockPath, 'r+');
         break;
       } catch (error) {
+        await tempHandle?.close().catch(() => {});
+        await unlink(tempLockPath).catch(() => {});
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-        try {
-          const s = await stat(lockPath);
-          if (Date.now() - s.mtimeMs > STALE_MS) await unlink(lockPath).catch(() => {});
-        } catch {
-          // ignore stat errors; retry
-        }
+        // Never reclaim an old lock automatically: its owner may still be
+        // running a long critical section. The timeout below gives the caller
+        // an explicit recovery path without breaking mutual exclusion.
+
         if (Date.now() > deadline) {
           throw new Error(
             `无法获取文件锁(超时):${key}。若确认无其他 sovei 进程在运行,可删除 ${lockPath}`,
           );
         }
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, this.lockRetryMs));
       }
     }
     try {
       return await fn();
     } finally {
-      await handle.close();
-      await unlink(lockPath).catch(() => {});
+      try {
+        await handle.close();
+      } finally {
+        const currentOwner = await readFile(lockPath, 'utf8').catch(() => '');
+        if (currentOwner === owner) await unlink(lockPath).catch(() => {});
+      }
     }
   }
 }
