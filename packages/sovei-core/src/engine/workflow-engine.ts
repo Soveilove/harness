@@ -12,6 +12,9 @@
 
 import type { WorkflowState, WorkflowEvent, WorkflowDefinition, SubChangeState } from './types.js';
 import { workflowReducer, createInitialState, canExecuteStage, aggregationGate } from './state-machine.js';
+import { WorkflowStateStore } from './state-store.js';
+import { transitionWorkflowStateV3 } from './transitions-v3.js';
+import type { WorkflowStateV3 } from './state-v3.js';
 import { EventStore } from './event-store.js';
 import type { StageDefinition } from '../stages/define-stage.js';
 import type { StageContext } from '../stages/define-stage.js';
@@ -71,6 +74,53 @@ export class WorkflowEngine {
   private changeControl: ChangeControlRepository;
   private wayfinder: WayfinderRepository;
 
+  private getV3StateStore(featureId: string): WorkflowStateStore {
+    const featurePath = getFeaturePath(this.config, featureId);
+    return new WorkflowStateStore(
+      this.storage,
+      `${featurePath}/workflow-state.json`,
+      this.workflow.stageOrder,
+    );
+  }
+
+  private async getV3State(featureId: string): Promise<WorkflowStateV3> {
+    return this.getV3StateStore(featureId).read();
+  }
+
+  private toLegacyState(state: WorkflowStateV3): WorkflowState {
+    return {
+      featureId: state.featureId,
+      status: state.status,
+      currentStage: state.currentStage,
+      nextStage: state.nextStage,
+      completedStages: state.completedStages,
+      reopenedStages: state.reopenedStages,
+      completedTaskIds: state.completedTaskIds,
+      activeChangeId: state.activeChangeId,
+      revision: state.revision,
+      riskLevel: state.riskLevel,
+      blockers: state.blockers,
+      pendingConfirmations: state.pendingConfirmations,
+      preparedStages: state.preparedStages,
+      subChanges: [],
+      updatedAt: state.updatedAt,
+    };
+  }
+
+  private async hasV3State(featureId: string): Promise<boolean> {
+    return this.storage.exists(`${getFeaturePath(this.config, featureId)}/workflow-state.json`);
+  }
+
+  private async syncV3Transition(
+    featureId: string,
+    state: WorkflowStateV3,
+    transition: Parameters<typeof transitionWorkflowStateV3>[1],
+  ): Promise<WorkflowStateV3> {
+    const store = this.getV3StateStore(featureId);
+    return store.update(state.revision, (current) =>
+      transitionWorkflowStateV3(current, transition, this.workflow.stageOrder));
+  }
+
   constructor(
     private storage: StorageBackend,
     private knowledgeStore: KnowledgeStore,
@@ -99,23 +149,26 @@ export class WorkflowEngine {
    * 而非此原语——保持引擎对测试夹具与程序化调用的灵活性。
    */
   async bootstrap(featureId: string): Promise<WorkflowState> {
+    if (await this.hasV3State(featureId)) {
+      return this.toLegacyState(await this.getV3State(featureId));
+    }
     const featurePath = getFeaturePath(this.config, featureId);
     const existingEvents = await this.eventStore.readAll(featurePath);
     if (existingEvents.length > 0) {
       const state = await this.eventStore.replay(featurePath, this.workflow);
-      this.logger.info(`Feature already bootstrapped: ${featureId}`);
+      this.logger.info(`Feature already bootstrapped (legacy state): ${featureId}`);
       return state;
     }
-    const event: WorkflowEvent = { type: 'BOOTSTRAP', featureId };
-    await this.eventStore.append(featurePath, event);
-    const state = await this.eventStore.replay(featurePath, this.workflow);
-    await this.eventStore.persistState(featurePath, state);
-    this.logger.info(`Bootstrapped feature: ${featureId}`);
-    return state;
+    const state = await this.getV3StateStore(featureId).create(featureId);
+    this.logger.info(`Bootstrapped feature with workflow-state.json: ${featureId}`);
+    return this.toLegacyState(state);
   }
 
-  /** Get current state (from event replay) */
+  /** Get current state. New Features read v3 JSON; legacy fixtures remain read-only fallback. */
   async getState(featureId: string): Promise<WorkflowState> {
+    if (await this.hasV3State(featureId)) {
+      return this.toLegacyState(await this.getV3State(featureId));
+    }
     const featurePath = getFeaturePath(this.config, featureId);
     return this.eventStore.replay(featurePath, this.workflow);
   }
@@ -307,13 +360,17 @@ export class WorkflowEngine {
 
     this.logger.info(`阶段 ${stageName} 已准备；完成其产物契约后才能推进。`);
 
-    // Record preparation in the event log so completeStage can enforce it.
+    // Record preparation in v3 state for new Features; legacy and sub-change
+    // paths remain on EventStore until their dedicated migration tasks.
     if (subChangeId) {
       await this.eventStore.append(
         featurePath,
         { type: 'SUBCHANGE_STAGE_PREPARE', subChangeId, stage: stageName },
         stageName,
       );
+    } else if (await this.hasV3State(featureId)) {
+      const v3State = await this.getV3State(featureId);
+      await this.syncV3Transition(featureId, v3State, { type: 'prepare', actor: 'cli' });
     } else {
       await this.eventStore.append(featurePath, { type: 'STAGE_PREPARED', stage: stageName }, stageName);
     }
@@ -400,10 +457,26 @@ export class WorkflowEngine {
       // HEAD 读取失败（非 git 仓库）时静默跳过，不写基线、不报错
     }
 
-    const event: WorkflowEvent = subChangeId
-      ? { type: 'SUBCHANGE_STAGE_COMPLETE', subChangeId, stage: stageName, artifacts: result.artifactsWritten }
-      : { type: 'STAGE_COMPLETE', stage: stageName, artifacts: result.artifactsWritten };
-    await this.eventStore.append(featurePath, event, stageName);
+    if (subChangeId) {
+      await this.eventStore.append(
+        featurePath,
+        { type: 'SUBCHANGE_STAGE_COMPLETE', subChangeId, stage: stageName, artifacts: result.artifactsWritten },
+        stageName,
+      );
+    } else if (await this.hasV3State(featureId)) {
+      const v3State = await this.getV3State(featureId);
+      await this.syncV3Transition(featureId, v3State, {
+        type: 'complete',
+        actor: 'cli',
+        reason: `artifacts validated for ${stageName}`,
+      });
+    } else {
+      await this.eventStore.append(
+        featurePath,
+        { type: 'STAGE_COMPLETE', stage: stageName, artifacts: result.artifactsWritten },
+        stageName,
+      );
+    }
 
     // verify completion auto-merges the sub-change (reducer handles this, but we
     // also append an explicit SUBCHANGE_MERGED for audit clarity when not already merged).
