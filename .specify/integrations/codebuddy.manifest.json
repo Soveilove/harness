@@ -1,7 +1,7 @@
 {
   "integration": "codebuddy",
   "version": "0.16.5.dev0",
-  "installed_at": "2026-08-17T09:33:22.847297+00:00",
+  "installed_at": "2026-08-17T09:53:31.458804+00:00",
   "files": {
     ".codebuddy/commands/speckit.analyze.md": "b96c62808ed5034a9ef6e869d5d3e344dcd6dec45723840b885cdc68c13bd5ee",
     ".codebuddy/commands/speckit.clarify.md": "7fc686be9008872c22a7c8f8b87ba2eb85a788524fa444b4252d5b200703cf3a",
