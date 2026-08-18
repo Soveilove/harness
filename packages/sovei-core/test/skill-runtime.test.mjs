@@ -6,6 +6,8 @@ import {
   KnowledgeStore,
   MemoryStorage,
   WorkflowEngine,
+  WorkflowStateStore,
+  transitionWorkflowStateV3,
   SkillAdapterRegistry,
   MarkdownSkillAdapter,
 } from '../dist/index.js';
@@ -60,12 +62,14 @@ function createEngineWithoutSkill() {
 
 /** Fast-forward through the explore entry stage so tests can operate on grill+. */
 async function skipExplore(storage, featureId) {
-  const events = new EventStore(storage);
   const path = `specs/${featureId}`;
+  const store = new WorkflowStateStore(storage, `${path}/workflow-state.json`, DEFAULT_WORKFLOW.stageOrder);
+  let state = await store.read();
+  const prepared = transitionWorkflowStateV3(state, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+  await store.update(state.revision, () => prepared);
   await storage.write(`${path}/exploration.md`, '# 需求探索\n\n代码现状与变更判定。');
-  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');
-  await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
+  const completed = transitionWorkflowStateV3(prepared, { type: 'complete', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+  await store.update(prepared.revision, () => completed);
 }
 
 test('prepareStage with external skill injects skill body into prompt', async () => {

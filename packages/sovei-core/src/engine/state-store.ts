@@ -39,6 +39,7 @@ export class WorkflowStateStore {
       }
       const next = await updater(current);
       const validated = parseWorkflowStateV3(this.serialize(next), this.stageOrder);
+      if (validated.revision === expectedRevision) return current;
       if (validated.revision !== expectedRevision + 1) {
         throw new Error(
           `Workflow state revision must increment by one: expected ${expectedRevision + 1}, actual ${validated.revision}`,

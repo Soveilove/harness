@@ -91,8 +91,8 @@ test('AC-3: `workflow explore "<需求>" --slug` allocates NNN-slug and records 
     assert.match(stdout, /已记录需求原文/);
     const requirement = await readFile(join(root, 'specs', '001-oauth-login', 'requirement.md'), 'utf8');
     assert.match(requirement, /OAuth2/);
-    const state = await readFile(join(root, 'specs', '001-oauth-login', 'workflow-state.yaml'), 'utf8');
-    assert.match(state, /currentStage: "?explore"?/);
+    const state = JSON.parse(await readFile(join(root, 'specs', '001-oauth-login', 'workflow-state.json'), 'utf8'));
+    assert.equal(state.currentStage, 'explore');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

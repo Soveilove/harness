@@ -23,6 +23,9 @@ const config = {
 async function skipExplore(storage, featureId) {
   const events = new EventStore(storage);
   const path = `specs/${featureId}`;
+  if ((await events.readAll(path)).length === 0) {
+    await events.append(path, { type: 'BOOTSTRAP', featureId });
+  }
   await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
   await storage.write(`${path}/exploration.md`, '# 需求探索\n\n核心目标与代码现状。');
   await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');

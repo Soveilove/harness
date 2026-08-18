@@ -159,7 +159,7 @@ test('aggregationGate passes when all sub-changes merged', () => {
 
 test('splitFeature creates sub-change-map.md and scaffold dirs', async () => {
   const { storage, engine } = createEngine();
-  await engine.bootstrap('060-split-test');
+  await new EventStore(storage).append('specs/060-split-test', { type: 'BOOTSTRAP', featureId: '060-split-test' });
   const state = await engine.splitFeature('060-split-test', [
     { id: 'SC-060-01', name: 'layer-a', goal: 'Build layer A', dependsOn: [] },
     { id: 'SC-060-02', name: 'layer-b', goal: 'Build layer B', dependsOn: ['SC-060-01'] },
@@ -175,8 +175,8 @@ test('splitFeature creates sub-change-map.md and scaffold dirs', async () => {
 });
 
 test('splitFeature rejects re-splitting', async () => {
-  const { engine } = createEngine();
-  await engine.bootstrap('061-resplit');
+  const { storage, engine } = createEngine();
+  await new EventStore(storage).append('specs/061-resplit', { type: 'BOOTSTRAP', featureId: '061-resplit' });
   await engine.splitFeature('061-resplit', [
     { id: 'SC-061-01', name: 'a', goal: 'g', dependsOn: [] },
   ]);
@@ -190,7 +190,7 @@ test('splitFeature rejects re-splitting', async () => {
 
 test('splitFeature seeds spec.md per sub-change and parent awaits aggregation at learn (方向 C)', async () => {
   const { storage, engine } = createEngine();
-  await engine.bootstrap('063-csplit');
+  await new EventStore(storage).append('specs/063-csplit', { type: 'BOOTSTRAP', featureId: '063-csplit' });
   const state = await engine.splitFeature('063-csplit', [
     { id: 'SC-063-01', name: 'sc-a', goal: 'A', dependsOn: [] },
     { id: 'SC-063-02', name: 'sc-b', goal: 'B', dependsOn: ['SC-063-01'] },
@@ -216,19 +216,20 @@ test('splitFeature seeds spec.md per sub-change and parent awaits aggregation at
 
 test('blocked parent still allows child spec preparation while awaiting aggregation', async () => {
   const { storage, engine } = createEngine();
-  await engine.bootstrap('064-child-spec');
+  await new EventStore(storage).append('specs/064-child-spec', { type: 'BOOTSTRAP', featureId: '064-child-spec' });
   await storage.write('specs/064-child-spec/decision-log.md', '# Decisions\n');
   const state = await engine.splitFeature('064-child-spec', [
     { id: 'SC-064-01', name: 'sc-a', goal: 'A', dependsOn: [] },
   ]);
   assert.equal(state.status, 'blocked');
   await engine.prepareStage('064-child-spec', 'spec', { subChangeId: 'SC-064-01' });
-  assert.equal((await engine.getState('064-child-spec')).subChanges[0].currentStage, 'spec');
+  const legacyState = await new EventStore(storage).replay('specs/064-child-spec', DEFAULT_WORKFLOW);
+  assert.equal(legacyState.subChanges[0].currentStage, 'spec');
 });
 
 test('listSubChanges reports blocked state for unmerged deps', async () => {
-  const { engine } = createEngine();
-  await engine.bootstrap('062-blocked');
+  const { storage, engine } = createEngine();
+  await new EventStore(storage).append('specs/062-blocked', { type: 'BOOTSTRAP', featureId: '062-blocked' });
   await engine.splitFeature('062-blocked', [
     { id: 'SC-062-01', name: 'a', goal: 'g', dependsOn: [] },
     { id: 'SC-062-02', name: 'b', goal: 'g2', dependsOn: ['SC-062-01'] },

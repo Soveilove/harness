@@ -11,6 +11,8 @@ import {
   WorkflowEngine,
   KnowledgeStore,
   EventStore,
+  WorkflowStateStore,
+  transitionWorkflowStateV3,
   DEFAULT_WORKFLOW,
   checkStale,
   serializeSyncBaseline,
@@ -172,12 +174,14 @@ test('sync stage completion writes a repository-level baseline file', async () =
     const featureId = '024-sync-baseline';
     const path = `specs/${featureId}`;
 
-    // 用事件日志快进到 learn 阶段完成
-    const events = new EventStore(storage);
-    await events.append(path, { type: 'BOOTSTRAP', featureId });
+    // 使用 workflow-state.json 快进到 sync 阶段之前
+    const store = new WorkflowStateStore(storage, `${path}/workflow-state.json`, DEFAULT_WORKFLOW.stageOrder);
+    let state = await store.create(featureId);
     for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 11)) {
-      await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
-      await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
+      const prepared = transitionWorkflowStateV3(state, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+      await store.update(state.revision, () => prepared);
+      state = transitionWorkflowStateV3(prepared, { type: 'complete', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+      await store.update(prepared.revision, () => state);
     }
     // 准备 sync 阶段（生成 sync-report.md 模板）
     await mkdir(join(root, path), { recursive: true });
@@ -205,13 +209,14 @@ test('sync stage completion skips baseline write when not a git repository', asy
     const engine = new WorkflowEngine(storage, new KnowledgeStore(storage), logger, engineConfig(root));
     const featureId = '024-sync-nogit';
     const path = `specs/${featureId}`;
-    const events = new EventStore(storage);
-    await events.append(path, { type: 'BOOTSTRAP', featureId });
+    const store = new WorkflowStateStore(storage, `${path}/workflow-state.json`, DEFAULT_WORKFLOW.stageOrder);
+    let state = await store.create(featureId);
     for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, 11)) {
-      await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
-      await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
+      const prepared = transitionWorkflowStateV3(state, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+      await store.update(state.revision, () => prepared);
+      state = transitionWorkflowStateV3(prepared, { type: 'complete', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+      await store.update(prepared.revision, () => state);
     }
-    await mkdir(join(root, path), { recursive: true });
     await writeFile(join(root, path, 'learning-report.md'), '# Learning Report\n\n已审核。', 'utf8');
     await engine.prepareStage(featureId, 'sync');
     await writeFile(join(root, path, 'sync-report.md'), '# Sync Report\n\n已同步。', 'utf8');

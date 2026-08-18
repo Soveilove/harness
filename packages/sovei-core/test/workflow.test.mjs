@@ -6,6 +6,8 @@ import {
   KnowledgeStore,
   MemoryStorage,
   WorkflowEngine,
+  WorkflowStateStore,
+  transitionWorkflowStateV3,
 } from '../dist/index.js';
 
 const logger = { info() {}, warn() {}, error() {}, debug() {} };
@@ -28,12 +30,14 @@ function createEngine() {
  * Writes exploration.md so grill's requiredArtifacts is satisfied.
  */
 async function skipExplore(storage, featureId) {
-  const events = new EventStore(storage);
   const path = `specs/${featureId}`;
-  await events.append(path, { type: 'STAGE_PREPARED', stage: 'explore' }, 'explore');
+  const store = new WorkflowStateStore(storage, `${path}/workflow-state.json`, DEFAULT_WORKFLOW.stageOrder);
+  const current = await store.read();
+  const prepared = transitionWorkflowStateV3(current, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+  await store.update(current.revision, () => prepared);
   await storage.write(`${path}/exploration.md`, '# 需求探索\n\n核心目标与代码现状。');
-  await events.append(path, { type: 'STAGE_COMPLETE', stage: 'explore', artifacts: ['exploration.md'] }, 'explore');
-  await events.persistState(path, await events.replay(path, DEFAULT_WORKFLOW));
+  const completed = transitionWorkflowStateV3(prepared, { type: 'complete', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+  await store.update(prepared.revision, () => completed);
 }
 
 test('bootstrap is idempotent and preparation cannot complete placeholder artifacts', async () => {
@@ -62,29 +66,30 @@ test('bootstrap is idempotent and preparation cannot complete placeholder artifa
   assert.deepEqual(completed.completedStages, ['explore', 'grill']);
 });
 
-test('implement tracks individual tasks and blocks stage completion while tasks remain', async () => {
+test('implement blocks stage completion while tasks remain in JSON state', async () => {
   const { storage, engine } = createEngine();
-  const events = new EventStore(storage);
   const path = 'specs/002-multi-task';
-  await events.append(path, { type: 'BOOTSTRAP', featureId: '002-multi-task' });
-  // Complete every stage up to (but not including) implement, then prepare it.
+  await engine.bootstrap('002-multi-task');
+  const stateStore = new WorkflowStateStore(storage, `${path}/workflow-state.json`, DEFAULT_WORKFLOW.stageOrder);
+  let state = await stateStore.read();
   const implementIndex = DEFAULT_WORKFLOW.stageOrder.indexOf('implement');
   for (const stage of DEFAULT_WORKFLOW.stageOrder.slice(0, implementIndex)) {
-    await events.append(path, { type: 'STAGE_PREPARED', stage }, stage);
-    await events.append(path, { type: 'STAGE_COMPLETE', stage, artifacts: [] }, stage);
+    const prepared = transitionWorkflowStateV3(state, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+    await stateStore.update(state.revision, () => prepared);
+    state = transitionWorkflowStateV3(prepared, { type: 'complete', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+    await stateStore.update(prepared.revision, () => state);
   }
-  await events.append(path, { type: 'STAGE_PREPARED', stage: 'implement' }, 'implement');
+  const prepared = transitionWorkflowStateV3(state, { type: 'prepare', actor: 'test' }, DEFAULT_WORKFLOW.stageOrder);
+  await stateStore.update(state.revision, () => prepared);
   await storage.write(`${path}/tasks.md`, '# Tasks\n\n- [ ] TASK-001: first\n- [ ] TASK-002: second\n');
   await storage.write(`${path}/change-manifest.md`, '# Changes\n\nTASK-001 implemented and verified.');
 
-  let state = await engine.completeTask('002-multi-task', 'TASK-001');
-  assert.deepEqual(state.completedTaskIds, ['TASK-001']);
-  assert.equal(state.currentStage, 'implement');
-  await assert.rejects(engine.completeStage('002-multi-task', 'implement'), /unfinished tasks: TASK-002/);
+  await assert.rejects(engine.completeStage('002-multi-task', 'implement'), /unfinished tasks: TASK-001, TASK-002/);
 
+  const currentJson = JSON.parse(await storage.read(`${path}/workflow-state.json`));
+  currentJson.completedTaskIds = ['TASK-001', 'TASK-002'];
+  await storage.write(`${path}/workflow-state.json`, JSON.stringify(currentJson, null, 2));
   await storage.write(`${path}/change-manifest.md`, '# Changes\n\nTASK-001 and TASK-002 implemented and verified.');
-  state = await engine.completeTask('002-multi-task', 'TASK-002');
-  assert.deepEqual(state.completedTaskIds, ['TASK-001', 'TASK-002']);
   state = await engine.completeStage('002-multi-task', 'implement');
   assert.equal(state.currentStage, 'converge');
 });
@@ -124,4 +129,48 @@ test('prepareStage enables completeStage and records STAGE_PREPARED event', asyn
   const completed = await engine.completeStage('005-prepare-then-complete', 'grill');
   assert.deepEqual(completed.preparedStages, []);
   assert.deepEqual(completed.completedStages, ['explore', 'grill']);
+});
+
+test('new Feature bootstrap rejects a directory containing any pre-existing file', async () => {
+  const { storage, engine } = createEngine();
+  await storage.write('specs/006-legacy-input/old-state.yml', 'legacy: true');
+  await assert.rejects(
+    () => engine.bootstrap('006-legacy-input'),
+    /must be empty|已有文件|pre-existing/i,
+  );
+  assert.equal(await storage.read('specs/006-legacy-input/old-state.yml'), 'legacy: true');
+  assert.equal(await storage.read('specs/006-legacy-input/workflow-state.json'), null);
+});
+
+test('new Feature top-level operations use JSON state without EventStore fallback', async () => {
+  const { storage, engine } = createEngine();
+  await engine.bootstrap('007-json-only');
+  assert.equal(await storage.read('specs/007-json-only/workflow-events.jsonl'), null);
+
+  const initial = await engine.getState('007-json-only');
+  assert.equal(initial.revision, 0);
+  await engine.prepareStage('007-json-only', 'explore');
+  const prepared = await engine.getState('007-json-only');
+  assert.deepEqual(prepared.preparedStages, ['explore']);
+  assert.equal(prepared.revision, 1);
+  await engine.prepareStage('007-json-only', 'explore');
+  const repeated = await engine.getState('007-json-only');
+  assert.equal(repeated.revision, 1);
+  const repeatedJson = JSON.parse(await storage.read('specs/007-json-only/workflow-state.json'));
+  assert.equal(repeatedJson.history.length, 1);
+
+  await storage.write('specs/007-json-only/exploration.md', '# 需求探索\n\n真实探索结果。');
+  await storage.write('specs/007-json-only/sub-change-map.md', '# 拆分\n\nno-split');
+  const completed = await engine.completeStage('007-json-only', 'explore');
+  assert.deepEqual(completed.completedStages, ['explore']);
+  assert.equal(completed.revision, 2);
+  assert.equal(await storage.read('specs/007-json-only/workflow-events.jsonl'), null);
+});
+
+test('JSON-only status rejects missing or malformed state without replay', async () => {
+  const { storage, engine } = createEngine();
+  await storage.write('specs/008-invalid-json/workflow-events.jsonl', JSON.stringify({ type: 'BOOTSTRAP' }));
+  await assert.rejects(() => engine.getState('008-invalid-json'), /Workflow state not found|not found/i);
+  await storage.write('specs/008-invalid-json/workflow-state.json', '{broken');
+  await assert.rejects(() => engine.getState('008-invalid-json'), /invalid JSON/i);
 });

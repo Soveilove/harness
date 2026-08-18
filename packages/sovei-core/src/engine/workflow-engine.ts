@@ -100,7 +100,10 @@ export class WorkflowEngine {
       revision: state.revision,
       riskLevel: state.riskLevel,
       blockers: state.blockers,
-      pendingConfirmations: state.pendingConfirmations,
+      pendingConfirmations: state.pendingConfirmations.map((confirmation) => ({
+        ...confirmation,
+        gate: confirmation.gate as 'spec-confirmation' | 'verify-confirmation',
+      })),
       preparedStages: state.preparedStages,
       subChanges: [],
       updatedAt: state.updatedAt,
@@ -111,13 +114,22 @@ export class WorkflowEngine {
     return this.storage.exists(`${getFeaturePath(this.config, featureId)}/workflow-state.json`);
   }
 
+  private async assertEmptyFeatureDirectory(featureId: string): Promise<void> {
+    const featurePath = getFeaturePath(this.config, featureId);
+    const entries = await this.storage.listEntries(featurePath);
+    if (entries.length > 0) {
+      throw new Error(`Cannot bootstrap Feature '${featureId}': target directory must be empty`);
+    }
+  }
+
   private async syncV3Transition(
     featureId: string,
     state: WorkflowStateV3,
     transition: Parameters<typeof transitionWorkflowStateV3>[1],
+    expectedRevision = state.revision,
   ): Promise<WorkflowStateV3> {
     const store = this.getV3StateStore(featureId);
-    return store.update(state.revision, (current) =>
+    return store.update(expectedRevision, (current) =>
       transitionWorkflowStateV3(current, transition, this.workflow.stageOrder));
   }
 
@@ -152,23 +164,19 @@ export class WorkflowEngine {
     if (await this.hasV3State(featureId)) {
       return this.toLegacyState(await this.getV3State(featureId));
     }
-    const featurePath = getFeaturePath(this.config, featureId);
-    const existingEvents = await this.eventStore.readAll(featurePath);
-    if (existingEvents.length > 0) {
-      const state = await this.eventStore.replay(featurePath, this.workflow);
-      this.logger.info(`Feature already bootstrapped (legacy state): ${featureId}`);
-      return state;
-    }
+    await this.assertEmptyFeatureDirectory(featureId);
     const state = await this.getV3StateStore(featureId).create(featureId);
     this.logger.info(`Bootstrapped feature with workflow-state.json: ${featureId}`);
     return this.toLegacyState(state);
   }
 
-  /** Get current state. New Features read v3 JSON; legacy fixtures remain read-only fallback. */
+  /** Get current state exclusively from workflow-state.json for top-level operations. */
   async getState(featureId: string): Promise<WorkflowState> {
-    if (await this.hasV3State(featureId)) {
-      return this.toLegacyState(await this.getV3State(featureId));
-    }
+    return this.toLegacyState(await this.getV3State(featureId));
+  }
+
+  /** Legacy state read reserved for explicitly out-of-scope commands. */
+  private async getLegacyState(featureId: string): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
     return this.eventStore.replay(featurePath, this.workflow);
   }
@@ -180,7 +188,9 @@ export class WorkflowEngine {
     options?: { subChangeId?: string },
   ): Promise<StageResult> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = options?.subChangeId
+      ? await this.eventStore.replay(featurePath, this.workflow)
+      : await this.getState(featureId);
     await this.assertNoPendingChanges(featurePath);
 
     // Determine artifact path: sub-change namespace vs top-level.
@@ -368,11 +378,9 @@ export class WorkflowEngine {
         { type: 'SUBCHANGE_STAGE_PREPARE', subChangeId, stage: stageName },
         stageName,
       );
-    } else if (await this.hasV3State(featureId)) {
+    } else {
       const v3State = await this.getV3State(featureId);
       await this.syncV3Transition(featureId, v3State, { type: 'prepare', actor: 'cli' });
-    } else {
-      await this.eventStore.append(featurePath, { type: 'STAGE_PREPARED', stage: stageName }, stageName);
     }
 
     return result;
@@ -463,19 +471,13 @@ export class WorkflowEngine {
         { type: 'SUBCHANGE_STAGE_COMPLETE', subChangeId, stage: stageName, artifacts: result.artifactsWritten },
         stageName,
       );
-    } else if (await this.hasV3State(featureId)) {
+    } else {
       const v3State = await this.getV3State(featureId);
       await this.syncV3Transition(featureId, v3State, {
         type: 'complete',
         actor: 'cli',
         reason: `artifacts validated for ${stageName}`,
-      });
-    } else {
-      await this.eventStore.append(
-        featurePath,
-        { type: 'STAGE_COMPLETE', stage: stageName, artifacts: result.artifactsWritten },
-        stageName,
-      );
+      }, state.revision);
     }
 
     // verify completion auto-merges the sub-change (reducer handles this, but we
@@ -497,8 +499,10 @@ export class WorkflowEngine {
       }
     }
 
-    const newState = await this.eventStore.replay(featurePath, this.workflow);
-    await this.eventStore.persistState(featurePath, newState);
+    const newState = subChangeId
+      ? await this.eventStore.replay(featurePath, this.workflow)
+      : this.toLegacyState(await this.getV3State(featureId));
+    if (subChangeId) await this.eventStore.persistState(featurePath, newState);
 
     if (stageDef.cleanup) await stageDef.cleanup(ctx);
 
@@ -510,7 +514,7 @@ export class WorkflowEngine {
   /** Record one implementation task without advancing the implement stage. */
   async completeTask(featureId: string, taskId: string, options?: { subChangeId?: string }): Promise<WorkflowState> {
     const subChangeId = options?.subChangeId;
-    const { featurePath, state, artifacts } = await this.createStageContext(featureId, 'implement', subChangeId);
+    const { featurePath, state, artifacts } = await this.createStageContext(featureId, 'implement', subChangeId, true);
     const requiredTasks = await this.readTaskIds(artifacts);
     if (!requiredTasks.includes(taskId)) throw new Error(`Unknown task '${taskId}' in tasks.md`);
     if (state.completedTaskIds.includes(taskId)) return state;
@@ -538,7 +542,7 @@ export class WorkflowEngine {
     reason: string,
     changeDimensions: ChangeDimension[],
   ): Promise<ChangeRequest> {
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     this.assertChangeTarget(state, targetStage);
     const featurePath = getFeaturePath(this.config, featureId);
     await this.assertNoPendingChanges(featurePath);
@@ -558,7 +562,7 @@ export class WorkflowEngine {
   /** Apply a reviewed change request, archive stale artifacts, and reopen from its target. */
   async applyChange(featureId: string, changeId: string): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     if (state.activeChangeId === changeId) throw new Error(`Change request already applied: ${changeId}`);
     const request = await this.changeControl.loadRequest(featurePath, changeId);
     if (request.featureId !== featureId) throw new Error(`Change request belongs to feature '${request.featureId}'`);
@@ -609,7 +613,7 @@ export class WorkflowEngine {
   /** Reopen a completed stage */
   async reopen(featureId: string, targetStage: string, reason: string): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     await this.assertNoPendingChanges(featurePath);
 
     await this.archiveInvalidatedArtifacts(
@@ -637,7 +641,7 @@ export class WorkflowEngine {
     reference: string,
   ): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     const pending = state.pendingConfirmations.find(
       (pc) => pc.stage === stage && pc.role === role,
     );
@@ -664,7 +668,7 @@ export class WorkflowEngine {
     reason: string,
   ): Promise<WorkflowState> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     const pending = state.pendingConfirmations.find(
       (pc) => pc.stage === stage && pc.role === role,
     );
@@ -771,7 +775,7 @@ export class WorkflowEngine {
     }
   }
 
-  private async createStageContext(featureId: string, stageName: string, subChangeId?: string): Promise<{
+  private async createStageContext(featureId: string, stageName: string, subChangeId?: string, allowLegacy = false): Promise<{
     featurePath: string;
     state: WorkflowState;
     stageDef: StageDefinition;
@@ -779,7 +783,11 @@ export class WorkflowEngine {
     ctx: StageContext;
   }> {
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = allowLegacy && !subChangeId && !(await this.hasV3State(featureId))
+      ? await this.eventStore.replay(featurePath, this.workflow)
+      : subChangeId
+        ? await this.eventStore.replay(featurePath, this.workflow)
+        : await this.getState(featureId);
     await this.assertNoPendingChanges(featurePath);
     const artifactRoot = subChangeId ? getSubChangePath(featurePath, subChangeId) : featurePath;
     const check = canExecuteStage(state, stageName, this.workflow, subChangeId ? { subChangeId } : undefined);
@@ -913,7 +921,7 @@ export class WorkflowEngine {
       throw new Error('Cannot split: sub-changes list is empty');
     }
     const featurePath = getFeaturePath(this.config, featureId);
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     if (state.subChanges.length > 0) {
       throw new Error(
         `Feature '${featureId}' is already split with ${state.subChanges.length} sub-changes. `
@@ -987,7 +995,7 @@ export class WorkflowEngine {
 
   /** List all sub-changes with their current status and blocked state. */
   async listSubChanges(featureId: string): Promise<Array<SubChangeState & { blocked: boolean; blockedBy: string[] }>> {
-    const state = await this.getState(featureId);
+    const state = await this.getLegacyState(featureId);
     return state.subChanges.map((sc) => {
       const blockedBy = sc.dependsOn.filter((depId) => {
         const dep = state.subChanges.find((s) => s.id === depId);

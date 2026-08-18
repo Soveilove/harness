@@ -1,0 +1,10 @@
+node_modules/
+dist/
+src/
+test/
+scripts/
+specs/
+design-docs/
+*.log
+.env*
+coverage/
