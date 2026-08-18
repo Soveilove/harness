@@ -1,0 +1,12 @@
+{
+    "name": "ec-web-ai-market",
+    "description": "EC 团队前端专属 AI 智能体市场",
+    "plugins": [
+        {
+            "name": "ec-web-ai-plugin",
+            "description": "包含业务分析、三层架构代码生成及 OpenSpec 设计讨论的研发套件",
+            "version": "1.0.25",
+            "source": "./ec-web-ai-plugin"
+        }
+    ]
+}

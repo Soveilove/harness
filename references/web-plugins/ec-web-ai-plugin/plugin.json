@@ -1,0 +1,11 @@
+{
+    "name": "ec-web-ai-plugin",
+    "description": "EC Web 前端 AI开发插件，包含编码规范、自定义Agent、技能、OpenSpec工作流和ec-design MCP服务",
+    "version": "1.0.25",
+    "author": {
+        "name": "EC Frontend Team"
+    },
+    "skills": "skills/",
+    "agents": "agents/",
+    "mcpServers": ".mcp.json"
+}

@@ -7,11 +7,6 @@ sovei-flow/project/usage.jsonl
 # Embedded separate repository (public scaffold), not part of the harness repo
 public-repo/
 
-# EC 前端团队插件市场（参考吸收，不纳入本仓库）
-web-plugins/
-
-# # IDE/agent internal memory (cross-session working notes, not part of the repo)
-# .codebuddy/
 
 # Claude Code 临时 worktree（每个 agent 会话的隔离副本，不纳入本仓库）
 .claude/worktrees/
